@@ -45,10 +45,16 @@ To get started with development, follow these steps:
 3. Open `chrome://extensions/` in your Chrome browser.
 4. Click **Load unpacked** and select the `dist` folder from this repository.
 
-## Author
+## Continued Author
+
+👤 **Yuri**
+- Email: [me@yuricunha.com](mailto:me@yuricunha.com)
+
+
+## Original Author
 
 👤 **Geczy**
-- Email: [me@yuricunha.com](mailto:me@yuricunha.com)
+- Email: [hashtagnogf@protonmail.com](hashtagnogf@protonmail.com)
 
 ## Show Your Support
 
