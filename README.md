@@ -12,7 +12,7 @@
 
 ## About
 
-Tinder Autopilot is a Chrome extension designed to automate various tasks on Tinder, allowing users to optimize their time and enhance their experience on the platform. This project is a continuation of the original [Tinder Autopilot](https://github.com/isyuricunha/tinder-autopilot) by Geczy. We aim to maintain and expand its features to ensure it remains useful and up-to-date.
+Tinder Autopilot is a Chrome extension designed to automate various tasks on Tinder, allowing users to optimize their time and enhance their experience on the platform. This project is a continuation of the original [Tinder Autopilot](https://github.com/Geczy/tinder-autopilot) by Geczy. We aim to maintain and expand its features to ensure it remains useful and up-to-date.
 
 ## Key Features
 
