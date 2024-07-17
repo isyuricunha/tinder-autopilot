@@ -57,4 +57,3 @@ If this project has helped you, please give it a ⭐️! Consider supporting its
 ---
 
 Now this project is maintained by me, **Yuri Cunha**. If you have any questions or need further assistance, feel free to reach out.
-```
