@@ -1,7 +1,7 @@
 {
   "name": "Autopilot for Tinder",
   "short_name": "Tinder Auto",
-  "homepage_url": "https://github.com/Geczy/tinder-autopilot/",
+  "homepage_url": "https://github.com/isyuricunha/tinder-autopilot/",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -11,22 +11,15 @@
   "manifest_version": 2,
   "update_url": "https://clients2.google.com/service/update2/crx",
   "version": "3.0.0",
-  "author": "Geczy",
+  "author": "isyuricunha",
   "background": {
-    "scripts": [
-      "bg.js"
-    ],
+    "scripts": ["bg.js"],
     "persistent": false
   },
   "content_scripts": [
     {
-      "js": [
-        "main.js"
-      ],
-      "matches": [
-        "https://tinder.com/*",
-        "https://*.gotinder.com/*"
-      ]
+      "js": ["main.js"],
+      "matches": ["https://tinder.com/*", "https://*.gotinder.com/*"]
     }
   ]
 }
