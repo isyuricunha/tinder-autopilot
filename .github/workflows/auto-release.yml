@@ -2,7 +2,7 @@ name: deploy release and notes / change logs
 
 on:
   push:
-    branches: main
+    branches: master
     tags:
       - '[0-9]+.*'
 
