@@ -9,20 +9,29 @@ class Interactions {
   };
 
   goToMainPage = () => {
-    const matchesLink = document.querySelectorAll("a[href='/app/matches']");
-    if (matchesLink && matchesLink.length) {
-      return matchesLink[0].click();
+    // Try multiple selectors for navigation
+    const selectors = [
+      "a[href='/app/recs']",
+      "a[href='/app/matches']", 
+      "[data-testid='recs-tab']",
+      "[data-testid='matches-tab']",
+      "nav button[aria-label*='Discover']",
+      "nav div:nth-child(1) > span",
+      ".navTab:first-child button"
+    ];
+    
+    for (const selector of selectors) {
+      const elements = document.querySelectorAll(selector);
+      if (elements.length > 0) {
+        const element = elements[0];
+        if (element && element.offsetParent !== null) {
+          element.click();
+          return true;
+        }
+      }
     }
-
-    const mainMenuLink = document.querySelectorAll("a[href='/app/recs']");
-    if (mainMenuLink && mainMenuLink.length) {
-      return mainMenuLink[0].click();
-    }
-
-    const matchesTab = document.querySelector('nav div:nth-child(1) > span');
-    if (matchesTab) {
-      return matchesTab.click();
-    }
+    
+    return false;
   };
 
   closeInstructions = () => {
@@ -43,15 +52,26 @@ class Interactions {
 
   closeMatchFound = () => {
     try {
-      const modal = document.querySelector('[title="Back to Tinder"]');
-      if (modal) {
-        modal.click();
-        logger('Closing match found');
-        return true;
+      const selectors = [
+        '[title="Back to Tinder"]',
+        'button[aria-label="Close"]',
+        '[data-testid="matchModalCloseButton"]',
+        '.modal button:first-child',
+        'button[title*="Close"]'
+      ];
+      
+      for (const selector of selectors) {
+        const modal = document.querySelector(selector);
+        if (modal && modal.offsetParent !== null) {
+          modal.click();
+          logger('Closing match found');
+          return true;
+        }
       }
     } catch (e) {
       return false;
     }
+    return false;
   };
 
   closeModal = () => {

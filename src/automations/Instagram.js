@@ -1,12 +1,13 @@
 import { insertCss } from '../misc/insert-css';
 
 class Instagram {
+  modalSelector = '#modal-manager';
+  
   imageSelector = `${this.modalSelector} div[style*="instagram"]`;
 
   observer;
 
   constructor() {
-    return;
     insertCss(`
     #modal-manager div[style*="instagram"] { cursor: zoom-in; }
     #modal-manager div[style*="instagram"]:hover {
@@ -15,12 +16,15 @@ class Instagram {
     `);
 
     try {
-      const target = document.querySelector('[role="dialog"]').parentElement.parentElement;
-      const observer = new MutationObserver(this.start);
-      observer.observe(target, { childList: true });
-
-      this.observer = observer;
-    } catch (e) {}
+      const target = document.querySelector('[role="dialog"]')?.parentElement?.parentElement;
+      if (target) {
+        const observer = new MutationObserver(this.start);
+        observer.observe(target, { childList: true });
+        this.observer = observer;
+      }
+    } catch (e) {
+      console.warn('Instagram module: Could not set up observer', e);
+    }
   }
 
   start = () => {

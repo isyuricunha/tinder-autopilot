@@ -26,15 +26,36 @@ class Swiper {
   };
 
   hasLike = () => {
-    const xpath = "//span[text()='Like']";
-    const matchingElement = document.evaluate(
-      xpath,
-      document,
-      null,
-      XPathResult.FIRST_ORDERED_NODE_TYPE,
-      null
-    ).singleNodeValue;
-    return matchingElement.closest('button');
+    // Try multiple selectors for like button (Tinder UI changes frequently)
+    const selectors = [
+      "button[aria-label*='Like']",
+      "button[data-testid='like']",
+      "button[title*='Like']",
+      ".recsCardboard__cardsContainer button:last-child",
+      "[data-testid='gamepad-like']"
+    ];
+    
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null) { // Check if visible
+        return button;
+      }
+    }
+    
+    // Fallback to XPath
+    try {
+      const xpath = "//span[text()='Like']";
+      const matchingElement = document.evaluate(
+        xpath,
+        document,
+        null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null
+      ).singleNodeValue;
+      return matchingElement?.closest('button');
+    } catch (e) {
+      return null;
+    }
   };
 
   pressLike = () => {
@@ -50,17 +71,30 @@ class Swiper {
   };
 
   matchFound = () => {
-    const found = document.querySelectorAll('button[aria-label="Close"]');
-
-    if (typeof found?.click !== 'function') {
-      return false;
+    // Try multiple selectors for match modal close button
+    const selectors = [
+      'button[aria-label="Close"]',
+      'button[title="Back to Tinder"]',
+      '[data-testid="matchModalCloseButton"]',
+      '.modal button[aria-label*="Close"]',
+      '.matchModal button:first-child'
+    ];
+    
+    for (const selector of selectors) {
+      const buttons = document.querySelectorAll(selector);
+      if (buttons.length > 0) {
+        const button = buttons[0];
+        if (button && button.offsetParent !== null) {
+          document.getElementById('matchCount').innerHTML =
+            parseInt(document.getElementById('matchCount').innerHTML, 10) + 1;
+          logger("Congrats! We've got a match! 🤡");
+          button.click();
+          return true;
+        }
+      }
     }
-
-    document.getElementById('matchCount').innerHTML =
-      parseInt(document.getElementById('matchCount').innerHTML, 10) + 1;
-    logger("Congrats! We've got a match! 🤡");
-    found.click();
-    return true;
+    
+    return false;
   };
 
   run = () => {

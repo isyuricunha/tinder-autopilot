@@ -60,6 +60,5 @@ function createStyleElement() {
   return styleElement;
 }
 
-module.exports = insertCss;
-module.exports.insertCss = insertCss;
-module.exports.removeCss = removeCss;
+export { insertCss, removeCss };
+export default insertCss;
