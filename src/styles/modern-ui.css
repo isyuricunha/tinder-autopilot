@@ -1,0 +1,150 @@
+/* Modern UI Styles for Tinder Autopilot */
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #ff8c42, #ffab42);
+}
+
+/* Hover effects for cards */
+.autopilot-card {
+  transition: all 0.3s ease;
+}
+
+.autopilot-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15) !important;
+  border-color: #ff6b35 !important;
+}
+
+/* Toggle switch animations */
+.toggle-switch {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-switch:hover {
+  transform: scale(1.05);
+}
+
+/* Activity log styling */
+.activity-log {
+  background: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 16px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.activity-log p {
+  margin: 4px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 107, 53, 0.05);
+  border-left: 3px solid #ff6b35;
+}
+
+.activity-log span {
+  color: #ff6b35;
+  font-weight: 600;
+}
+
+/* Textarea focus effects */
+textarea:focus {
+  outline: none;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 107, 53, 0.3) !important;
+  border-color: #ff6b35 !important;
+}
+
+/* Button hover effects */
+.modern-button {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.modern-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.2);
+}
+
+/* Stats cards pulse animation */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.1);
+  }
+  100% {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.stats-card {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #ff6b35, #ff8c42);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  border: 2px solid #333333;
+  border-top: 2px solid #ff6b35;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+/* Smooth transitions for all elements */
+* {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Dark theme enhancements */
+body.tinder-autopilot-dark {
+  background: #000000;
+  color: #ffffff;
+}
+
+/* Custom selection colors */
+::selection {
+  background: rgba(255, 107, 53, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background: rgba(255, 107, 53, 0.3);
+  color: #ffffff;
+}

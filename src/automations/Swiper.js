@@ -1,5 +1,6 @@
 import { logger, generateRandomNumber } from '../misc/helper';
 import Interactions from '../misc/Interactions';
+import ProfileAnalyzer from './ProfileAnalyzer';
 
 class Swiper {
   selector = '.tinderAutopilot';
@@ -8,6 +9,7 @@ class Swiper {
 
   constructor() {
     this.interactions = new Interactions();
+    this.profileAnalyzer = new ProfileAnalyzer();
   }
 
   start = () => {
@@ -58,16 +60,55 @@ class Swiper {
     }
   };
 
+  getLikeInterval = () => {
+    try {
+      const stored = localStorage.getItem('TinderAutopilot/likeInterval');
+      return stored ? parseInt(stored) * 1000 : 3000; // Convert to milliseconds
+    } catch (e) {
+      return 3000; // Default 3 seconds
+    }
+  };
+
   pressLike = () => {
     const likeButton = this.hasLike();
     if (!likeButton && !this.canSwipe()) {
       return false;
     }
 
+    // Check if profile should be skipped based on bio
+    if (this.profileAnalyzer.shouldSkipProfile()) {
+      // Skip this profile by pressing dislike instead
+      const dislikeButton = this.hasDislike();
+      if (dislikeButton) {
+        dislikeButton.click();
+        logger('⏭️ Skipped profile due to bio filter');
+        return true;
+      }
+    }
+
     likeButton.click();
     document.getElementById('likeCount').innerHTML =
       parseInt(document.getElementById('likeCount').innerHTML, 10) + 1;
     return true;
+  };
+
+  hasDislike = () => {
+    const selectors = [
+      "button[aria-label*='Pass']",
+      "button[data-testid='dislike']",
+      "button[title*='Pass']",
+      ".recsCardboard__cardsContainer button:first-child",
+      "[data-testid='gamepad-dislike']"
+    ];
+    
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null) {
+        return button;
+      }
+    }
+    
+    return null;
   };
 
   matchFound = () => {
@@ -144,7 +185,8 @@ class Swiper {
 
     // What we came here to do, swipe right!
     if (this.pressLike()) {
-      setTimeout(this.run, generateRandomNumber(500, 900));
+      const interval = this.getLikeInterval();
+      setTimeout(this.run, interval);
       return;
     }
 
