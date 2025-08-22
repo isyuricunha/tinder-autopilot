@@ -30,7 +30,8 @@ class Swiper {
     const hasProfile = this.hasProfile();
     const noBlockingModals = !document.querySelector('.beacon__circle') && 
                             !document.querySelector('[data-testid="modal"]') &&
-                            !document.querySelector('.modal');
+                            !document.querySelector('.modal') &&
+                            !document.querySelector('[role="dialog"]');
     
     if (!likeButton) {
       logger('🔍 Debug: No like button found');
@@ -106,71 +107,78 @@ class Swiper {
   };
 
   hasLike = () => {
-    // Try multiple selectors for like button (updated for current Tinder UI)
-    const selectors = [
+    // Prefer explicit Like selectors and exclude Boost
+    const positiveSelectors = [
+      "button[aria-label='Like']",
       "button[aria-label*='Like']",
-      "button[data-testid='like']", 
-      "button[title*='Like']",
-      ".recsCardboard__cardsContainer button:last-child",
-      "[data-testid='gamepad-like']",
-      // Updated selectors for current Tinder UI
+      "button[data-testid='like']",
+      "button[data-testid='gamepad-like']",
       "button[data-testid='gamepad-like-button']",
-      ".gamepad button:last-child",
-      ".Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\) button:last-child",
-      ".gamepad__button--like",
-      "button.button:last-of-type",
-      // Fallback generic selectors
-      ".gamepad > button:nth-child(5)", // Like is usually 5th button
-      "button[style*='background'][style*='green']"
+      "button[title='Like']",
+      "button[title*='Like']",
+      ".gamepad__button--like"
     ];
-    
-    for (const selector of selectors) {
-      try {
-        const button = document.querySelector(selector);
-        if (button && button.offsetParent !== null && !button.disabled) {
-          // Additional check: make sure it's actually a like button
-          const buttonText = button.textContent?.toLowerCase() || '';
-          const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-          
-          if (buttonText.includes('like') || ariaLabel.includes('like') || 
-              button.querySelector('svg') || // Most buttons have SVG icons
-              selector.includes('like')) {
-            return button;
-          }
+
+    // Search within the gamepad/footer area if present to reduce false positives
+    const gamepadContainers = [
+      document.querySelector('[data-testid="gamepad"]'),
+      document.querySelector('.gamepad'),
+      document.querySelector('.Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\)')
+    ].filter(Boolean);
+
+    const candidates = [];
+
+    if (gamepadContainers.length) {
+      for (const container of gamepadContainers) {
+        for (const sel of positiveSelectors) {
+          container.querySelectorAll(sel).forEach((btn) => candidates.push(btn));
         }
-      } catch (e) {
-        continue;
+      }
+    } else {
+      // Fallback to document-wide search
+      for (const sel of positiveSelectors) {
+        document.querySelectorAll(sel).forEach((btn) => candidates.push(btn));
       }
     }
-    
-    // Enhanced XPath fallback
+
+    // Filter out Boost and non-visible/disabled
+    const like = candidates.find((btn) => {
+      if (!btn || btn.disabled || btn.offsetParent === null) return false;
+      const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+      const title = (btn.getAttribute('title') || '').toLowerCase();
+      const dtid = (btn.getAttribute('data-testid') || '').toLowerCase();
+      const text = (btn.textContent || '').toLowerCase();
+      const content = `${aria} ${title} ${dtid} ${text}`;
+      const isLike = content.includes('like');
+      const isBoost = content.includes('boost');
+      return isLike && !isBoost;
+    });
+
+    if (like) return like;
+
+    // XPath fallback strictly for Like and excluding Boost
     try {
       const xpaths = [
-        "//span[text()='Like']",
-        "//button[contains(@aria-label, 'Like')]",
-        "//button[contains(@title, 'Like')]"
+        "//button[translate(@aria-label,'LIKE','like')='like']",
+        "//button[contains(translate(@aria-label,'LIKE','like'),'like') and not(contains(translate(@aria-label,'BOOST','boost'),'boost'))]",
+        "//button[contains(translate(@title,'LIKE','like'),'like') and not(contains(translate(@title,'BOOST','boost'),'boost'))]",
+        "//span[normalize-space(.)='Like']/ancestor::button[1]"
       ];
-      
+
       for (const xpath of xpaths) {
-        const matchingElement = document.evaluate(
+        const node = document.evaluate(
           xpath,
           document,
           null,
           XPathResult.FIRST_ORDERED_NODE_TYPE,
           null
         ).singleNodeValue;
-        
-        if (matchingElement) {
-          const button = matchingElement.closest('button');
-          if (button && button.offsetParent !== null) {
-            return button;
-          }
-        }
+        if (node && node.offsetParent !== null) return node.closest('button') || node;
       }
     } catch (e) {
       console.warn('XPath fallback failed', e);
     }
-    
+
     return null;
   };
 
