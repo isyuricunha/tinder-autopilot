@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "О сайте"
+   },
+   "ACTIVE": {
+      "message": "активная"
+   },
+   "AGE": {
+      "message": "Возраст"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Расширение Auto Swiper для пролистывания профилей Tinder, Bumble, Lovoo, PoF и OkCupid."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "назад"
+   },
+   "BANNED_WORDS": {
+      "message": "Запрещенные ключевые слова"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Профили, содержащие любое из этих ключевых слов, будут автоматически пропущены. Используйте этот список, чтобы избежать профилей с конкретными словами, которые вас не интересуют."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Панель управления биллингом"
+   },
+   "BREAK_DURATION": {
+      "message": "Продолжительность перерыва в минутах."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Уведомления в браузере"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Результаты сеанса свипирования:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Используемый в данный момент браузер не поддерживается."
+   },
+   "CITY": {
+      "message": "Город"
+   },
+   "CLOUD_SYNC": {
+      "message": "Сохранение/загрузка облака"
+   },
+   "DARK": {
+      "message": "Dark"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Отладочный вывод"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Задержка после перезагрузки страницы в минутах"
+   },
+   "DELETE_LOG": {
+      "message": "Журнал"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Удалить журнал"
+   },
+   "DELETE_STATS": {
+      "message": "Статистика"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Удалить статистику"
+   },
+   "DISTANCE": {
+      "message": "Расстояние"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Скачать журнал (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Журнал загрузки (JSON)"
+   },
+   "EMAIL": {
+      "message": "Электронная почта"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Включение задержки после перезагрузки страницы"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Включите сбор/скреп URL-адресов изображений профиля"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Включить Макс. Расстояние"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Включить максимальное количество проходов"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Диапазон возрастов для включения"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Диапазон разрешенной высоты"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Включить мин. Изображения"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Включить имитацию случайного использования"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Включить автоматическую перезагрузку страницы между пролистываниями"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Включение автоматического перерыва между пролистываниями"
+   },
+   "ERROR": {
+      "message": "ERROR"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "Расширение не смогло загрузить скрипт своего содержимого во вкладку сайта знакомств. Убедитесь, что у вас открыт сайт знакомств, что вы не находитесь в приватном окне/инкогнито и что никакое другое расширение или настройка браузера не блокирует скрипты. Попробуйте обновить страницу или перезапустить браузер. Если проблема не исчезнет, обратитесь на сайт support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Вход в систему не удался. Пожалуйста, проверьте подключение к Интернету и убедитесь, что ваш e-mail и пароль верны."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Вы исчерпали свой ежедневный лимит операций"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Вы находитесь на неподдерживаемом сайте!"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "При загрузке опций с сервера произошла ошибка. Пожалуйста, повторите эту операцию позже."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "При сохранении параметров на сервере произошла ошибка. Пожалуйста, повторите эту операцию позже."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Пожалуйста, откройте или обновите сайт знакомств, на котором вы хотите участвовать в свипинге."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "Функция пролистывания не работает должным образом. Пожалуйста, попробуйте еще раз. Если проблема сохраняется, свяжитесь с разработчиком по адресу support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Экспорт"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "увеличенное расстояние"
+   },
+   "FAQ": {
+      "message": "FAQ"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "FM Swipe"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Принудительное пролистывание матчей (не нравится, нравится, перезагрузка страницы, повтор...)"
+   },
+   "HEIGHT": {
+      "message": "Высота"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "игнорировать Расстояние"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Блокировка изображений"
+   },
+   "IMPORT": {
+      "message": "Импорт"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Импорт завершен"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Имя экземпляра изменено"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Последний поворот влево"
+   },
+   "LEFT": {
+      "message": "Левый"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Процентное соотношение левого поворота"
+   },
+   "LIGHT": {
+      "message": "Свет"
+   },
+   "LOAD": {
+      "message": "Загрузка"
+   },
+   "LOCATION": {
+      "message": "Расположение"
+   },
+   "LOGIN": {
+      "message": "Вход в систему"
+   },
+   "LOGOUT": {
+      "message": "Выход из системы"
+   },
+   "LOG_CSV": {
+      "message": "Журнал (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Журнал (JSON)"
+   },
+   "MATCHES": {
+      "message": "Спички"
+   },
+   "MAX_DISTANCE": {
+      "message": "Макс. Расстояние"
+   },
+   "MAX_SWIPES": {
+      "message": "Max Swipes"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Возрастной диапазон"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Диапазон высот"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Время между проходами в сек."
+   },
+   "MIN_PICTURES": {
+      "message": "Мин. Изображения"
+   },
+   "MONTH": {
+      "message": "Месяц"
+   },
+   "NAME": {
+      "message": "Название"
+   },
+   "NO": {
+      "message": "Нет"
+   },
+   "NOT_ACTIVE": {
+      "message": "не активен"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "нет Пустое описание"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "только в последнее время"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "только проверенные Профили"
+   },
+   "OPTIONS": {
+      "message": "Опции"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Опции успешно загружены."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Опции успешно сохранены."
+   },
+   "OR": {
+      "message": "ИЛИ"
+   },
+   "PASSWORD": {
+      "message": "Пароль"
+   },
+   "PICTURES": {
+      "message": "Фотографии"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Мгновенные ключевые слова Like"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Профили, содержащие эти ключевые слова, получают немедленный лайк. Идеально подходит для выделения профилей, соответствующих вашим основным интересам или предпочтениям."
+   },
+   "PREMIUM": {
+      "message": "Премиум"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Проверьте подписку"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "пропустить Пустое расстояние, Игнорировать расстояние, Расширенное расстояние"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "нет пустого описания, только проверенные профили"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "бесплатная пробная версия"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "подмена местоположения"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Вход в систему"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Подписаться"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Отмена"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "изменение скорости пролистывания"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "статистика пролистывания"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "неограниченные запрещенные слова"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "неограниченное количество Swipes"
+   },
+   "PRICING": {
+      "message": "Ценообразование"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Моделирование случайного использования"
+   },
+   "RATE": {
+      "message": "Оценить это расширение"
+   },
+   "RATE_INFORMATION": {
+      "message": "Если вам нравится это расширение, не могли бы вы уделить немного времени и оценить его? Это займет всего минуту, а ваша поддержка будет очень ценна. Спасибо!"
+   },
+   "RATE_NOT_NOW": {
+      "message": "Спроси меня в другой раз"
+   },
+   "RATE_NOW": {
+      "message": "Тариф"
+   },
+   "REASON": {
+      "message": "Причина"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "запрещённое слово"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "нет Описание"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "слишком короткий"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "высокий"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "в последнее время не активен"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "не проверено"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "ключевое слово не найдено"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "слишком далеко"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "слишком мало фотографий"
+   },
+   "REASON_TO_OLD": {
+      "message": "слишком старый"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "слишком молодой"
+   },
+   "REFRESH": {
+      "message": "Обновить"
+   },
+   "REGISTER": {
+      "message": "Регистр"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Автоматическая перезагрузка страницы между пролистываниями"
+   },
+   "REQUIRED": {
+      "message": "Требуется"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Необходимые ключевые слова"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Эти ключевые слова должны присутствовать в профиле, чтобы он был рассмотрен на предмет лайков. Это гарантирует, что лайкнут только те профили, которые соответствуют вашим основным критериям."
+   },
+   "RESET_LOG": {
+      "message": "журнал сброса"
+   },
+   "RESET_SETTINGS": {
+      "message": "сброс Опции"
+   },
+   "RESET_STATS": {
+      "message": "Статистика сброса"
+   },
+   "Right": {
+      "message": "Справа"
+   },
+   "SAVE": {
+      "message": "Сохранить"
+   },
+   "SET": {
+      "message": "установить"
+   },
+   "SITES": {
+      "message": "Сайты"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "игнорировать неизвестно Расстояние"
+   },
+   "STATS": {
+      "message": "Статистика"
+   },
+   "STOP": {
+      "message": "Остановить"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Остановитесь справа"
+   },
+   "SUBSCRIPTION": {
+      "message": "Подписка"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Подписка отменена"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Обновлена информация о подписке"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "План подписки"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Дата продления подписки"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Статус подписки"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Поддерживаемые браузеры"
+   },
+   "SWIPE": {
+      "message": "Начало"
+   },
+   "SWIPES": {
+      "message": "Swipes"
+   },
+   "SWIPE_BREAK": {
+      "message": "Автоматический перерыв между промахиваниями"
+   },
+   "THEME": {
+      "message": "Тема"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Программа Auto-Swiper получила обновление. Обновите все активные сайты знакомств для реализации новых изменений и обратитесь к журналу изменений для получения дополнительной информации."
+   },
+   "TOTAL": {
+      "message": "Всего"
+   },
+   "UNSET": {
+      "message": "unset"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "с автоматической перезагрузкой страницы"
+   },
+   "YEARS": {
+      "message": "Годы"
+   },
+   "YES": {
+      "message": "Да"
+   }
+}

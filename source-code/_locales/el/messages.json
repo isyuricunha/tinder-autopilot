@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "Σχετικά με το"
+   },
+   "ACTIVE": {
+      "message": "ενεργό"
+   },
+   "AGE": {
+      "message": "Ηλικία"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Επέκταση Auto Swiper για να σαρώσετε τα προφίλ Tinder, Bumble, Lovoo, PoF και OkCupid."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "πίσω"
+   },
+   "BANNED_WORDS": {
+      "message": "Απαγορευμένες λέξεις-κλειδιά"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Τα προφίλ που περιέχουν οποιαδήποτε από αυτές τις λέξεις-κλειδιά θα παραλείπονται αυτόματα. Χρησιμοποιήστε αυτή τη λίστα για να αποφύγετε προφίλ με συγκεκριμένους όρους που δεν σας ενδιαφέρουν."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Ταμπλό χρέωσης"
+   },
+   "BREAK_DURATION": {
+      "message": "Διάρκεια του διαλείμματος σε λεπτά."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Ειδοποιήσεις προγράμματος περιήγησης"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Αποτελέσματα της συνεδρίας swiping:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Το πρόγραμμα περιήγησης που χρησιμοποιείτε αυτή τη στιγμή δεν υποστηρίζεται."
+   },
+   "CITY": {
+      "message": "Πόλη"
+   },
+   "CLOUD_SYNC": {
+      "message": "Αποθήκευση/φόρτωση Cloud"
+   },
+   "DARK": {
+      "message": "Σκούρο"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Έξοδος εντοπισμού σφαλμάτων"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Καθυστέρηση μετά την επαναφόρτωση της σελίδας σε λεπτά"
+   },
+   "DELETE_LOG": {
+      "message": "Ημερολόγιο"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Διαγραφή αρχείου καταγραφής"
+   },
+   "DELETE_STATS": {
+      "message": "Στατιστικά στοιχεία"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Διαγραφή στατιστικών στοιχείων"
+   },
+   "DISTANCE": {
+      "message": "Απόσταση"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Λήψη αρχείου καταγραφής (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Λήψη αρχείου καταγραφής (JSON)"
+   },
+   "EMAIL": {
+      "message": "E-Mail"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Ενεργοποίηση της καθυστέρησης μετά την επαναφόρτωση της σελίδας"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Ενεργοποίηση της συλλογής/αφαίρεσης των διευθύνσεων URL της εικόνας προφίλ"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Ενεργοποίηση Max. Απόσταση"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Ενεργοποίηση Max Swipes"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Ενεργοποίηση Εύρος ηλικίας"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Ενεργοποίηση εύρους ύψους"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Ενεργοποίηση Min. Εικόνες"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Ενεργοποίηση προσομοίωσης τυχαίας χρήσης"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Ενεργοποίηση της αυτόματης επαναφόρτωσης σελίδας μεταξύ Swipes"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Ενεργοποίηση του αυτόματου διαλείμματος μεταξύ των Swipes"
+   },
+   "ERROR": {
+      "message": "ΣΦΑΛΜΑ"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "Η επέκταση δεν μπορούσε να φορτώσει το σενάριο περιεχομένου της στην καρτέλα του ιστότοπου γνωριμιών. Βεβαιωθείτε ότι έχετε ανοίξει την ιστοσελίδα γνωριμιών, ότι δεν βρίσκεστε σε ιδιωτικό/γνωστό παράθυρο και ότι καμία άλλη επέκταση ή ρύθμιση του προγράμματος περιήγησης δεν εμποδίζει τα σενάρια. Δοκιμάστε να ανανεώσετε τη σελίδα ή να επανεκκινήσετε το πρόγραμμα περιήγησής σας. Εάν το πρόβλημα παραμένει, επικοινωνήστε με το support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Η σύνδεση απέτυχε. Παρακαλούμε επαληθεύστε τη σύνδεσή σας στο διαδίκτυο και βεβαιωθείτε ότι το email και ο κωδικός πρόσβασής σας είναι σωστά."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Έχετε φτάσει στο ημερήσιο όριο των κινήσεών σας"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Βρίσκεστε σε έναν μη υποστηριζόμενο ιστότοπο!"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Προέκυψε σφάλμα κατά τη φόρτωση επιλογών από το διακομιστή. Παρακαλώ επιχειρήστε ξανά αυτή τη λειτουργία σε μεταγενέστερη στιγμή."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Προέκυψε σφάλμα κατά την αποθήκευση επιλογών στο διακομιστή. Παρακαλώ επιχειρήστε ξανά αυτή τη λειτουργία σε μεταγενέστερη στιγμή."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Ανοίξτε ή ανανεώστε την ιστοσελίδα γνωριμιών στην οποία θέλετε να κάνετε swiping."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "Η λειτουργία σάρωσης δεν λειτουργεί σωστά. Παρακαλώ προσπαθήστε ξανά. Αν το πρόβλημα παραμένει, επικοινωνήστε με τον προγραμματιστή στη διεύθυνση support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Εξαγωγή"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "εκτεταμένη απόσταση"
+   },
+   "FAQ": {
+      "message": "ΣΥΧΝΈΣ ΕΡΩΤΉΣΕΙΣ"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "FM Swipe"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Αναγκαστικό σάρωση αγώνα (Dislike, Like, Επαναφόρτωση σελίδας, Επανάληψη...)"
+   },
+   "HEIGHT": {
+      "message": "Ύψος"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "αγνοήστε την απόσταση"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Μπλοκάρισμα εικόνας"
+   },
+   "IMPORT": {
+      "message": "Εισαγωγή"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Η εισαγωγή ολοκληρώθηκε"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Το όνομα της περίπτωσης άλλαξε"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Τελευταία αριστερή σάρωση"
+   },
+   "LEFT": {
+      "message": "Αριστερά"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Ποσοστό αριστερής σάρωσης"
+   },
+   "LIGHT": {
+      "message": "Φως"
+   },
+   "LOAD": {
+      "message": "Φορτίο"
+   },
+   "LOCATION": {
+      "message": "Τοποθεσία"
+   },
+   "LOGIN": {
+      "message": "Σύνδεση"
+   },
+   "LOGOUT": {
+      "message": "Αποσύνδεση"
+   },
+   "LOG_CSV": {
+      "message": "Ημερολόγιο (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Ημερολόγιο (JSON)"
+   },
+   "MATCHES": {
+      "message": "Αγώνες"
+   },
+   "MAX_DISTANCE": {
+      "message": "Max. Απόσταση"
+   },
+   "MAX_SWIPES": {
+      "message": "Max Swipes"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Εύρος ηλικίας"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Εύρος ύψους"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Χρόνος μεταξύ των σαρώσεων σε δευτερόλεπτα."
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Εικόνες"
+   },
+   "MONTH": {
+      "message": "Μήνας"
+   },
+   "NAME": {
+      "message": "Όνομα"
+   },
+   "NO": {
+      "message": "Όχι"
+   },
+   "NOT_ACTIVE": {
+      "message": "δεν είναι ενεργό"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "no Κενή περιγραφή"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "μόνο πρόσφατα ενεργός"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "μόνο επαληθευμένα προφίλ"
+   },
+   "OPTIONS": {
+      "message": "Επιλογές"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Οι επιλογές έχουν φορτωθεί επιτυχώς."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Οι επιλογές έχουν αποθηκευτεί επιτυχώς."
+   },
+   "OR": {
+      "message": "Ή"
+   },
+   "PASSWORD": {
+      "message": "Κωδικός πρόσβασης"
+   },
+   "PICTURES": {
+      "message": "Εικόνες"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Άμεσες λέξεις-κλειδιά"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Τα προφίλ που περιέχουν αυτές τις λέξεις-κλειδιά λαμβάνουν άμεσα like. Ιδανικό για την ανάδειξη προφίλ που ταιριάζουν με τα κορυφαία ενδιαφέροντα ή τις προτιμήσεις σας."
+   },
+   "PREMIUM": {
+      "message": "Premium"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Ελέγξτε τη συνδρομή σας"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "παραλείψτε Κενή απόσταση, Αγνοήστε την απόσταση, Εκτεταμένη απόσταση"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "όχι κενή περιγραφή, μόνο επαληθευμένα προφίλ"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "δωρεάν δοκιμή"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "αλλοίωση θέσης"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Σύνδεση"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Εγγραφείτε στο"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Ακύρωση"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "αλλαγή ταχύτητας σάρωσης"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "swipe Στατιστικά στοιχεία"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "unlimited απαγορευμένες λέξεις"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "απεριόριστα Swipes"
+   },
+   "PRICING": {
+      "message": "Τιμολόγηση"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Προσομοίωση τυχαίας χρήσης"
+   },
+   "RATE": {
+      "message": "Βαθμολογήστε αυτή την επέκταση"
+   },
+   "RATE_INFORMATION": {
+      "message": "Αν σας αρέσει αυτή η επέκταση, θα μπορούσατε να διαθέσετε ένα λεπτό για να την αξιολογήσετε; Θα χρειαστεί μόνο ένα λεπτό και η υποστήριξή σας εκτιμάται ιδιαίτερα. Σας ευχαριστούμε!"
+   },
+   "RATE_NOT_NOW": {
+      "message": "Ρωτήστε με μια άλλη φορά"
+   },
+   "RATE_NOW": {
+      "message": "Βαθμολογήστε"
+   },
+   "REASON": {
+      "message": "Λόγος"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "απαγορευμένη λέξη"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "no Περιγραφή"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "πολύ μικρό"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "σε ψηλό"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "όχι πρόσφατα ενεργός"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "δεν επαληθεύτηκε"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "δεν βρέθηκε η απαιτούμενη λέξη-κλειδί"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "πολύ μακριά"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "πολύ λίγες εικόνες"
+   },
+   "REASON_TO_OLD": {
+      "message": "πάρα πολύ παλιά"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "πάρα πολύ νέος"
+   },
+   "REFRESH": {
+      "message": "Ανανέωση"
+   },
+   "REGISTER": {
+      "message": "Εγγραφή"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Αυτόματη επαναφόρτωση σελίδας μεταξύ των Swipes"
+   },
+   "REQUIRED": {
+      "message": "Απαιτούμενο"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Απαιτούμενες λέξεις-κλειδιά"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Αυτές οι λέξεις-κλειδιά πρέπει να είναι παρούσες σε ένα προφίλ για να θεωρηθεί ότι μπορεί να γίνει αρεστό. Αυτό διασφαλίζει ότι μόνο τα προφίλ που πληρούν τα βασικά σας κριτήρια θα γίνουν αρεστά."
+   },
+   "RESET_LOG": {
+      "message": "reset Log"
+   },
+   "RESET_SETTINGS": {
+      "message": "επαναφορά επιλογών"
+   },
+   "RESET_STATS": {
+      "message": "επαναφορά Στατιστική"
+   },
+   "Right": {
+      "message": "Δεξιά"
+   },
+   "SAVE": {
+      "message": "Αποθήκευση"
+   },
+   "SET": {
+      "message": "set"
+   },
+   "SITES": {
+      "message": "Τοποθεσίες"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "αγνοήστε άγνωστο Απόσταση"
+   },
+   "STATS": {
+      "message": "Στατιστικά στοιχεία"
+   },
+   "STOP": {
+      "message": "Σταματήστε το"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Στάση στα δεξιά Swipe"
+   },
+   "SUBSCRIPTION": {
+      "message": "Συνδρομή"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Η συνδρομή ακυρώθηκε"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Πληροφορίες συνδρομής ανανεώθηκαν"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Σχέδιο συνδρομής"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Ημερομηνία ανανέωσης συνδρομής"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Κατάσταση συνδρομής"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Υποστηριζόμενα προγράμματα περιήγησης"
+   },
+   "SWIPE": {
+      "message": "Έναρξη"
+   },
+   "SWIPES": {
+      "message": "Χτυπήματα"
+   },
+   "SWIPE_BREAK": {
+      "message": "Αυτόματο διάλειμμα μεταξύ Swipes"
+   },
+   "THEME": {
+      "message": "Θέμα"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Το Auto-Swiper έχει λάβει μια ενημέρωση. Ανανεώστε τυχόν ενεργές τοποθεσίες γνωριμιών για να εφαρμόσετε τις νέες αλλαγές και συμβουλευτείτε το ημερολόγιο αλλαγών για περισσότερες λεπτομέρειες."
+   },
+   "TOTAL": {
+      "message": "Σύνολο"
+   },
+   "UNSET": {
+      "message": "unset"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "με αυτόματη επαναφόρτωση σελίδας"
+   },
+   "YEARS": {
+      "message": "Έτη"
+   },
+   "YES": {
+      "message": "Ναι"
+   }
+}

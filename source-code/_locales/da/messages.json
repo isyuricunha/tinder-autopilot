@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "Om"
+   },
+   "ACTIVE": {
+      "message": "aktiv"
+   },
+   "AGE": {
+      "message": "Alder"
+   },
+   "API_TOKEN": {
+      "message": "API-token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Auto Swiper Extension til at swipe Tinder-, Bumble-, Lovoo-, PoF- og OkCupid-profiler."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "tilbage"
+   },
+   "BANNED_WORDS": {
+      "message": "Forbudte nøgleord"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Profiler, der indeholder et af disse nøgleord, vil automatisk blive sprunget over. Brug denne liste til at undgå profiler med specifikke termer, som du ikke er interesseret i."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Dashboard til fakturering"
+   },
+   "BREAK_DURATION": {
+      "message": "Pausens varighed i minutter."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Browser-meddelelser"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Resultater af swiping-sessionen:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Den browser, du bruger i øjeblikket, understøttes ikke."
+   },
+   "CITY": {
+      "message": "By"
+   },
+   "CLOUD_SYNC": {
+      "message": "Cloud Gem/Lad"
+   },
+   "DARK": {
+      "message": "Mørk"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Output til fejlfinding"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Forsinkelse efter genindlæsning af side i minutter"
+   },
+   "DELETE_LOG": {
+      "message": "Logbog"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Slet loggen"
+   },
+   "DELETE_STATS": {
+      "message": "Statistik"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Slet statistikker"
+   },
+   "DISTANCE": {
+      "message": "Afstand"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Download log (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Download log (JSON)"
+   },
+   "EMAIL": {
+      "message": "E-mail"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Aktiver forsinkelse efter genindlæsning af side"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Gør det muligt at indsamle/scrappe URL'er til profilbilleder"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Aktiver maks. Afstand"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Aktivér maks. swipes"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Aktiver aldersgruppe"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Aktiver højdeområde"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Aktivér Min. Billeder"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Aktiver simulering af tilfældig brug"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Aktivér automatisk genindlæsning af siden mellem swipes"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Aktiver automatisk pause mellem swipes"
+   },
+   "ERROR": {
+      "message": "FEJL"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "Udvidelsen kunne ikke indlæse sit indholdsscript i fanen på datingsiden. Sørg for, at du har datingsiden åben, at du ikke er i et privat/incognito-vindue, og at ingen andre udvidelser eller browserindstillinger blokerer for scripts. Prøv at opdatere siden eller genstarte din browser. Hvis problemet fortsætter, skal du kontakte support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Login mislykkedes. Bekræft venligst din internetforbindelse, og sørg for, at din e-mail og adgangskode er korrekte."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Du har nået din daglige swipe-grænse"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Du er på et ikke-understøttet websted!"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Der opstod en fejl under indlæsning af indstillinger fra serveren. Forsøg venligst igen på et senere tidspunkt."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Der opstod en fejl, da indstillingerne blev gemt på serveren. Prøv venligst igen på et senere tidspunkt."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Åbn eller opdater den datingside, hvor du gerne vil swipe."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "Swipe-funktionen fungerer ikke korrekt. Prøv venligst igen. Hvis problemet fortsætter, skal du kontakte udvikleren på support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Eksport"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "udvidet afstand"
+   },
+   "FAQ": {
+      "message": "OFTE STILLEDE SPØRGSMÅL"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "FM-swipe"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Fremtvinge match-swipe (ikke lide, lide, genindlæse siden, gentage ...)"
+   },
+   "HEIGHT": {
+      "message": "Højde"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "Ignorer afstand"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Blokering af billeder"
+   },
+   "IMPORT": {
+      "message": "Import"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Import færdig"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Instansnavn ændret"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Sidste venstre swipe"
+   },
+   "LEFT": {
+      "message": "Venstre"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Venstre swipe-procent"
+   },
+   "LIGHT": {
+      "message": "Lys"
+   },
+   "LOAD": {
+      "message": "Belastning"
+   },
+   "LOCATION": {
+      "message": "Placering"
+   },
+   "LOGIN": {
+      "message": "Login"
+   },
+   "LOGOUT": {
+      "message": "Log ud"
+   },
+   "LOG_CSV": {
+      "message": "Log (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Log (JSON)"
+   },
+   "MATCHES": {
+      "message": "Tændstikker"
+   },
+   "MAX_DISTANCE": {
+      "message": "Max. Afstand"
+   },
+   "MAX_SWIPES": {
+      "message": "Max Swipes"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Aldersgruppe"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Højdeområde"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Tid mellem swipes i sek."
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Billeder"
+   },
+   "MONTH": {
+      "message": "Måned"
+   },
+   "NAME": {
+      "message": "Navn"
+   },
+   "NO": {
+      "message": "Nej, det er det ikke"
+   },
+   "NOT_ACTIVE": {
+      "message": "ikke aktiv"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "nej Tom beskrivelse"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "kun aktiv for nylig"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "kun verificerede profiler"
+   },
+   "OPTIONS": {
+      "message": "Valgmuligheder"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Indstillingerne er blevet indlæst."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Indstillingerne er blevet gemt."
+   },
+   "OR": {
+      "message": "ELLER"
+   },
+   "PASSWORD": {
+      "message": "Adgangskode"
+   },
+   "PICTURES": {
+      "message": "Billeder"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Øjeblikkelige like-søgeord"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Profiler med disse nøgleord får et like med det samme. Ideel til at fremhæve profiler, der matcher dine største interesser eller præferencer."
+   },
+   "PREMIUM": {
+      "message": "Premium"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Tjek dit abonnement"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "Spring tom afstand over, Ignorer afstand, Udvidet afstand"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "ingen tom beskrivelse, kun verificerede profiler"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "Gratis prøveversion"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "Spoofing af placering"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Login"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Tilmeld dig"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Annuller"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "ændre swipe-hastighed"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "swipe Statistik"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "ubegrænset forbudte ord"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "Ubegrænset antal swipes"
+   },
+   "PRICING": {
+      "message": "Prisfastsættelse"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Simuler tilfældig brug"
+   },
+   "RATE": {
+      "message": "Bedøm denne udvidelse"
+   },
+   "RATE_INFORMATION": {
+      "message": "Hvis du er glad for denne udvidelse, vil du så ikke være sød at give den en bedømmelse? Det tager kun et øjeblik, og din støtte er meget værdsat. Tak skal du have!"
+   },
+   "RATE_NOT_NOW": {
+      "message": "Spørg mig en anden gang"
+   },
+   "RATE_NOW": {
+      "message": "Pris"
+   },
+   "REASON": {
+      "message": "Årsag"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "Forbudt ord"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "ingen beskrivelse"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "for kort"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "til høj"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "ikke aktiv for nylig"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "ikke verificeret"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "intet påkrævet søgeord fundet"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "for langt væk"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "For få billeder"
+   },
+   "REASON_TO_OLD": {
+      "message": "for gammel"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "For ung"
+   },
+   "REFRESH": {
+      "message": "Opfrisk"
+   },
+   "REGISTER": {
+      "message": "Tilmeld dig"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Automatisk genindlæsning af siden mellem swipes"
+   },
+   "REQUIRED": {
+      "message": "Påkrævet"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Nødvendige nøgleord"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Disse nøgleord skal være til stede i en profil, for at den kan komme i betragtning til at blive liket. Det sikrer, at kun profiler, der opfylder dine væsentlige kriterier, bliver liket."
+   },
+   "RESET_LOG": {
+      "message": "Nulstil log"
+   },
+   "RESET_SETTINGS": {
+      "message": "Nulstil indstillinger"
+   },
+   "RESET_STATS": {
+      "message": "Nulstil statistik"
+   },
+   "Right": {
+      "message": "Højre"
+   },
+   "SAVE": {
+      "message": "Gem"
+   },
+   "SET": {
+      "message": "sæt"
+   },
+   "SITES": {
+      "message": "Steder"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "ignorer ukendt Afstand"
+   },
+   "STATS": {
+      "message": "Statistik"
+   },
+   "STOP": {
+      "message": "Stop"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Stop til højre Swipe"
+   },
+   "SUBSCRIPTION": {
+      "message": "Abonnement"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Abonnementet er annulleret"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Abonnement-info opdateret"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Abonnementsplan"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Dato for fornyelse af abonnement"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Status for abonnement"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Understøttede browsere"
+   },
+   "SWIPE": {
+      "message": "Start"
+   },
+   "SWIPES": {
+      "message": "Stryg"
+   },
+   "SWIPE_BREAK": {
+      "message": "Automatisk pause mellem swipes"
+   },
+   "THEME": {
+      "message": "Tema"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Auto-Swiper har modtaget en opdatering. Opdater alle aktive datingsider for at implementere de nye ændringer, og se changeloggen for yderligere detaljer."
+   },
+   "TOTAL": {
+      "message": "I alt"
+   },
+   "UNSET": {
+      "message": "Frakoblet"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "med automatisk genindlæsning af siden"
+   },
+   "YEARS": {
+      "message": "År"
+   },
+   "YES": {
+      "message": "Ja"
+   }
+}

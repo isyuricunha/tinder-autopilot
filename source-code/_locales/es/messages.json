@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "Acerca de"
+   },
+   "ACTIVE": {
+      "message": "activo"
+   },
+   "AGE": {
+      "message": "Edad"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Auto Swiper Extensión para Swipe Tinder, Bumble, Lovoo, PoF y OkCupid Perfiles."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "volver"
+   },
+   "BANNED_WORDS": {
+      "message": "Palabras clave prohibidas"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Los perfiles que contengan alguna de estas palabras clave se omitirán automáticamente. Utiliza esta lista para evitar perfiles con términos específicos que no te interesen."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Panel de facturación"
+   },
+   "BREAK_DURATION": {
+      "message": "Duración de la pausa en minutos."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Notificaciones del navegador"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Resultados de la sesión de barrido:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "El navegador que está utilizando no es compatible."
+   },
+   "CITY": {
+      "message": "Ciudad"
+   },
+   "CLOUD_SYNC": {
+      "message": "Guardar/Cargar en la nube"
+   },
+   "DARK": {
+      "message": "Oscuro"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Salida de depuración"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Retraso tras la recarga de la página en minutos"
+   },
+   "DELETE_LOG": {
+      "message": "Registro"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Borrar registro"
+   },
+   "DELETE_STATS": {
+      "message": "Estadísticas"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Borrar estadísticas"
+   },
+   "DISTANCE": {
+      "message": "Distancia"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Descargar registro (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Descargar registro (JSON)"
+   },
+   "EMAIL": {
+      "message": "Correo electrónico"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Activar el retardo tras la recarga de la página"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Permitir la recopilación de URL de fotos de perfil"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Activar Máx. Distancia"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Activar el número máximo de barridos"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Habilitar rango de edad"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Habilitar rango de altura"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Activar Min. Imágenes"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Activar la simulación de uso aleatorio"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Activar la recarga automática de páginas entre Swipes"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Activar pausa automática entre Swipes"
+   },
+   "ERROR": {
+      "message": "ERROR"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "La extensión no pudo cargar su script de contenido en la pestaña del sitio de citas. Por favor, asegúrate de que tienes el sitio de citas abierto, que no estás en una ventana privada/de incógnito, y que ninguna otra extensión o configuración del navegador está bloqueando los scripts. Prueba a actualizar la página o a reiniciar el navegador. Si el problema persiste, ponte en contacto con support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Error en el inicio de sesión. Compruebe su conexión a Internet y asegúrese de que su correo electrónico y contraseña son correctos."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Has alcanzado tu límite diario"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Se encuentra en un sitio no compatible."
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Se ha producido un error al cargar las opciones del servidor. Vuelva a intentarlo más tarde."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Se ha producido un error al guardar las opciones en el servidor. Vuelva a intentarlo más tarde."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Por favor, abra o actualice el sitio web de citas en el que le gustaría participar en el swiping."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "La función de deslizamiento no funciona correctamente. Inténtalo de nuevo. Si el problema persiste, ponte en contacto con el desarrollador en support@auto-swiper.ch."
+   },
+   "EXPORT": {
+      "message": "Exportar"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "Distancia ampliada"
+   },
+   "FAQ": {
+      "message": "PREGUNTAS FRECUENTES"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "Barrido FM"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Force Match Swipe (No me gusta, Me gusta, Recargar página, Repetir...)"
+   },
+   "HEIGHT": {
+      "message": "Altura"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "ignorar Distancia"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Bloqueo de imágenes"
+   },
+   "IMPORT": {
+      "message": "Importar"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Importación finalizada"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Cambio del nombre de la instancia"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Último golpe a la izquierda"
+   },
+   "LEFT": {
+      "message": "Izquierda"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Porcentaje de deslizamiento a la izquierda"
+   },
+   "LIGHT": {
+      "message": "Luz"
+   },
+   "LOAD": {
+      "message": "Carga"
+   },
+   "LOCATION": {
+      "message": "Ubicación"
+   },
+   "LOGIN": {
+      "message": "Inicio de sesión"
+   },
+   "LOGOUT": {
+      "message": "Cierre de sesión"
+   },
+   "LOG_CSV": {
+      "message": "Registro (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Registro (JSON)"
+   },
+   "MATCHES": {
+      "message": "Partidos"
+   },
+   "MAX_DISTANCE": {
+      "message": "Máx. Distancia"
+   },
+   "MAX_SWIPES": {
+      "message": "Golpes máximos"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Edades"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Altura"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Tiempo entre barridos en seg."
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Fotos"
+   },
+   "MONTH": {
+      "message": "Mes"
+   },
+   "NAME": {
+      "message": "Nombre"
+   },
+   "NO": {
+      "message": "No"
+   },
+   "NOT_ACTIVE": {
+      "message": "no activo"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "no Descripción vacía"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "activo desde hace poco"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "sólo Perfiles verificados"
+   },
+   "OPTIONS": {
+      "message": "Opciones"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Las opciones se han cargado correctamente."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Las opciones se han guardado correctamente."
+   },
+   "OR": {
+      "message": "O"
+   },
+   "PASSWORD": {
+      "message": "Contraseña"
+   },
+   "PICTURES": {
+      "message": "Fotos"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Palabras clave Instant Like"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Los perfiles que incluyen estas palabras clave reciben un \"me gusta\" inmediato. Ideal para destacar perfiles que coincidan con tus principales intereses o preferencias."
+   },
+   "PREMIUM": {
+      "message": "Premium"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Compruebe su suscripción"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "omitir distancia vacía, ignorar distancia, distancia ampliada"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "sin descripción vacía, sólo perfiles verificados"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "Prueba gratuita"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "suplantación de ubicación"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Inicio de sesión"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Suscríbase a"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Cancelar"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "Cambiar la velocidad de barrido"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "deslizar Estadísticas"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "ilimitado palabras prohibidas"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "Golpes ilimitados"
+   },
+   "PRICING": {
+      "message": "Precios"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Simular el uso aleatorio"
+   },
+   "RATE": {
+      "message": "Evalúe esta extensión"
+   },
+   "RATE_INFORMATION": {
+      "message": "Si le está gustando esta extensión, ¿podría dedicar un momento a puntuarla? Sólo le llevará un minuto, y su apoyo es muy apreciado. Muchas gracias."
+   },
+   "RATE_NOT_NOW": {
+      "message": "Pregúntame en otro momento"
+   },
+   "RATE_NOW": {
+      "message": "Tarifa"
+   },
+   "REASON": {
+      "message": "Razón"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "palabra prohibida"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "no Descripción"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "demasiado corto"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "a alto"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "no activo recientemente"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "no verificado"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "no se ha encontrado la palabra clave requerida"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "demasiado lejos"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "muy pocas fotos"
+   },
+   "REASON_TO_OLD": {
+      "message": "demasiado viejo"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "demasiado joven"
+   },
+   "REFRESH": {
+      "message": "Actualizar"
+   },
+   "REGISTER": {
+      "message": "Regístrese en"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Recarga automática de la página entre Swipes"
+   },
+   "REQUIRED": {
+      "message": "Requerido"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Palabras clave obligatorias"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Estas palabras clave deben estar presentes en un perfil para que se considere que le gusta. Esto garantiza que solo gusten los perfiles que cumplan tus criterios esenciales."
+   },
+   "RESET_LOG": {
+      "message": "restablecer Registro"
+   },
+   "RESET_SETTINGS": {
+      "message": "restablecer Opciones"
+   },
+   "RESET_STATS": {
+      "message": "restablecer Estadística"
+   },
+   "Right": {
+      "message": "Derecha"
+   },
+   "SAVE": {
+      "message": "Guardar"
+   },
+   "SET": {
+      "message": "configure"
+   },
+   "SITES": {
+      "message": "Sitios"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "ignorar desconocido Distancia"
+   },
+   "STATS": {
+      "message": "Estadísticas"
+   },
+   "STOP": {
+      "message": "Stop"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Parada a la derecha Swipe"
+   },
+   "SUBSCRIPTION": {
+      "message": "Suscripción"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Suscripción cancelada"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Suscripción Información actualizada"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Plan de suscripción"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Fecha de renovación de la suscripción"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Estado de la suscripción"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Navegadores compatibles"
+   },
+   "SWIPE": {
+      "message": "Inicio"
+   },
+   "SWIPES": {
+      "message": "Swipes"
+   },
+   "SWIPE_BREAK": {
+      "message": "Pausa automática entre Swipes"
+   },
+   "THEME": {
+      "message": "Tema"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Auto-Swiper ha recibido una actualización. Actualice todas las páginas de citas activas para aplicar los nuevos cambios y consulte el registro de cambios para obtener más información."
+   },
+   "TOTAL": {
+      "message": "Total"
+   },
+   "UNSET": {
+      "message": "unset"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "con Recarga automática de la página"
+   },
+   "YEARS": {
+      "message": "Años"
+   },
+   "YES": {
+      "message": "Sí"
+   }
+}

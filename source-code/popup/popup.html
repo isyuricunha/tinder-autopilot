@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <title>Auto Swiper</title>
+        <style>
+            #app {
+                min-width: 430px;
+                max-width: 440px;
+            }
+            body {
+                overflow: hidden;
+                font-family: 'Roboto', sans-serif;
+            }
+            .n-slider-marks {
+                top: 5px !important;
+            }
+            .n-slider--with-mark {
+                margin-bottom: 2px !important;
+                padding-top: 0px !important;
+            }
+            /*** Scale up View in Firefox Mobile ***/
+            @media (min-resolution: 200dpi) {
+                #app {
+                    -moz-transform: scale(2,2);
+                    -moz-transform-origin: 0 0;
+                }
+            }
+        </style>
+      <script type="module" crossorigin src="/popup/popup.js"></script>
+    </head>
+    <body>
+        <div id="app"></div>
+    </body>
+</html>

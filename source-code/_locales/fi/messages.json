@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "Tietoja"
+   },
+   "ACTIVE": {
+      "message": "aktiivinen"
+   },
+   "AGE": {
+      "message": "Ikä"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Automaattinen Swiper-laajennus Tinder-, Bumble-, Lovoo-, PoF- ja OkCupid-profiilien pyyhkimiseen."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "takaisin"
+   },
+   "BANNED_WORDS": {
+      "message": "Kielletyt avainsanat"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Profiilit, jotka sisältävät näitä avainsanoja, ohitetaan automaattisesti. Tämän luettelon avulla voit välttää profiileja, joissa on tiettyjä termejä, joista et ole kiinnostunut."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Laskutusmittaristo"
+   },
+   "BREAK_DURATION": {
+      "message": "Tauon kesto minuutteina."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Selaimen ilmoitukset"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Pyyhkäisyistunnon tulokset:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Tällä hetkellä käyttämääsi selainta ei tueta."
+   },
+   "CITY": {
+      "message": "Kaupunki"
+   },
+   "CLOUD_SYNC": {
+      "message": "Pilvi Tallenna/lataa"
+   },
+   "DARK": {
+      "message": "Tumma"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Vianmäärityksen ulostulo"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Viive sivun uudelleenlatauksen jälkeen minuutteina"
+   },
+   "DELETE_LOG": {
+      "message": "Tukki"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Poista loki"
+   },
+   "DELETE_STATS": {
+      "message": "Tilastot"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Poista tilastot"
+   },
+   "DISTANCE": {
+      "message": "Etäisyys"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Lataa loki (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Lataa loki (JSON)"
+   },
+   "EMAIL": {
+      "message": "Sähköposti"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Ota käyttöön viive sivun uudelleenlatauksen jälkeen"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Profiilikuvien URL-osoitteiden keräämisen/kaapimisen mahdollistaminen"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Ota käyttöön Max. Etäisyys"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Enable Max Swipes (Enable Max Swipes)"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Ota käyttöön Ikäalue"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Ota käyttöön korkeusalue"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Ota käyttöön Min. Kuvat"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Ota käyttöön satunnaiskäytön simulointi"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Ota käyttöön automaattinen sivun uudelleenlataus pyyhkäisyjen välillä"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Ota käyttöön automaattinen tauko pyyhkäisyjen välillä"
+   },
+   "ERROR": {
+      "message": "VIRHE"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "Laajennus ei pystynyt lataamaan sisällön käsikirjoitusta deittisivuston välilehteen. Varmista, että deittisivusto on auki, että et ole yksityisessä/inkognito-ikkunassa ja että mikään muu laajennus tai selaimen asetus ei estä skriptejä. Kokeile sivun päivittämistä tai selaimen uudelleenkäynnistämistä. Jos ongelma jatkuu, ota yhteyttä osoitteeseen support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Kirjautuminen epäonnistui. Tarkista internet-yhteytesi ja varmista, että sähköpostiosoitteesi ja salasanasi ovat oikein."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Olet saavuttanut päivittäisen pyyhkäisyrajasi"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Olet sivustolla, jota ei tueta!"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Virhe tapahtui, kun asetuksia ladattiin palvelimelta. Yritä tätä toimintoa uudelleen myöhemmin."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Virhe tapahtui, kun asetuksia tallennettiin palvelimelle. Yritä tätä toimintoa uudelleen myöhemmin."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Avaa tai päivitä deittisivusto, jossa haluat osallistua pyyhkäisyyn."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "Pyyhkäisytoiminto ei toimi oikein. Yritä uudelleen. Jos ongelma jatkuu, ota yhteyttä kehittäjään osoitteessa support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Vie"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "laajennettu etäisyys"
+   },
+   "FAQ": {
+      "message": "FAQ"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "FM Swipe"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Pakota ottelun pyyhkäisy (Dislike, Like, Page Reload, Repeat...)"
+   },
+   "HEIGHT": {
+      "message": "Korkeus"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "ignore Etäisyys"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Kuvan estäminen"
+   },
+   "IMPORT": {
+      "message": "Tuo"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Tuonti valmis"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Instanssin nimi muutettu"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Viimeinen pyyhkäisy vasemmalle"
+   },
+   "LEFT": {
+      "message": "Vasen"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Vasemman pyyhkäisyn prosenttiosuus"
+   },
+   "LIGHT": {
+      "message": "Valo"
+   },
+   "LOAD": {
+      "message": "Lataa"
+   },
+   "LOCATION": {
+      "message": "Sijainti"
+   },
+   "LOGIN": {
+      "message": "Kirjaudu sisään"
+   },
+   "LOGOUT": {
+      "message": "Kirjaudu ulos"
+   },
+   "LOG_CSV": {
+      "message": "Loki (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Loki (JSON)"
+   },
+   "MATCHES": {
+      "message": "Ottelut"
+   },
+   "MAX_DISTANCE": {
+      "message": "Max. Etäisyys"
+   },
+   "MAX_SWIPES": {
+      "message": "Max pyyhkäisee"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Ikäjakauma"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Korkeusalue"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Pyyhkäisyjen välinen aika sekunteina."
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Kuvat"
+   },
+   "MONTH": {
+      "message": "Kuukausi"
+   },
+   "NAME": {
+      "message": "Nimi"
+   },
+   "NO": {
+      "message": "Ei"
+   },
+   "NOT_ACTIVE": {
+      "message": "ei aktiivinen"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "no Empty Kuvaus"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "vasta äskettäin aktiivinen"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "vain tarkistetut profiilit"
+   },
+   "OPTIONS": {
+      "message": "Vaihtoehdot"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Valinnat on ladattu onnistuneesti."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Valinnat on tallennettu onnistuneesti."
+   },
+   "OR": {
+      "message": "TAI"
+   },
+   "PASSWORD": {
+      "message": "Salasana"
+   },
+   "PICTURES": {
+      "message": "Kuvat"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Instant Like Avainsanat"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Näillä avainsanoilla varustetut profiilit saavat välittömästi tykkäyksen. Ihanteellinen keino korostaa profiileja, jotka vastaavat tärkeimpiä kiinnostuksen kohteitasi tai mieltymyksiäsi."
+   },
+   "PREMIUM": {
+      "message": "Premium"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Tarkista tilauksesi"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "Ohita Tyhjä etäisyys, Unohda etäisyys, Laajennettu etäisyys."
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "no Empty Description, vain tarkistetut profiilit"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "ilmainen kokeilu"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "sijainnin väärentäminen"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Kirjaudu sisään"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Tilaa"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Peruuta"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "muuttaa pyyhkäisynopeutta"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "pyyhkäisy Tilastot"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "rajoittamaton kielletty Words"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "rajoittamaton Swipes"
+   },
+   "PRICING": {
+      "message": "Hinnoittelu"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Simuloi satunnaista käyttöä"
+   },
+   "RATE": {
+      "message": "Arvioi tämä laajennus"
+   },
+   "RATE_INFORMATION": {
+      "message": "Jos pidät tästä laajennuksesta, voisitko ystävällisesti antaa sille arvosanan? Se vie vain minuutin, ja tukeasi arvostetaan suuresti. Kiitos!"
+   },
+   "RATE_NOT_NOW": {
+      "message": "Kysy minulta toisen kerran"
+   },
+   "RATE_NOW": {
+      "message": "Arvioi"
+   },
+   "REASON": {
+      "message": "Syy"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "kielletty sana"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "no Kuvaus"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "liian lyhyt"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "pitkäksi"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "ei hiljattain aktiivinen"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "ei tarkistettu"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "ei löytynyt vaadittua avainsanaa"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "liian kaukana"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "liian vähän kuvia"
+   },
+   "REASON_TO_OLD": {
+      "message": "liian vanha"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "liian nuori"
+   },
+   "REFRESH": {
+      "message": "Päivitä"
+   },
+   "REGISTER": {
+      "message": "Rekisteröi"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Sivun automaattinen uudelleenlataus pyyhkäisyjen välillä"
+   },
+   "REQUIRED": {
+      "message": "Vaadittu"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Tarvittavat avainsanat"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Näiden avainsanojen on oltava läsnä profiilissa, jotta se voidaan katsoa miellyttäväksi. Näin varmistetaan, että vain olennaiset kriteerisi täyttävät profiilit saavat suosiota."
+   },
+   "RESET_LOG": {
+      "message": "nollaa loki"
+   },
+   "RESET_SETTINGS": {
+      "message": "nollaa vaihtoehdot"
+   },
+   "RESET_STATS": {
+      "message": "nollaa tilasto"
+   },
+   "Right": {
+      "message": "Oikea"
+   },
+   "SAVE": {
+      "message": "Tallenna"
+   },
+   "SET": {
+      "message": "set"
+   },
+   "SITES": {
+      "message": "Sivustot"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "ignore unknown Etäisyys"
+   },
+   "STATS": {
+      "message": "Tilastot"
+   },
+   "STOP": {
+      "message": "Stop"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Pysähdy oikealle Swipe"
+   },
+   "SUBSCRIPTION": {
+      "message": "Tilaus"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Tilaus peruutettu"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Tilaustiedot päivitetty"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Tilaussuunnitelma"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Tilauksen uusimispäivä"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Tilauksen tila"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Tuetut selaimet"
+   },
+   "SWIPE": {
+      "message": "Aloita"
+   },
+   "SWIPES": {
+      "message": "Swipes"
+   },
+   "SWIPE_BREAK": {
+      "message": "Automaattinen tauko pyyhkäisyjen välillä"
+   },
+   "THEME": {
+      "message": "Teema"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Auto-Swiper on saanut päivityksen. Päivitä kaikki aktiiviset deittisivustot uusien muutosten toteuttamiseksi ja katso lisätietoja muutosluettelosta."
+   },
+   "TOTAL": {
+      "message": "Yhteensä"
+   },
+   "UNSET": {
+      "message": "unset"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "automaattinen sivun uudelleenlataus"
+   },
+   "YEARS": {
+      "message": "Vuodet"
+   },
+   "YES": {
+      "message": "Kyllä"
+   }
+}
