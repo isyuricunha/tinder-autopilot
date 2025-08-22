@@ -16,6 +16,11 @@
     "scripts": ["bg.js"],
     "persistent": false
   },
+  "permissions": [
+    "storage",
+    "https://api.gotinder.com/*",
+    "https://*.gotinder.com/*"
+  ],
   "content_scripts": [
     {
       "js": ["main.js"],
