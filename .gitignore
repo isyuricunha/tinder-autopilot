@@ -8,3 +8,6 @@ yarn-error.log
 dist
 .env
 zips
+
+# some folder
+source-code
