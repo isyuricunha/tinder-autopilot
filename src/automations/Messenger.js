@@ -55,54 +55,104 @@ class Messenger {
     this.sendMessagesTo(this.allMatches.reverse());
   };
 
+  // Normalize message for duplicate detection (handles {name} variable)
+  normalizeMessageForComparison = (messageTemplate, actualName) => {
+    const messageWithName = messageTemplate.replace('{name}', actualName.toLowerCase());
+    return messageWithName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace('thanks', 'thank');
+  };
+
+  // Check if message was already sent by comparing normalized versions
+  hasMessageBeenSent = (messageList, messageTemplate, matchName) => {
+    if (!messageList || messageList.length === 0) return false;
+    
+    const normalizedTemplate = this.normalizeMessageForComparison(messageTemplate, matchName);
+    
+    // Also check variations without name replacement
+    const templateWithoutName = messageTemplate.replace('{name}', '').trim().toLowerCase().replace(/[^a-zA-Z0-9]+/g, '-');
+    
+    return messageList.some(sentMsg => 
+      sentMsg.includes(normalizedTemplate) || 
+      (templateWithoutName && sentMsg.includes(templateWithoutName))
+    );
+  };
+
   sendMessagesTo = async (r) => {
     const matchList = keyBy(r, 'id');
-    const pendingPromiseList = [];
+    const batchSize = 10; // Process in smaller batches to prevent memory issues
+    const matchIds = Object.keys(matchList);
+    
+    logger(`Processing ${matchIds.length} matches in batches of ${batchSize}`);
 
-    for (const matchID of Object.keys(matchList)) {
-      await randomDelay();
+    for (let i = 0; i < matchIds.length; i += batchSize) {
       if (!this.isRunningMessage) break;
+      
+      const batch = matchIds.slice(i, i + batchSize);
+      const batchPromises = [];
 
-      const match = matchList[matchID];
-      const messageToSend = get(document.getElementById('messageToSend'), 'value', '').replace(
-        '{name}',
-        get(match, 'person.name').toLowerCase()
-      );
+      for (const matchID of batch) {
+        await randomDelay(100, 300); // Shorter delay between requests
+        if (!this.isRunningMessage) break;
 
-      const messageToSendL = messageToSend
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9]+/g, '-')
-        .replace('thanks', 'thank');
+        const match = matchList[matchID];
+        const messageTemplate = get(document.getElementById('messageToSend'), 'value', '');
+        const matchName = get(match, 'person.name', '');
+        
+        if (!messageTemplate.trim() || !matchName) {
+          logger(` Skipping match - missing template or name`);
+          continue;
+        }
 
-      pendingPromiseList.push(
-        getMessagesForMatch(match.id)
-          .then((messageList) => {
-            this.checkedMessage += 1;
-            logger(`Checked ${this.checkedMessage}/${this.allMatches.length}`);
-            return messageList ? !messageList.includes(messageToSendL) : false;
-          })
-          .then((shouldSend) => {
-            if (shouldSend) {
-              sendMessageToMatch(match.id, { message: messageToSend }).then((b) => {
-                if (get(b, 'sent_date')) {
-                  logger(`Message sent to ${get(match, 'person.name')}`);
-                }
-              });
-            }
-          })
-      );
+        const messageToSend = messageTemplate.replace('{name}', matchName.toLowerCase());
+
+        batchPromises.push(
+          getMessagesForMatch(match.id)
+            .then((messageList) => {
+              this.checkedMessage += 1;
+              logger(`Checked ${this.checkedMessage}/${this.allMatches.length}`);
+              
+              const alreadySent = this.hasMessageBeenSent(messageList, messageTemplate, matchName);
+              return !alreadySent;
+            })
+            .then((shouldSend) => {
+              if (shouldSend) {
+                return sendMessageToMatch(match.id, { message: messageToSend }).then((b) => {
+                  if (get(b, 'sent_date')) {
+                    logger(` Message sent to ${matchName}`);
+                  } else {
+                    logger(` Failed to send message to ${matchName}`);
+                  }
+                  return b;
+                });
+              } else {
+                logger(` Skipped ${matchName} - message already sent`);
+                return null;
+              }
+            })
+            .catch((error) => {
+              logger(` Error processing ${matchName}: ${error.message}`);
+              return null;
+            })
+        );
+      }
+
+      // Wait for current batch to complete before processing next
+      if (batchPromises.length > 0) {
+        await Promise.allSettled(batchPromises);
+        
+        // Memory cleanup between batches
+        if (i + batchSize < matchIds.length) {
+          logger(`Batch ${Math.floor(i/batchSize) + 1} completed. Waiting before next batch...`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second pause between batches
+        }
+      }
     }
 
-    if (pendingPromiseList.length === 0) {
-      logger('No more matches to send message to');
-      this.stop();
-    } else {
-      Promise.all(pendingPromiseList).then((r) => {
-        logger('No more matches to send message to');
-        this.stop();
-      });
-    }
+    logger(' All matches processed');
+    this.stop();
   };
 }
 

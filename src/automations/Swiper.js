@@ -1,6 +1,7 @@
 import { logger, generateRandomNumber } from '../misc/helper';
 import Interactions from '../misc/Interactions';
 import ProfileAnalyzer from './ProfileAnalyzer';
+import SuperLiker from './SuperLiker';
 
 class Swiper {
   selector = '.tinderAutopilot';
@@ -10,6 +11,7 @@ class Swiper {
   constructor() {
     this.interactions = new Interactions();
     this.profileAnalyzer = new ProfileAnalyzer();
+    this.superLiker = new SuperLiker();
   }
 
   start = () => {
@@ -24,40 +26,152 @@ class Swiper {
   };
 
   canSwipe = () => {
-    return this.hasLike() && !document.querySelector('.beacon__circle');
+    const likeButton = this.hasLike();
+    const hasProfile = this.hasProfile();
+    const noBlockingModals = !document.querySelector('.beacon__circle') && 
+                            !document.querySelector('[data-testid="modal"]') &&
+                            !document.querySelector('.modal');
+    
+    if (!likeButton) {
+      logger('🔍 Debug: No like button found');
+    }
+    if (!hasProfile) {
+      logger('🔍 Debug: No profile detected');
+    }
+    
+    return likeButton && hasProfile && noBlockingModals;
+  };
+
+  hasProfile = () => {
+    // Updated selectors for current Tinder UI (2024)
+    const profileSelectors = [
+      // Main card containers
+      '[data-testid="card-stack"]',
+      '[data-testid="profileCard"]', 
+      '.recsCardboard__card',
+      '.Expand.enterAnimationContainer > div',
+      
+      // Image containers
+      '.keen-slider__slide:not(.keen-slider__slide--clone)',
+      '.StretchedBox img',
+      
+      // Profile content areas
+      '[data-testid="card-stack"] > div > div',
+      '.gamepad-card',
+      '.profileCard',
+      
+      // Fallback selectors
+      '.Expand',
+      '.StretchedBox'
+    ];
+
+    console.log('🔍 Checking for profile...');
+    
+    for (const selector of profileSelectors) {
+      const elements = document.querySelectorAll(selector);
+      console.log(`  ${selector}: ${elements.length} elements`);
+      
+      for (const element of elements) {
+        if (element && element.offsetParent !== null && element.offsetWidth > 0 && element.offsetHeight > 0) {
+          console.log(`✅ Profile found with selector: ${selector}`);
+          return true;
+        }
+      }
+    }
+
+    // Check for profile images specifically
+    const imageSelectors = [
+      'img[src*="images-ssl.gotinder.com"]',
+      'img[src*="gotinder.com"]',
+      'img[src*="tinder"]',
+      '.keen-slider img',
+      '[data-testid="card-stack"] img'
+    ];
+    
+    for (const selector of imageSelectors) {
+      const images = document.querySelectorAll(selector);
+      console.log(`  Images ${selector}: ${images.length} found`);
+      if (images.length > 0) {
+        for (const img of images) {
+          if (img.offsetParent !== null && img.complete && img.naturalWidth > 0) {
+            console.log(`✅ Profile image found: ${img.src.substring(0, 50)}...`);
+            return true;
+          }
+        }
+      }
+    }
+
+    console.log('❌ No profile detected');
+    return false;
   };
 
   hasLike = () => {
-    // Try multiple selectors for like button (Tinder UI changes frequently)
+    // Try multiple selectors for like button (updated for current Tinder UI)
     const selectors = [
       "button[aria-label*='Like']",
-      "button[data-testid='like']",
+      "button[data-testid='like']", 
       "button[title*='Like']",
       ".recsCardboard__cardsContainer button:last-child",
-      "[data-testid='gamepad-like']"
+      "[data-testid='gamepad-like']",
+      // Updated selectors for current Tinder UI
+      "button[data-testid='gamepad-like-button']",
+      ".gamepad button:last-child",
+      ".Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\) button:last-child",
+      ".gamepad__button--like",
+      "button.button:last-of-type",
+      // Fallback generic selectors
+      ".gamepad > button:nth-child(5)", // Like is usually 5th button
+      "button[style*='background'][style*='green']"
     ];
     
     for (const selector of selectors) {
-      const button = document.querySelector(selector);
-      if (button && button.offsetParent !== null) { // Check if visible
-        return button;
+      try {
+        const button = document.querySelector(selector);
+        if (button && button.offsetParent !== null && !button.disabled) {
+          // Additional check: make sure it's actually a like button
+          const buttonText = button.textContent?.toLowerCase() || '';
+          const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
+          
+          if (buttonText.includes('like') || ariaLabel.includes('like') || 
+              button.querySelector('svg') || // Most buttons have SVG icons
+              selector.includes('like')) {
+            return button;
+          }
+        }
+      } catch (e) {
+        continue;
       }
     }
     
-    // Fallback to XPath
+    // Enhanced XPath fallback
     try {
-      const xpath = "//span[text()='Like']";
-      const matchingElement = document.evaluate(
-        xpath,
-        document,
-        null,
-        XPathResult.FIRST_ORDERED_NODE_TYPE,
-        null
-      ).singleNodeValue;
-      return matchingElement?.closest('button');
+      const xpaths = [
+        "//span[text()='Like']",
+        "//button[contains(@aria-label, 'Like')]",
+        "//button[contains(@title, 'Like')]"
+      ];
+      
+      for (const xpath of xpaths) {
+        const matchingElement = document.evaluate(
+          xpath,
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+        
+        if (matchingElement) {
+          const button = matchingElement.closest('button');
+          if (button && button.offsetParent !== null) {
+            return button;
+          }
+        }
+      }
     } catch (e) {
-      return null;
+      console.warn('XPath fallback failed', e);
     }
+    
+    return null;
   };
 
   getLikeInterval = () => {
@@ -180,6 +294,13 @@ class Swiper {
     // Keep Swiping
     if (this.matchFound()) {
       setTimeout(this.run, generateRandomNumber(500, 900));
+      return;
+    }
+
+    // Try Super Like first if enabled and conditions are met
+    if (this.superLiker.pressSuperLike()) {
+      const interval = this.getLikeInterval();
+      setTimeout(this.run, interval);
       return;
     }
 

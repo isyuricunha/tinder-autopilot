@@ -141,32 +141,155 @@ class Sidebar {
       this.hideUnanswered.stop
     );
 
+    // Bind additional checkboxes for new features
+    this.bindCheckbox('.tinderAutopilotBioFilter');
+    this.bindCheckbox('.tinderAutopilotGenderFilter');
+    this.bindCheckbox('.tinderAutopilotAdvancedFilter');
+    this.bindCheckbox('.tinderAutopilotSuperLike');
+
+    // Initialize slider values from localStorage
+    this.initializeSliders();
+    
+    // Set initial slider states based on toggle positions
+    setTimeout(() => {
+      this.updateSliderStates();
+    }, 1000);
+    
+    // Also add a manual trigger for testing
+    window.updateSliderStates = () => this.updateSliderStates();
+
     document.getElementById('messageToSend').addEventListener('blur', (e) => {
       localStorage.setItem('TinderAutopilot/MessengerDefault', JSON.stringify(e.target.value));
     });
   };
 
+  initializeSliders = () => {
+    const sliders = [
+      { id: 'likeInterval', defaultValue: 3, unit: 's' },
+      { id: 'minAge', defaultValue: 18, unit: ' years' },
+      { id: 'maxAge', defaultValue: 35, unit: ' years' },
+      { id: 'maxDistance', defaultValue: 50, unit: ' km' },
+      { id: 'minPhotoCount', defaultValue: 3, unit: ' photos' }
+    ];
+
+    sliders.forEach(({ id, defaultValue, unit }) => {
+      const slider = document.getElementById(id);
+      const valueDisplay = document.getElementById(`${id}Value`);
+      
+      if (slider && valueDisplay) {
+        const storedValue = localStorage.getItem(`TinderAutopilot/${id}`) || defaultValue;
+        slider.value = storedValue;
+        valueDisplay.textContent = storedValue + unit;
+      }
+    });
+
+    // Initialize Super Like strategy dropdown
+    const strategySelect = document.getElementById('superLikeStrategy');
+    if (strategySelect) {
+      const storedStrategy = localStorage.getItem('TinderAutopilot/superLikeStrategy') || 'random';
+      strategySelect.value = storedStrategy;
+    }
+  };
+
   bindCheckbox = (selector, start = false, stop = false) => {
-    document.querySelector(selector).onclick = (e) => {
+    const element = document.querySelector(selector);
+    if (!element) {
+      console.warn(`Element not found for selector: ${selector}`);
+      return;
+    }
+    
+    element.onclick = (e) => {
       e.preventDefault();
 
       const isOn = getCheckboxValue(selector);
       toggleCheckbox(selector);
+      
+      // Update dependent sliders with a small delay to ensure toggle state is updated
+      setTimeout(() => {
+        this.updateSliderStates();
+      }, 50);
+      
       if (isOn && stop) stop();
       if (!isOn && start) start();
     };
   };
+
+  updateSliderStates = () => {
+    console.log('🔧 updateSliderStates called');
+    
+    // Manual slider mapping since the data-parent approach isn't working
+    const sliderMappings = [
+      { sliderId: 'likeInterval', parentSelector: '.tinderAutopilot' },
+      { sliderId: 'minAge', parentSelector: '.tinderAutopilotAdvancedFilter' },
+      { sliderId: 'maxAge', parentSelector: '.tinderAutopilotAdvancedFilter' },
+      { sliderId: 'maxDistance', parentSelector: '.tinderAutopilotAdvancedFilter' },
+      { sliderId: 'minPhotoCount', parentSelector: '.tinderAutopilotAdvancedFilter' }
+    ];
+    
+    sliderMappings.forEach(({ sliderId, parentSelector }) => {
+      const slider = document.getElementById(sliderId);
+      const container = slider?.closest('.slider-container') || slider?.parentElement?.parentElement?.parentElement;
+      
+      if (slider && container) {
+        const isParentEnabled = getCheckboxValue(parentSelector);
+        console.log(`Slider ${sliderId} - Parent ${parentSelector} enabled: ${isParentEnabled}`);
+        
+        slider.disabled = !isParentEnabled;
+        
+        // Update visual state
+        if (isParentEnabled) {
+          container.style.opacity = '1';
+          container.style.pointerEvents = 'auto';
+          console.log(`✅ Enabled slider: ${sliderId}`);
+        } else {
+          container.style.opacity = '0.5';
+          container.style.pointerEvents = 'none';
+          console.log(`❌ Disabled slider: ${sliderId}`);
+        }
+      } else {
+        console.log(`⚠️ Slider ${sliderId} or container not found`);
+      }
+    });
+  };
 }
 
-const getCheckboxValue = (selector) =>
-  document.querySelector(`${selector} .toggleSwitch > div`).className === onToggle;
+const getCheckboxValue = (selector) => {
+  const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
+  console.log(`🔍 Toggle element for ${selector}:`, toggleElement);
+  
+  if (toggleElement) {
+    const style = toggleElement.style.cssText;
+    const background = toggleElement.style.background;
+    console.log(`🎨 Style: ${style}`);
+    console.log(`🎨 Background: ${background}`);
+    
+    // Check multiple ways the toggle might be "on"
+    const isOnByGradient = style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') || 
+                          style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
+                          background.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
+                          background.includes('linear-gradient(135deg, #ff6b35, #ff8c42)');
+    
+    const isOnByBorder = style.includes('border: 2px solid rgb(255, 107, 53)') || 
+                        style.includes('border: 2px solid #ff6b35');
+    
+    const isOn = isOnByGradient || isOnByBorder;
+    console.log(`✅ getCheckboxValue(${selector}): ${isOn} (gradient: ${isOnByGradient}, border: ${isOnByBorder})`);
+    return isOn;
+  }
+  
+  console.log(`❌ getCheckboxValue(${selector}): false (element not found)`);
+  return false;
+};
 
 const toggleCheckbox = (selector) => {
   const isOn = getCheckboxValue(selector);
-  document.querySelector(`${selector} .toggleSwitch > div`).className = isOn ? offToggle : onToggle;
-  document.querySelector(`${selector} .toggleSwitch > div > div`).className = isOn
-    ? offToggleInner
-    : onToggleInner;
+  const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
+  const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
+  
+  if (toggleElement && innerElement) {
+    toggleElement.style.cssText = isOn ? offToggle : onToggle;
+    innerElement.style.cssText = isOn ? offToggleInner : onToggleInner;
+  }
 };
 
 export { getCheckboxValue, toggleCheckbox };

@@ -51,7 +51,7 @@ const checkboxGenerator = (className, label, helpText = '') => `
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                     <div style="flex: 1; overflow: hidden; padding: 0; color: #ffffff; font-size: 15px; font-weight: 500; line-height: 1.3;"><span>${label}</span></div>
                     <div style="position: relative; flex-shrink: 0;">
-                        <div style="cursor: pointer; pointer-events: none;">
+                        <div class="toggleSwitch" style="cursor: pointer; pointer-events: none;">
                             <input style="position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; cursor: pointer;" name="${className}" type="checkbox">
                             <div style="${offToggle}"><div style="${offToggleInner}"></div></div>
                         </div>
@@ -67,8 +67,8 @@ ${
 }
 `;
 
-const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, step = 1, unit = '' }) => `
-<div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, step = 1, unit = '', parentToggle = null }) => `
+<div class="slider-container" data-parent="${parentToggle || ''}" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 16px; cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -78,7 +78,8 @@ const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, s
             <div style="position: relative; width: 100%;">
                 <input type="range" id="${className}" min="${min}" max="${max}" value="${defaultValue}" step="${step}" 
                        style="width: 100%; height: 6px; border-radius: 3px; background: #333333; outline: none; -webkit-appearance: none; appearance: none;"
-                       oninput="document.getElementById('${className}Value').textContent = this.value + '${unit}'; localStorage.setItem('TinderAutopilot/${className}', this.value);">
+                       oninput="document.getElementById('${className}Value').textContent = this.value + '${unit}'; localStorage.setItem('TinderAutopilot/${className}', this.value);" 
+                       onchange="localStorage.setItem('TinderAutopilot/${className}', this.value);">
                 <style>
                     #${className}::-webkit-slider-thumb {
                         -webkit-appearance: none;
@@ -98,6 +99,18 @@ const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, s
                         cursor: pointer;
                         border: none;
                         box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+                    }
+                    #${className}:disabled::-webkit-slider-thumb {
+                        background: #555555;
+                        cursor: not-allowed;
+                    }
+                    #${className}:disabled::-moz-range-thumb {
+                        background: #555555;
+                        cursor: not-allowed;
+                    }
+                    #${className}:disabled {
+                        background: #222222;
+                        cursor: not-allowed;
                     }
                 </style>
             </div>
@@ -122,7 +135,8 @@ const autopilot = `
           min: 1,
           max: 10,
           defaultValue: 3,
-          unit: 's'
+          unit: 's',
+          parentToggle: 'tinderAutopilot'
         })}
         ${checkboxGenerator(
           'tinderAutopilotHideMine',
@@ -146,6 +160,81 @@ const autopilot = `
           helpText: 'Profiles containing these words will be skipped automatically.',
           defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
         })}
+        ${checkboxGenerator(
+          'tinderAutopilotGenderFilter',
+          'Enable Gender Filtering',
+          'Skip profiles based on gender identity.'
+        )}
+        ${textboxGenerator({
+          className: 'genderFilter',
+          placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
+          helpText: 'Profiles with these gender identities will be skipped. Leave empty to disable.',
+          defaultValue: ''
+        })}
+        ${titleGenerator('Advanced Filtering')}
+        ${checkboxGenerator(
+          'tinderAutopilotAdvancedFilter',
+          'Enable Advanced Filtering',
+          'Filter profiles by age, distance, and photo count.'
+        )}
+        ${sliderGenerator({
+          className: 'minAge',
+          label: 'Minimum Age',
+          helpText: 'Skip profiles below this age.',
+          min: 18,
+          max: 50,
+          defaultValue: 18,
+          unit: ' years',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        })}
+        ${sliderGenerator({
+          className: 'maxAge',
+          label: 'Maximum Age',
+          helpText: 'Skip profiles above this age.',
+          min: 18,
+          max: 99,
+          defaultValue: 35,
+          unit: ' years',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        })}
+        ${sliderGenerator({
+          className: 'maxDistance',
+          label: 'Maximum Distance',
+          helpText: 'Skip profiles farther than this distance.',
+          min: 1,
+          max: 100,
+          defaultValue: 50,
+          unit: ' km',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        })}
+        ${sliderGenerator({
+          className: 'minPhotoCount',
+          label: 'Minimum Photos',
+          helpText: 'Skip profiles with fewer photos.',
+          min: 1,
+          max: 9,
+          defaultValue: 3,
+          unit: ' photos',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        })}
+        ${titleGenerator('Super Like Settings')}
+        ${checkboxGenerator(
+          'tinderAutopilotSuperLike',
+          'Enable Super Like Automation',
+          'Automatically use Super Likes based on strategy (5 per day limit).'
+        )}
+        <div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+          <div style="padding: 16px;">
+            <label style="color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;">Super Like Strategy</label>
+            <select id="superLikeStrategy" style="width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 14px;" onchange="localStorage.setItem('TinderAutopilot/superLikeStrategy', this.value);">
+              <option value="random">Random (10% chance)</option>
+              <option value="verified">Verified profiles only</option>
+              <option value="photos">5+ photos only</option>
+              <option value="distance">Nearby profiles (≤10km)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">Choose when to automatically use Super Likes. Limited to 5 per day.</div>
   </div>
 `;
 
