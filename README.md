@@ -7,7 +7,7 @@
 ~~Install on the Chrome Web Store~~ (no longer available)
 
 <p align="center">
-  <img src="https://i.imgur.com/wz8fHwG.png" alt="product demo" />
+  <img src="https://i.imgur.com/PM6XD8y.png" alt="product demo" />
 </p>
 
 ## Table of Contents
