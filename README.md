@@ -170,12 +170,12 @@ Scripts (`package.json`):
 - `yarn major|minor|patch` → release-it (CI driven, requires env setup)
 
 Project layout:
-- `src/index.js` — content entry
-- `src/views/` — sidebar UI and templates
-- `src/automations/` — feature modules
-- `src/misc/` — helpers, background, API
-- `chrome/` — extension manifest and icons
-- `dist/` — build output to load in Chrome
+- `src/index.js` - content entry
+- `src/views/` - sidebar UI and templates
+- `src/automations/` - feature modules
+- `src/misc/` - helpers, background, API
+- `chrome/` - extension manifest and icons
+- `dist/` - build output to load in Chrome
 
 Coding standards:
 - ESLint + Prettier (Airbnb base)
@@ -185,11 +185,11 @@ Coding standards:
 - __Sidebar not visible__: ensure you loaded `dist/` as unpacked extension and are on `tinder.com`.
 - __API calls failing__: verify you are logged into Tinder Web and tokens (`TinderWeb/APIToken`) exist.
 - __Auto-like not working__: check that the page is on Discover/Recs and no modal blocks the UI.
-- __Messaging stuck__: reduce batch size or wait—module pages through all matches with delays.
+- __Messaging stuck__: reduce batch size or wait-module pages through all matches with delays.
 - __Super Like not triggering__: confirm strategy conditions and that you haven't hit the daily limit.
 
 ## Privacy & Disclaimer
-This tool automates interactions with Tinder Web in your browser session. Use responsibly and at your own risk. Review Tinder’s Terms of Service—automation may violate platform policies.
+This tool automates interactions with Tinder Web in your browser session. Use responsibly and at your own risk. Review Tinder’s Terms of Service-automation may violate platform policies.
 
 Data stored locally in your browser:
 - `TinderAutopilot/*` preferences and counters
@@ -204,11 +204,11 @@ We welcome PRs! Suggested flow:
 5. Link issues and describe changes clearly
 
 ## Maintainers
-- Continued by: **Yuri Cunha** — [me@yuricunha.com](mailto:me@yuricunha.com)
-- Original author: **Geczy** — [hashtagnogf@protonmail.com](mailto:hashtagnogf@protonmail.com)
+- Continued by: **Yuri Cunha** - [me@yuricunha.com](mailto:me@yuricunha.com)
+- Original author: **Geczy** - [hashtagnogf@protonmail.com](mailto:hashtagnogf@protonmail.com)
 
 ## License
-MIT — see LICENSE file.
+MIT - see LICENSE file.
 
 ---
 If this project helped you, please ⭐ the repo and consider sponsorship.
