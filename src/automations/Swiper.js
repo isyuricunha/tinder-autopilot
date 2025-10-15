@@ -191,19 +191,20 @@ class Swiper {
     }
   };
 
-  pressLike = () => {
+  pressLike = async () => {
     const likeButton = this.hasLike();
     if (!likeButton && !this.canSwipe()) {
       return false;
     }
 
-    // Check if profile should be skipped based on bio
-    if (this.profileAnalyzer.shouldSkipProfile()) {
+    // Check if profile should be skipped based on bio (opens modal, checks, closes)
+    const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
+    if (shouldSkip) {
       // Skip this profile by pressing dislike instead
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         dislikeButton.click();
-        logger('⏭️ Skipped profile due to bio filter');
+        logger('⏭️ Skipped profile due to filter match');
         return true;
       }
     }
@@ -313,14 +314,15 @@ class Swiper {
     }
 
     // What we came here to do, swipe right!
-    if (this.pressLike()) {
-      const interval = this.getLikeInterval();
-      setTimeout(this.run, interval);
-      return;
-    }
-
-    logger('No profiles found. Waiting 4s');
-    setTimeout(this.run, generateRandomNumber(3000, 4000));
+    this.pressLike().then((success) => {
+      if (success) {
+        const interval = this.getLikeInterval();
+        setTimeout(this.run, interval);
+      } else {
+        logger('No profiles found. Waiting 4s');
+        setTimeout(this.run, generateRandomNumber(3000, 4000));
+      }
+    });
   };
 }
 

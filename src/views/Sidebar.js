@@ -14,7 +14,7 @@ import Messenger from '../automations/Messenger';
 import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
-import { waitUntilElementExists } from '../misc/helper';
+import { waitUntilElementExists, logger } from '../misc/helper';
 import { insertCss } from '../misc/insert-css';
 
 class Sidebar {
@@ -161,6 +161,26 @@ class Sidebar {
     document.getElementById('messageToSend').addEventListener('blur', (e) => {
       localStorage.setItem('TinderAutopilot/MessengerDefault', JSON.stringify(e.target.value));
     });
+
+    // Save bio blacklist when user updates it
+    const bioBlacklistField = document.getElementById('bioBlacklist');
+    if (bioBlacklistField) {
+      bioBlacklistField.addEventListener('blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/bioBlacklist', value);
+        logger(`💾 Saved banned words: ${value}`);
+      });
+    }
+
+    // Save gender filter when user updates it
+    const genderFilterField = document.getElementById('genderFilter');
+    if (genderFilterField) {
+      genderFilterField.addEventListener('blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/genderFilter', value);
+        logger(`💾 Saved gender filter: ${value}`);
+      });
+    }
   };
 
   initializeSliders = () => {
@@ -188,6 +208,24 @@ class Sidebar {
     if (strategySelect) {
       const storedStrategy = localStorage.getItem('TinderAutopilot/superLikeStrategy') || 'random';
       strategySelect.value = storedStrategy;
+    }
+
+    // Initialize bio blacklist textarea
+    const bioBlacklistField = document.getElementById('bioBlacklist');
+    if (bioBlacklistField) {
+      const storedBlacklist = localStorage.getItem('TinderAutopilot/bioBlacklist');
+      if (storedBlacklist) {
+        bioBlacklistField.value = storedBlacklist;
+      }
+    }
+
+    // Initialize gender filter textarea
+    const genderFilterField = document.getElementById('genderFilter');
+    if (genderFilterField) {
+      const storedGenderFilter = localStorage.getItem('TinderAutopilot/genderFilter');
+      if (storedGenderFilter) {
+        genderFilterField.value = storedGenderFilter;
+      }
     }
   };
 
