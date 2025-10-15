@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "O stránkách"
+   },
+   "ACTIVE": {
+      "message": "aktivní"
+   },
+   "AGE": {
+      "message": "Věk"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Rozšíření Auto Swiper pro přejetí profilů Tinder, Bumble, Lovoo, PoF a OkCupid."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "zpět"
+   },
+   "BANNED_WORDS": {
+      "message": "Zakázaná klíčová slova"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Profily obsahující některá z těchto klíčových slov budou automaticky přeskočeny. Pomocí tohoto seznamu se můžete vyhnout profilům s konkrétními výrazy, které vás nezajímají."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Přístrojový panel pro fakturaci"
+   },
+   "BREAK_DURATION": {
+      "message": "Délka přestávky v minutách."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Oznámení prohlížeče"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Výsledky relace swipování:"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Prohlížeč, který právě používáte, není podporován."
+   },
+   "CITY": {
+      "message": "Město"
+   },
+   "CLOUD_SYNC": {
+      "message": "Uložení/načtení do cloudu"
+   },
+   "DARK": {
+      "message": "Dark"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Výstup ladění"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Zpoždění po načtení stránky v minutách"
+   },
+   "DELETE_LOG": {
+      "message": "Přihlásit se"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Odstranit protokol"
+   },
+   "DELETE_STATS": {
+      "message": "Statistiky"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Smazat statistiky"
+   },
+   "DISTANCE": {
+      "message": "Vzdálenost"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Stáhnout protokol (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Stáhnout protokol (JSON)"
+   },
+   "EMAIL": {
+      "message": "E-mail"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Povolit zpoždění po opětovném načtení stránky"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Povolení shromažďování/vyhledávání adres URL profilových obrázků"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Povolit Max. Vzdálenost"
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Povolení maximálního počtu přejetí"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Povolit věkový rozsah"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Povolení rozsahu výšky"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Povolit Min. Obrázky"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Povolit simulaci náhodného použití"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Povolení automatického načítání stránky mezi přejetími prstem"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Povolení automatické přestávky mezi přejetími"
+   },
+   "ERROR": {
+      "message": "CHYBA"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "Rozšíření nemohlo načíst svůj obsahový skript na kartě seznamky. Ujistěte se, že máte otevřenou seznamku, že nejste v soukromém okně/okně inkognito a že skripty neblokuje žádné jiné rozšíření nebo nastavení prohlížeče. Zkuste obnovit stránku nebo restartovat prohlížeč. Pokud problém přetrvává, kontaktujte support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "Přihlášení se nezdařilo. Ověřte prosím své internetové připojení a zkontrolujte, zda jsou váš e-mail a heslo správné."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Dosáhli jste denního limitu pro přejetí"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Jste na nepodporovaném webu!"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Při načítání možností ze serveru došlo k chybě. Zkuste tuto operaci provést znovu později."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Při ukládání možností na server došlo k chybě. Zkuste tuto operaci provést znovu později."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Otevřete nebo obnovte seznamovací web, kde se chcete zapojit do swipování."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "Funkce přejetí prstem nefunguje správně. Zkuste to prosím znovu. Pokud problém přetrvává, obraťte se na vývojáře na adrese support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Export"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "prodloužená vzdálenost"
+   },
+   "FAQ": {
+      "message": "ČASTO KLADENÉ DOTAZY"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "Přejetí FM"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Vynutit přejetí po stránce (Nelíbí se mi, Líbí se mi, Znovu načíst stránku, Opakovat...)"
+   },
+   "HEIGHT": {
+      "message": "Výška"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "ignorovat Vzdálenost"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Blokování obrazu"
+   },
+   "IMPORT": {
+      "message": "Import"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Import dokončen"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Změna názvu instance"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Poslední přejetí vlevo"
+   },
+   "LEFT": {
+      "message": "Vlevo"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Procento přejetí doleva"
+   },
+   "LIGHT": {
+      "message": "Světlo"
+   },
+   "LOAD": {
+      "message": "Zatížení"
+   },
+   "LOCATION": {
+      "message": "Umístění"
+   },
+   "LOGIN": {
+      "message": "Přihlášení"
+   },
+   "LOGOUT": {
+      "message": "Odhlášení"
+   },
+   "LOG_CSV": {
+      "message": "Protokol (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Protokol (JSON)"
+   },
+   "MATCHES": {
+      "message": "Zápasy"
+   },
+   "MAX_DISTANCE": {
+      "message": "Max. Vzdálenost"
+   },
+   "MAX_SWIPES": {
+      "message": "Max Swipes"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Věkový rozsah"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Výškový rozsah"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Doba mezi přejetími v sec."
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Obrázky"
+   },
+   "MONTH": {
+      "message": "Měsíc"
+   },
+   "NAME": {
+      "message": "Název"
+   },
+   "NO": {
+      "message": "Ne"
+   },
+   "NOT_ACTIVE": {
+      "message": "není aktivní"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "no Empty Popis"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "aktivní pouze v poslední době"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "pouze ověřené profily"
+   },
+   "OPTIONS": {
+      "message": "Možnosti"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Možnosti byly úspěšně načteny."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Možnosti byly úspěšně uloženy."
+   },
+   "OR": {
+      "message": "NEBO"
+   },
+   "PASSWORD": {
+      "message": "Heslo"
+   },
+   "PICTURES": {
+      "message": "Obrázky"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Klíčová slova s okamžitou podobností"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Profily s těmito klíčovými slovy jsou okamžitě označeny jako \"like\". Ideální pro zvýraznění profilů, které odpovídají vašim hlavním zájmům nebo preferencím."
+   },
+   "PREMIUM": {
+      "message": "Premium"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Zkontrolujte si své předplatné"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "přeskočit Prázdná vzdálenost, Ignorovat vzdálenost, Prodloužená vzdálenost"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "žádný prázdný popis, pouze ověřené profily"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "zkušební verze zdarma"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "spoofing polohy"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Přihlášení"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "Přihlaste se k odběru na"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Zrušit"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "změna rychlosti přejetí prstem"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "statistiky přejetí prstem"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "neomezené zakázané Slova"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "neomezené Swipes"
+   },
+   "PRICING": {
+      "message": "Stanovení cen"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Simulace náhodného použití"
+   },
+   "RATE": {
+      "message": "Ohodnotit toto rozšíření"
+   },
+   "RATE_INFORMATION": {
+      "message": "Pokud se vám toto rozšíření líbí, mohli byste ho laskavě ohodnotit? Zabere to jen minutu a vaší podpory si velmi vážíme. Děkujeme!"
+   },
+   "RATE_NOT_NOW": {
+      "message": "Zeptej se mě jindy"
+   },
+   "RATE_NOW": {
+      "message": "Hodnotit"
+   },
+   "REASON": {
+      "message": "Důvod"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "zakázané slovo"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "ne Popis"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "příliš krátký"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "na vysoký"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "v poslední době neaktivní"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "neověřeno"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "nebylo nalezeno žádné požadované klíčové slovo"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "příliš daleko"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "příliš málo obrázků"
+   },
+   "REASON_TO_OLD": {
+      "message": "příliš starý"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "příliš mladý"
+   },
+   "REFRESH": {
+      "message": "Obnovit"
+   },
+   "REGISTER": {
+      "message": "Registrace"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Automatické načtení stránky mezi přejetími prstem"
+   },
+   "REQUIRED": {
+      "message": "Požadované"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Požadovaná klíčová slova"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Tato klíčová slova musí být v profilu uvedena, aby mohl být profil zařazen mezi oblíbené. Tím je zajištěno, že budou lajkovány pouze profily, které splňují vaše základní kritéria."
+   },
+   "RESET_LOG": {
+      "message": "resetovat protokol"
+   },
+   "RESET_SETTINGS": {
+      "message": "Možnosti resetování"
+   },
+   "RESET_STATS": {
+      "message": "resetování Statistika"
+   },
+   "Right": {
+      "message": "Právo"
+   },
+   "SAVE": {
+      "message": "Uložit"
+   },
+   "SET": {
+      "message": "nastavit"
+   },
+   "SITES": {
+      "message": "Stránky"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "ignorovat neznámou vzdálenost"
+   },
+   "STATS": {
+      "message": "Statistiky"
+   },
+   "STOP": {
+      "message": "Zastavte"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Zastavit na pravé straně Přejetí prstem"
+   },
+   "SUBSCRIPTION": {
+      "message": "Předplatné"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Předplatné zrušeno"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Informace o předplatném"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Plán předplatného"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Datum obnovení předplatného"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Stav předplatného"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Podporované prohlížeče"
+   },
+   "SWIPE": {
+      "message": "Start"
+   },
+   "SWIPES": {
+      "message": "Swipes"
+   },
+   "SWIPE_BREAK": {
+      "message": "Automatická přestávka mezi přejetími"
+   },
+   "THEME": {
+      "message": "Téma"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Automatický stěrač byl aktualizován. Aktualizujte všechny aktivní seznamky, abyste implementovali nové změny, a další podrobnosti naleznete v seznamu změn."
+   },
+   "TOTAL": {
+      "message": "Celkem"
+   },
+   "UNSET": {
+      "message": "unset"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "s automatickým načtením stránky"
+   },
+   "YEARS": {
+      "message": "Roky"
+   },
+   "YES": {
+      "message": "Ano"
+   }
+}

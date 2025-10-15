@@ -1,0 +1,467 @@
+{
+   "ABOUT": {
+      "message": "A propos de"
+   },
+   "ACTIVE": {
+      "message": "actif"
+   },
+   "AGE": {
+      "message": "L'âge"
+   },
+   "API_TOKEN": {
+      "message": "API -Token"
+   },
+   "APP_DESCRIPTION": {
+      "message": "Auto Swiper Extension to Swipe Tinder, Bumble, Lovoo, PoF and OkCupid Profiles."
+   },
+   "APP_NAME": {
+      "message": "Auto Swiper for Tinder, Bumble and more!"
+   },
+   "APP_NAME_SHORT": {
+      "message": "Auto Swiper"
+   },
+   "BACK": {
+      "message": "retour"
+   },
+   "BANNED_WORDS": {
+      "message": "Mots clés interdits"
+   },
+   "BANNED_WORDS_TOOLTIP": {
+      "message": "Les profils contenant l'un de ces mots-clés seront automatiquement ignorés. Utilisez cette liste pour éviter les profils contenant des termes spécifiques qui ne vous intéressent pas."
+   },
+   "BILLING_DASHBOARD": {
+      "message": "Tableau de bord de la facturation"
+   },
+   "BREAK_DURATION": {
+      "message": "Durée de la pause en minutes."
+   },
+   "BROWSER_NOTIFICATION": {
+      "message": "Notifications du navigateur"
+   },
+   "BROWSER_NOTIFICATION_DON_TEXT": {
+      "message": "Résultats de la session de swiping :"
+   },
+   "BROWSER_NOT_SUPPORTED": {
+      "message": "Le navigateur que vous utilisez actuellement n'est pas pris en charge."
+   },
+   "CITY": {
+      "message": "Ville"
+   },
+   "CLOUD_SYNC": {
+      "message": "Sauvegarde/chargement du nuage"
+   },
+   "DARK": {
+      "message": "Sombre"
+   },
+   "DEBUGGING_INFORMATION": {
+      "message": "Sortie de débogage"
+   },
+   "DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Délai après le rechargement de la page en minutes"
+   },
+   "DELETE_LOG": {
+      "message": "Journal"
+   },
+   "DELETE_LOG_TOOLTIP": {
+      "message": "Supprimer le journal"
+   },
+   "DELETE_STATS": {
+      "message": "Statistiques"
+   },
+   "DELETE_STATS_TOOLTIP": {
+      "message": "Supprimer les statistiques"
+   },
+   "DISTANCE": {
+      "message": "Distance"
+   },
+   "DOWNLOAD_LOG_CSV": {
+      "message": "Télécharger le journal (CSV)"
+   },
+   "DOWNLOAD_LOG_JSON": {
+      "message": "Télécharger le journal (JSON)"
+   },
+   "EMAIL": {
+      "message": "Courrier électronique"
+   },
+   "ENABLE_DELAY_AFTER_PAGE_RELOAD": {
+      "message": "Activer le délai après le rechargement de la page"
+   },
+   "ENABLE_GATHERING_PICTURE_URLS": {
+      "message": "Permettre la collecte/la récupération des URL des photos de profil"
+   },
+   "ENABLE_MAX_DISTANCE": {
+      "message": "Activer Distance max. Distance max."
+   },
+   "ENABLE_MAX_SWIPES": {
+      "message": "Activer le nombre maximum de passages"
+   },
+   "ENABLE_MIN_MAX_AGE": {
+      "message": "Activer la tranche d'âge"
+   },
+   "ENABLE_MIN_MAX_HEIGHT": {
+      "message": "Activer la gamme de hauteurs"
+   },
+   "ENABLE_MIN_PICTURES": {
+      "message": "Activer Min. Images"
+   },
+   "ENABLE_RANDOM_USAGE_SIMULATION": {
+      "message": "Activer la simulation d'utilisation aléatoire"
+   },
+   "ENABLE_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Activer le rechargement automatique de la page entre deux balayages"
+   },
+   "ENABLE_SWIPE_BREAK": {
+      "message": "Activer la pause automatique entre les swipes"
+   },
+   "ERROR": {
+      "message": "ERREUR"
+   },
+   "ERROR_CONTENT_SCRIPT_NOT_LOADED": {
+      "message": "L'extension n'a pas pu charger son script de contenu dans l'onglet du site de rencontres. Assurez-vous que le site de rencontres est ouvert, que vous n'êtes pas dans une fenêtre privée/incognito et qu'aucune autre extension ou paramètre du navigateur ne bloque les scripts. Essayez d'actualiser la page ou de redémarrer votre navigateur. Si le problème persiste, contactez support@auto-swiper.ch."
+   },
+   "ERROR_LOGIN_REQUEST": {
+      "message": "La connexion a échoué. Veuillez vérifier votre connexion internet et vous assurer que votre courriel et votre mot de passe sont corrects."
+   },
+   "ERROR_MAX_SWIPES": {
+      "message": "Vous avez atteint votre limite quotidienne de transactions"
+   },
+   "ERROR_NOT_SUPPORTED_SITE": {
+      "message": "Vous êtes sur un site non supporté !"
+   },
+   "ERROR_OPTIONS_SYNC_LOAD": {
+      "message": "Une erreur s'est produite lors du chargement des options sur le serveur. Veuillez réessayer cette opération ultérieurement."
+   },
+   "ERROR_OPTIONS_SYNC_SAVE": {
+      "message": "Une erreur s'est produite lors de l'enregistrement des options sur le serveur. Veuillez réessayer cette opération ultérieurement."
+   },
+   "ERROR_PLEAS_RELOAD_PAGE": {
+      "message": "Veuillez ouvrir ou actualiser le site de rencontre sur lequel vous souhaitez effectuer un swiping."
+   },
+   "ERROR_SWIPING_NOT_WORKING": {
+      "message": "La fonction \"swiping\" ne fonctionne pas correctement. Veuillez réessayer. Si le problème persiste, contactez le développeur à l'adresse support@auto-swiper.ch ."
+   },
+   "EXPORT": {
+      "message": "Exportation"
+   },
+   "EXTENDED_DISTANCE": {
+      "message": "distance étendue"
+   },
+   "FAQ": {
+      "message": "FAQ"
+   },
+   "FORCE_MATCH_SWIPE": {
+      "message": "FM Swipe"
+   },
+   "FORCE_MATCH_SWIPE_TOOLTIP": {
+      "message": "Forcer le passage d'un match à l'autre (désapprouver, aimer, recharger la page, répéter...)"
+   },
+   "HEIGHT": {
+      "message": "Hauteur"
+   },
+   "IGNORE_DISTANCE": {
+      "message": "ignorer la distance"
+   },
+   "IMAGE_BLOCKING": {
+      "message": "Blocage de l'image"
+   },
+   "IMPORT": {
+      "message": "Importation"
+   },
+   "IMPORT_FINISHED": {
+      "message": "Importation terminée"
+   },
+   "INSTANCE_NAME_CHANGED": {
+      "message": "Nom de l'instance modifié"
+   },
+   "LAST_LEFT_SWIPE": {
+      "message": "Dernier glissement à gauche"
+   },
+   "LEFT": {
+      "message": "Gauche"
+   },
+   "LEFT_SWIPES_PERCENTAGE": {
+      "message": "Pourcentage de déplacement vers la gauche"
+   },
+   "LIGHT": {
+      "message": "Lumière"
+   },
+   "LOAD": {
+      "message": "Chargement"
+   },
+   "LOCATION": {
+      "message": "Localisation"
+   },
+   "LOGIN": {
+      "message": "Connexion"
+   },
+   "LOGOUT": {
+      "message": "Déconnexion"
+   },
+   "LOG_CSV": {
+      "message": "Journal (CSV)"
+   },
+   "LOG_JSON": {
+      "message": "Journal (JSON)"
+   },
+   "MATCHES": {
+      "message": "Correspondances"
+   },
+   "MAX_DISTANCE": {
+      "message": "Max. Distance"
+   },
+   "MAX_SWIPES": {
+      "message": "Max Swipes"
+   },
+   "MIN_MAX_AGE": {
+      "message": "Tranche d'âge"
+   },
+   "MIN_MAX_HEIGHT": {
+      "message": "Gamme de hauteurs"
+   },
+   "MIN_MAX_SWIPE_TIME": {
+      "message": "Temps entre les balayages en secondes"
+   },
+   "MIN_PICTURES": {
+      "message": "Min. Photos"
+   },
+   "MONTH": {
+      "message": "Mois"
+   },
+   "NAME": {
+      "message": "Nom"
+   },
+   "NO": {
+      "message": "Non"
+   },
+   "NOT_ACTIVE": {
+      "message": "inactif"
+   },
+   "NO_EMPTY_DESCRIPTION": {
+      "message": "pas de Description vide"
+   },
+   "ONLY_RECENTLY_ACTIVE": {
+      "message": "n'est actif que depuis peu"
+   },
+   "ONLY_VERIFYED_PROFILES": {
+      "message": "uniquement les profils vérifiés"
+   },
+   "OPTIONS": {
+      "message": "Options"
+   },
+   "OPTIONS_SUCCESSFULLY_LOADED": {
+      "message": "Les options ont été chargées avec succès."
+   },
+   "OPTIONS_SUCCESSFULLY_SAVED": {
+      "message": "Les options ont été sauvegardées avec succès."
+   },
+   "OR": {
+      "message": "OU"
+   },
+   "PASSWORD": {
+      "message": "Mot de passe"
+   },
+   "PICTURES": {
+      "message": "Photos"
+   },
+   "PREFERRED_WORDS": {
+      "message": "Mots clés instantanés"
+   },
+   "PREFERRED_WORDS_TOOLTIP": {
+      "message": "Les profils comportant ces mots-clés reçoivent un \"like\" immédiat. Idéal pour mettre en évidence les profils qui correspondent à vos centres d'intérêt ou à vos préférences."
+   },
+   "PREMIUM": {
+      "message": "Prime"
+   },
+   "PREMIUM_CHECK_SUBSCRIPTION": {
+      "message": "Vérifiez votre abonnement"
+   },
+   "PREMIUM_DISTANCE": {
+      "message": "sauter Distance vide, Distance ignorée, Distance étendue"
+   },
+   "PREMIUM_EMPTY_DESCRIPTION_ONLY_VERIFYED": {
+      "message": "pas de description vide, uniquement des profils vérifiés"
+   },
+   "PREMIUM_FREE_TRIAL": {
+      "message": "Essai gratuit"
+   },
+   "PREMIUM_LOCATION_SPOOFING": {
+      "message": "usurpation d'adresse"
+   },
+   "PREMIUM_LOGIN": {
+      "message": "Connexion"
+   },
+   "PREMIUM_SUBSCRIBE": {
+      "message": "S'abonner"
+   },
+   "PREMIUM_SWIPE_CANCEL": {
+      "message": "Annuler"
+   },
+   "PREMIUM_SWIPE_SPEED": {
+      "message": "Modifier la vitesse de balayage"
+   },
+   "PREMIUM_SWIPE_STATISTICS": {
+      "message": "swipe Statistiques"
+   },
+   "PREMIUM_UNLIMITED_BANNED_WORDS": {
+      "message": "illimité mots interdits"
+   },
+   "PREMIUM_UNLIMITED_SWIPES": {
+      "message": "Swipes illimités"
+   },
+   "PRICING": {
+      "message": "Tarification"
+   },
+   "RANDOM_USAGE_SIMULATION": {
+      "message": "Simuler une utilisation aléatoire"
+   },
+   "RATE": {
+      "message": "Notez cette extension"
+   },
+   "RATE_INFORMATION": {
+      "message": "Si vous appréciez cette extension, pourriez-vous prendre le temps de l'évaluer ? Cela ne vous prendra qu'une minute et votre soutien est très apprécié. Nous vous remercions."
+   },
+   "RATE_NOT_NOW": {
+      "message": "Demandez-moi une autre fois"
+   },
+   "RATE_NOW": {
+      "message": "Taux"
+   },
+   "REASON": {
+      "message": "Raison"
+   },
+   "REASON_BANNED_WORD": {
+      "message": "mot interdit"
+   },
+   "REASON_EMPTY_DESCRIPTION": {
+      "message": "pas de description"
+   },
+   "REASON_HEIGHT_TO_SMALL": {
+      "message": "trop court"
+   },
+   "REASON_HEIGHT_TO_TALL": {
+      "message": "à grand"
+   },
+   "REASON_ONLY_RECENTLY_ACTIVE": {
+      "message": "pas d'activité récente"
+   },
+   "REASON_ONLY_VERIFYED_PROFILES": {
+      "message": "non vérifié"
+   },
+   "REASON_REQUIRED_WORD": {
+      "message": "aucun mot-clé requis n'a été trouvé"
+   },
+   "REASON_TO_FAR_AWAY": {
+      "message": "trop loin"
+   },
+   "REASON_TO_LESS_PICTURES": {
+      "message": "trop peu de photos"
+   },
+   "REASON_TO_OLD": {
+      "message": "trop vieux"
+   },
+   "REASON_TO_YOUNG": {
+      "message": "trop jeune"
+   },
+   "REFRESH": {
+      "message": "Rafraîchir"
+   },
+   "REGISTER": {
+      "message": "Registre"
+   },
+   "RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "Rechargement automatique de la page entre deux balayages"
+   },
+   "REQUIRED": {
+      "message": "Exigée"
+   },
+   "REQUIRED_WORDS": {
+      "message": "Mots clés requis"
+   },
+   "REQUIRED_WORDS_TOOLTIP": {
+      "message": "Ces mots-clés doivent être présents dans un profil pour qu'il soit pris en compte. Cela permet de s'assurer que seuls les profils répondant à vos critères essentiels sont aimés."
+   },
+   "RESET_LOG": {
+      "message": "Réinitialiser le journal"
+   },
+   "RESET_SETTINGS": {
+      "message": "Options de réinitialisation"
+   },
+   "RESET_STATS": {
+      "message": "Statistiques de réinitialisation"
+   },
+   "Right": {
+      "message": "Droit"
+   },
+   "SAVE": {
+      "message": "Économiser"
+   },
+   "SET": {
+      "message": "fixer"
+   },
+   "SITES": {
+      "message": "Sites"
+   },
+   "SKIP_EMPTY_DISTANCE": {
+      "message": "ignorer inconnu Distance"
+   },
+   "STATS": {
+      "message": "Statistiques"
+   },
+   "STOP": {
+      "message": "Arrêter"
+   },
+   "STOP_ON_RIGHT_SWIPE": {
+      "message": "Arrêt à droite Swipe"
+   },
+   "SUBSCRIPTION": {
+      "message": "Abonnement"
+   },
+   "SUBSCRIPTION_CANCELED": {
+      "message": "Abonnement annulé"
+   },
+   "SUBSCRIPTION_INFOS_REFRESHED": {
+      "message": "Actualisation des informations sur l'abonnement"
+   },
+   "SUBSCRIPTION_PLAN": {
+      "message": "Plan d'abonnement"
+   },
+   "SUBSCRIPTION_RENEWDATE": {
+      "message": "Date de renouvellement de l'abonnement"
+   },
+   "SUBSCRIPTION_STATUS": {
+      "message": "Statut de l'abonnement"
+   },
+   "SUPPORTED_BROWSERS": {
+      "message": "Navigateurs pris en charge"
+   },
+   "SWIPE": {
+      "message": "Démarrage"
+   },
+   "SWIPES": {
+      "message": "Balayages"
+   },
+   "SWIPE_BREAK": {
+      "message": "Pause automatique entre les swipes"
+   },
+   "THEME": {
+      "message": "Thème"
+   },
+   "TOAST_VERSION_UPDATE": {
+      "message": "Auto-Swiper a reçu une mise à jour. Actualisez tous les sites de rencontre actifs pour mettre en œuvre les nouvelles modifications et consultez le journal des modifications pour plus de détails."
+   },
+   "TOTAL": {
+      "message": "Total"
+   },
+   "UNSET": {
+      "message": "non paramétré"
+   },
+   "WITH_RELOAD_PAGE_BETWEEN_SWIPES": {
+      "message": "avec Rechargement automatique de la page"
+   },
+   "YEARS": {
+      "message": "Années"
+   },
+   "YES": {
+      "message": "Oui"
+   }
+}
