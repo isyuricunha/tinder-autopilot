@@ -44,6 +44,77 @@ class Swiper {
     return likeButton && hasProfile && noBlockingModals;
   };
 
+  // Method to press keyboard shortcuts
+  pressKey = (key, keyCode) => {
+    try {
+      const events = [
+        new KeyboardEvent('keydown', {
+          key: key,
+          code: key,
+          keyCode: keyCode,
+          which: keyCode,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        }),
+        new KeyboardEvent('keyup', {
+          key: key,
+          code: key,
+          keyCode: keyCode,
+          which: keyCode,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        })
+      ];
+      
+      // Try dispatching on different elements
+      const targets = [
+        document,
+        document.body,
+        document.activeElement,
+        document.querySelector('[data-testid="card-stack"]'),
+        document.querySelector('.recsCardboard__cards'),
+        document.querySelector('.gamepad-card')
+      ].filter(Boolean);
+      
+      for (const target of targets) {
+        for (const event of events) {
+          target.dispatchEvent(event);
+        }
+      }
+      
+      return true;
+    } catch (e) {
+      logger(`⚠️ Error pressing key ${key}: ${e.message}`);
+      return false;
+    }
+  };
+
+  // Save current profile ID to detect changes
+  getCurrentProfileId = () => {
+    try {
+      // Try to get a unique identifier from the current profile
+      const nameElement = document.querySelector('h1[aria-label*="years"]') || 
+                          document.querySelector('[itemprop="name"]') ||
+                          document.querySelector('h1');
+      
+      if (nameElement) {
+        return nameElement.textContent;
+      }
+      
+      // Fallback: use first image src as identifier
+      const firstImage = document.querySelector('.keen-slider__slide img, [data-testid="card-stack"] img');
+      if (firstImage && firstImage.src) {
+        return firstImage.src;
+      }
+      
+      return Date.now().toString(); // Fallback to timestamp
+    } catch (e) {
+      return Date.now().toString();
+    }
+  };
+
   hasProfile = () => {
     // Updated selectors for current Tinder UI (2024)
     const profileSelectors = [
@@ -202,24 +273,101 @@ class Swiper {
     const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
     
     if (shouldSkip) {
-      // Profile blocked - click dislike button
+      // Profile blocked - try multiple methods to dislike
+      logger('🚫 Profile should be skipped, attempting to dislike...');
+      
+      // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
-        dislikeButton.click();
-        logger('⏭️ ❌ Skipped profile (filter match)');
+        try {
+          dislikeButton.click();
+          logger('⏭️ ❌ Skipped profile using dislike button');
+          return true;
+        } catch (e) {
+          logger(`⚠️ Error clicking dislike button: ${e.message}`);
+        }
+      }
+      
+      // Method 2: Try keyboard shortcut (ArrowLeft for dislike)
+      logger('⌨️ Trying keyboard shortcut for dislike...');
+      const currentProfileId = this.getCurrentProfileId();
+      
+      // Try pressing the ArrowLeft key
+      this.pressKey('ArrowLeft', 37);
+      
+      // Wait for action to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check if profile changed
+      const newProfileId = this.getCurrentProfileId();
+      if (currentProfileId !== newProfileId || !this.hasProfile()) {
+        logger('⏭️ ❌ Skipped profile using keyboard shortcut');
         return true;
-      } else {
-        // If we can't find dislike button, like it anyway to move forward
-        // This prevents getting stuck
-        logger('⚠️ No dislike button found, liking to continue...');
-        const likeButton = this.hasLike();
-        if (likeButton) {
-          likeButton.click();
-          logger('🔄 Liked blocked profile to avoid getting stuck');
+      }
+      
+      // Try alternative keyboard shortcuts
+      logger('⌨️ Trying alternative keyboard shortcuts...');
+      const shortcuts = [
+        { key: 'a', keyCode: 65 },  // 'a' key sometimes used for pass
+        { key: 'x', keyCode: 88 },  // 'x' key for reject
+        { key: 'Escape', keyCode: 27 }  // Escape to close/skip
+      ];
+      
+      for (const shortcut of shortcuts) {
+        this.pressKey(shortcut.key, shortcut.keyCode);
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const latestProfileId = this.getCurrentProfileId();
+        if (currentProfileId !== latestProfileId || !this.hasProfile()) {
+          logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
           return true;
         }
-        return false;
       }
+      
+      // Method 3: Try clicking in the left area of the card (swipe left gesture)
+      logger('👆 Trying to simulate left swipe...');
+      try {
+        const cardSelectors = [
+          '.keen-slider__slide:not(.keen-slider__slide--clone)',
+          '[data-testid="card-stack"] > div > div',
+          '.Expand',
+          '.StretchedBox'
+        ];
+        
+        for (const selector of cardSelectors) {
+          const card = document.querySelector(selector);
+          if (card && card.offsetParent !== null) {
+            const rect = card.getBoundingClientRect();
+            const leftX = rect.left + 10;
+            const centerY = rect.top + rect.height / 2;
+            
+            const clickEvent = new MouseEvent('click', {
+              view: window,
+              bubbles: true,
+              cancelable: true,
+              clientX: leftX,
+              clientY: centerY
+            });
+            
+            card.dispatchEvent(clickEvent);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            if (!this.hasProfile()) {
+              logger('⏭️ ❌ Skipped profile using left click simulation');
+              return true;
+            }
+            break;
+          }
+        }
+      } catch (e) {
+        logger(`⚠️ Left swipe simulation failed: ${e.message}`);
+      }
+      
+      // Last resort: Report that we couldn't dislike and return false to try again
+      logger('❌ CRITICAL: Could not dislike profile! Manual intervention may be needed.');
+      logger('🛑 Stopping autopilot to prevent unwanted likes...');
+      this.isRunning = false; // Stop the autopilot
+      return false;
     }
 
     // Profile passed all filters - click like button
@@ -242,49 +390,163 @@ class Swiper {
   };
 
   hasDislike = () => {
-    const selectors = [
+    logger('🔍 Searching for dislike button...');
+    
+    // Strategy 1: Find by aria-label or title
+    const labelSelectors = [
       "button[aria-label*='Pass']",
       "button[aria-label*='Nope']",
-      "button[data-testid='dislike']",
-      "button[data-testid='gamepad-dislike']",
-      "button[data-testid='gamepad-dislike-button']",
+      "button[aria-label*='pass']",
+      "button[aria-label*='nope']",
+      "button[aria-label*='Dislike']",
+      "button[aria-label*='dislike']",
       "button[title*='Pass']",
       "button[title*='Nope']",
-      ".recsCardboard__cardsContainer button:first-child",
-      "[data-testid='gamepad-dislike']",
-      ".gamepad button:first-child",
-      ".Pos\\(a\\).B\\(0\\) button:first-child"
+      "button[title*='pass']",
+      "button[title*='nope']",
+      "button[title*='Dislike']",
+      "button[title*='dislike']"
     ];
     
-    // First try gamepad container
-    const gamepadContainers = [
-      document.querySelector('[data-testid="gamepad"]'),
-      document.querySelector('.gamepad'),
-      document.querySelector('.Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\)')
-    ].filter(Boolean);
-    
-    if (gamepadContainers.length > 0) {
-      for (const container of gamepadContainers) {
-        const buttons = container.querySelectorAll('button');
-        if (buttons.length >= 1) {
-          const firstButton = buttons[0]; // Dislike is usually first
-          if (firstButton && firstButton.offsetParent !== null) {
-            logger(`✅ Found dislike button in gamepad container`);
-            return firstButton;
-          }
-        }
-      }
-    }
-    
-    // Fallback to direct selectors
-    for (const selector of selectors) {
+    for (const selector of labelSelectors) {
       const button = document.querySelector(selector);
-      if (button && button.offsetParent !== null) {
+      if (button && button.offsetParent !== null && !button.disabled) {
         logger(`✅ Found dislike button with selector: ${selector}`);
         return button;
       }
     }
     
+    // Strategy 2: Find by data-testid
+    const testIdSelectors = [
+      "button[data-testid='dislike']",
+      "button[data-testid='gamepad-dislike']",
+      "button[data-testid='gamepad-dislike-button']",
+      "button[data-testid='game-stamp-dislike']",
+      "[data-testid='gamepad-dislike']",
+      "[data-testid='dislike']"
+    ];
+    
+    for (const selector of testIdSelectors) {
+      const button = document.querySelector(selector);
+      if (button && button.offsetParent !== null && !button.disabled) {
+        const actualButton = button.tagName === 'BUTTON' ? button : button.closest('button');
+        if (actualButton) {
+          logger(`✅ Found dislike button with data-testid: ${selector}`);
+          return actualButton;
+        }
+      }
+    }
+    
+    // Strategy 3: Find by position in gamepad (dislike is usually the first button)
+    const gamepadSelectors = [
+      '[data-testid="gamepad"]',
+      '.gamepad',
+      '.Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\)',
+      '.recsGamepad',
+      '[class*="gamepad"]'
+    ];
+    
+    for (const selector of gamepadSelectors) {
+      const gamepad = document.querySelector(selector);
+      if (gamepad) {
+        // Find all buttons in the gamepad
+        const buttons = gamepad.querySelectorAll('button');
+        if (buttons.length >= 2) {
+          // In Tinder, the order is usually: Dislike (1st), Super Like (2nd), Like (3rd)
+          const firstButton = buttons[0];
+          
+          // Verify it's not a Super Like or Like button
+          if (firstButton && firstButton.offsetParent !== null && !firstButton.disabled) {
+            const ariaLabel = (firstButton.getAttribute('aria-label') || '').toLowerCase();
+            const title = (firstButton.getAttribute('title') || '').toLowerCase();
+            const testId = (firstButton.getAttribute('data-testid') || '').toLowerCase();
+            
+            // Make sure it's not Like or Super Like
+            if (!ariaLabel.includes('like') && !title.includes('like') && !testId.includes('like') &&
+                !ariaLabel.includes('super') && !title.includes('super') && !testId.includes('super') &&
+                !ariaLabel.includes('boost') && !title.includes('boost') && !testId.includes('boost')) {
+              logger(`✅ Found dislike button as first button in gamepad: ${selector}`);
+              return firstButton;
+            } else if (ariaLabel.includes('nope') || ariaLabel.includes('pass') || 
+                       title.includes('nope') || title.includes('pass')) {
+              logger(`✅ Found dislike button by content in gamepad: ${selector}`);
+              return firstButton;
+            }
+          }
+        }
+      }
+    }
+    
+    // Strategy 4: Find by SVG content (X icon)
+    try {
+      const buttons = document.querySelectorAll('button');
+      for (const button of buttons) {
+        if (button.offsetParent !== null && !button.disabled) {
+          const svg = button.querySelector('svg');
+          if (svg) {
+            // Check SVG paths for X-like shapes
+            const paths = svg.querySelectorAll('path');
+            for (const path of paths) {
+              const d = path.getAttribute('d');
+              // Look for X-shaped paths (common for dislike)
+              if (d && (d.includes('M14.926') || d.includes('M8.5 8.5') || d.includes('close'))) {
+                logger(`✅ Found dislike button by SVG X icon`);
+                return button;
+              }
+            }
+            
+            // Check fill color - dislike button often has red/pink colors
+            const fill = svg.getAttribute('fill') || '';
+            const style = window.getComputedStyle(svg);
+            const color = style.fill || style.color || '';
+            
+            if (fill.includes('#ff4458') || color.includes('rgb(255, 68, 88)')) {
+              logger(`✅ Found dislike button by red/pink SVG color`);
+              return button;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger(`⚠️ Error searching for dislike button by SVG: ${e.message}`);
+    }
+    
+    // Strategy 5: Find by computed styles and position
+    try {
+      // Get all buttons at the bottom of the screen
+      const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
+        if (!btn.offsetParent || btn.disabled) return false;
+        const rect = btn.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        // Button should be in the bottom 25% of the screen
+        return rect.top > viewportHeight * 0.75;
+      });
+      
+      // Sort buttons by horizontal position (left to right)
+      buttons.sort((a, b) => {
+        const aRect = a.getBoundingClientRect();
+        const bRect = b.getBoundingClientRect();
+        return aRect.left - bRect.left;
+      });
+      
+      // Dislike button is typically the leftmost action button
+      if (buttons.length >= 2) {
+        const firstButton = buttons[0];
+        // Verify it's not a navigation button
+        const ariaLabel = (firstButton.getAttribute('aria-label') || '').toLowerCase();
+        const hasText = firstButton.textContent.trim().length > 0;
+        
+        if (!hasText || ariaLabel.includes('pass') || ariaLabel.includes('nope') || 
+            ariaLabel.includes('dislike') || !ariaLabel.includes('profile')) {
+          logger(`✅ Found dislike button by position (leftmost bottom button)`);
+          return firstButton;
+        }
+      }
+    } catch (e) {
+      logger(`⚠️ Error finding dislike button by position: ${e.message}`);
+    }
+    
+    logger('❌ No dislike button found with any strategy');
     return null;
   };
 

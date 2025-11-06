@@ -85,34 +85,192 @@ class ProfileAnalyzer {
   }
 
   // Open the profile modal by clicking on the card
-  openProfile() {
+  async openProfile() {
     try {
-      logger('🔍 Opening profile by clicking card...');
+      logger('🔍 Opening profile modal...');
       
-      // Find the profile card image or container to click
-      const cardSelectors = [
-        '.keen-slider__slide:not(.keen-slider__slide--clone) img',
-        '[data-testid="card-stack"] img',
-        '.Expand img',
+      // Strategy 1: Find and click the actual info button on the card
+      logger('🔍 Looking for info button on card...');
+      
+      // The info button is usually at the bottom of the current card
+      const infoButtonSelectors = [
+        // Most specific: button at bottom of card
+        '.recsCardboard__cards button.Pos\\(a\\)',
+        '.recsCardboard__cards .Pos\\(a\\) button',
+        // Button with specific positioning  
+        'button.Pos\\(a\\).B\\(0\\)',
+        'button.Pos\\(a\\).B\\(4px\\)',
+        'button.Pos\\(a\\).Start\\(50%\\)',
+        // Generic positioned button
+        '.Expand button.Pos\\(a\\)',
+        '.StretchedBox button.Pos\\(a\\)',
+        // Button with focus styles
+        'button.focus-button-style',
+        // Any button at the bottom of the visible card
+        '.keen-slider__slide--active button',
+        '.keen-slider__slide:first-child button',
+        // Last resort: any small button on the card
+        '.recsCardboard button[type="button"]'
+      ];
+      
+      for (const selector of infoButtonSelectors) {
+        try {
+          const buttons = document.querySelectorAll(selector);
+          logger(`  Checking ${selector}: ${buttons.length} buttons found`);
+          
+          for (const button of buttons) {
+            if (button && button.offsetParent !== null && !button.disabled) {
+              // Check if button is at the bottom of screen (info buttons are usually there)
+              const rect = button.getBoundingClientRect();
+              const isAtBottom = rect.top > window.innerHeight * 0.6;
+              
+              // Check if button is small (info buttons are usually small)
+              const isSmallButton = rect.width < 100 && rect.height < 100;
+              
+              if (isAtBottom || isSmallButton) {
+                logger(`✅ Clicking potential info button: ${selector}`);
+                logger(`  Position: ${rect.left},${rect.top} Size: ${rect.width}x${rect.height}`);
+                button.click();
+                
+                // Wait and check if modal opened
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (this.isProfileModalOpen()) {
+                  logger('✅ Successfully opened profile!');
+                  return true;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Continue to next selector
+        }
+      }
+      
+      // Strategy 2: Try UP arrow key as fallback
+      logger('⌨️ Trying UP arrow key as fallback...');
+      const upArrowEvent = new KeyboardEvent('keydown', {
+        key: 'ArrowUp',
+        code: 'ArrowUp',
+        keyCode: 38,
+        which: 38,
+        bubbles: true,
+        cancelable: true
+      });
+      
+      document.dispatchEvent(upArrowEvent);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (this.isProfileModalOpen()) {
+        logger('✅ Opened profile with UP arrow!');
+        return true;
+      }
+      
+      // Strategy 3: Click on the card image itself (sometimes works)
+      logger('👆 Trying to click on card image...');
+      const imageSelectors = [
+        '.keen-slider__slide--active img',
+        '.keen-slider__slide:first-child img',
         '.StretchedBox img',
+        '.Expand img'
+      ];
+      
+      for (const selector of imageSelectors) {
+        const img = document.querySelector(selector);
+        if (img && img.offsetParent !== null) {
+          const rect = img.getBoundingClientRect();
+          // Click bottom part of image (often triggers info)
+          const clickEvent = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: true,
+            clientX: rect.left + rect.width / 2,
+            clientY: rect.bottom - 50
+          });
+          
+          logger(`👆 Clicking bottom of image: ${selector}`);
+          img.dispatchEvent(clickEvent);
+          
+          await new Promise(resolve => setTimeout(resolve, 500));
+          if (this.isProfileModalOpen()) {
+            logger('✅ Opened profile by clicking image!');
+            return true;
+          }
+        }
+      }
+      
+      // Strategy 4: Try Enter or Space key as fallback
+      logger('🔍 Trying Enter/Space keys...');
+      const keyEvents = [
+        new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }),
+        new KeyboardEvent('keydown', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true })
+      ];
+      
+      const keyTargets = [
+        document.activeElement,
+        document.querySelector('[data-keyboard-gamepad="true"]'),
+        document.querySelector('.recsCardboard__cardsContainer'),
+        document.querySelector('.keen-slider__slide:not(.keen-slider__slide--clone)'),
+        document.body
+      ].filter(Boolean);
+      
+      for (const event of keyEvents) {
+        for (const target of keyTargets) {
+          target.dispatchEvent(event);
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          if (this.isProfileModalOpen()) {
+            logger(`✅ Opened profile with ${event.key} key`);
+            return true;
+          }
+        }
+      }
+      
+      // Strategy 5: Click on specific areas of the card (fallback)
+      logger('🔍 Trying to click card center...');
+      const cardSelectors = [
         '.keen-slider__slide:not(.keen-slider__slide--clone)',
+        '[data-keyboard-gamepad="true"]',
+        '.recsCardboard__card',
         '[data-testid="card-stack"] > div > div',
-        '.Expand',
-        '.StretchedBox'
+        '.Expand.Animdur',
+        '.gamepad-card-stack__card'
       ];
       
       for (const selector of cardSelectors) {
         const cards = document.querySelectorAll(selector);
         for (const card of cards) {
           if (card && card.offsetParent !== null && card.offsetWidth > 0) {
-            logger(`✅ Found card with selector: ${selector}`);
-            card.click();
-            return true;
+            // Click in the center of the card
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            const clickEvent = new MouseEvent('click', {
+              view: window,
+              bubbles: true,
+              cancelable: true,
+              clientX: centerX,
+              clientY: centerY
+            });
+            
+            logger(`👆 Clicking center of card: ${selector}`);
+            card.dispatchEvent(clickEvent);
+            
+            // Wait and check if modal opened
+            await new Promise(resolve => setTimeout(resolve, 500));
+            if (this.isProfileModalOpen()) {
+              logger('✅ Opened profile by clicking card!');
+              return true;
+            }
           }
         }
       }
       
-      logger('❌ No clickable card found');
+      logger('❌ WARNING: Could not open profile with any method!');
+      logger('🔍 The extension may not be able to check bios.');
+      logger('💡 TIP: Try manually pressing UP arrow to see if profile opens.');
+      
+      // Return false - we couldn't open the profile
       return false;
     } catch (e) {
       logger(`💥 Error opening profile: ${e.message}`);
@@ -122,32 +280,109 @@ class ProfileAnalyzer {
 
   // Check if profile modal is open
   isProfileModalOpen() {
-    // Primary method: Check for profile-specific data-testid attributes
-    // These only appear when the profile modal is actually open
-    const profileElements = document.querySelectorAll('[data-testid*="profile"]');
-    if (profileElements.length > 0) {
-      logger(`✅ Profile modal detected via data-testid (${profileElements.length} elements)`);
+    // More specific check - profile modal should have BOTH scroll container AND specific profile elements
+    
+    // Look for the scrollable container
+    const scrollContainer = document.querySelector('.Ovs\\(touch\\)');
+    if (!scrollContainer || scrollContainer.offsetParent === null) {
+      return false;
+    }
+    
+    // But also verify it contains profile-specific content (not just any scrollable)
+    const hasProfileContent = 
+      scrollContainer.querySelector('section[aria-labelledby]') || // Profile sections
+      scrollContainer.querySelector('.Px\\(16px\\)--ml') || // Profile padding
+      scrollContainer.querySelector('h2') || // Section headers
+      scrollContainer.textContent?.includes('Essentials') || // Profile text
+      scrollContainer.textContent?.includes('Lifestyle');
+    
+    if (!hasProfileContent) {
+      return false;
+    }
+    
+    // Additional check: the container should be large (profile modal size)
+    const rect = scrollContainer.getBoundingClientRect();
+    const isLargeEnough = rect.width > 300 && rect.height > 400;
+    
+    if (isLargeEnough) {
+      logger(`✅ Profile modal detected (${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px)`);
       return true;
     }
-
-    // Secondary method: Look for profile content containers
-    const modalSelectors = [
+    
+    // Fallback: Look for specific profile modal classes
+    const profileContentSelectors = [
+      '.Expand.profileContent',
       '.profileContent',
-      '[class*="profileContent"]',
-      '[class*="ProfileContent"]',
-      '.Expand[class*="enterAnimation"]'
+      'div[class*="profileContent"]',
+      '.Pos\\(r\\)--ml.Z\\(1\\).Bgc\\(\\$c-ds-background-primary\\).Ov\\(h\\).Expand.profileContent'
     ];
 
-    for (const selector of modalSelectors) {
-      const modal = document.querySelector(selector);
-      if (modal && modal.offsetParent !== null) {
-        // Verify it has substantial content (likely a profile)
-        const textLength = modal.textContent?.length || 0;
-        if (textLength > 100) {
-          logger(`✅ Profile modal detected via ${selector} (${textLength} chars)`);
+    for (const selector of profileContentSelectors) {
+      try {
+        const elements = document.querySelectorAll(selector);
+        for (const element of elements) {
+          if (element && element.offsetParent !== null) {
+            // Check if this is actually a profile with substantial content
+            const hasText = element.textContent && element.textContent.length > 50;
+            const hasImages = element.querySelector('img') || element.querySelector('.keen-slider');
+            const hasSections = element.querySelector('section') || element.querySelector('ul');
+            
+            if (hasText || hasImages || hasSections) {
+              // Additional check: profile should be wider than a card
+              const rect = element.getBoundingClientRect();
+              if (rect.width > 400 || rect.height > 500) {
+                logger(`✅ Profile modal detected via ${selector} (${element.textContent?.length || 0} chars, ${rect.width}x${rect.height}px)`);
+                return true;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // Continue checking other selectors
+      }
+    }
+    
+    // Strategy 2: Check for profile-specific elements that only appear in expanded view
+    const profileOnlyElements = [
+      // Essentials section
+      'h2:has-text("Essentials")',
+      'h2:has-text("Basics")',
+      'h2:has-text("Lifestyle")',
+      // Profile sections
+      '[aria-labelledby*=":r"]',
+      // Bio header
+      '.Mb\\(16px\\).C\\(\\$c-ds-text-secondary\\)',
+      // Multiple photo indicators
+      '.keen-slider__slide:nth-child(3)',
+      // Back/close button specific to profile
+      'button[aria-label="Go back"]',
+      'button[aria-label="Close profile"]'
+    ];
+    
+    for (const selector of profileOnlyElements) {
+      try {
+        const element = document.querySelector(selector);
+        if (element && element.offsetParent !== null) {
+          logger(`✅ Profile modal detected via unique element: ${selector}`);
           return true;
         }
+      } catch (e) {
+        // Continue
       }
+    }
+    
+    // Strategy 3: Check if the view has changed (card stack hidden)
+    const cardStack = document.querySelector('.recsCardboard__cardsContainer');
+    const hasHiddenCards = cardStack && (cardStack.style.display === 'none' || cardStack.style.visibility === 'hidden');
+    if (hasHiddenCards) {
+      logger('✅ Profile modal detected (card stack hidden)');
+      return true;
+    }
+    
+    // Strategy 4: Check URL or history state
+    if (window.location.pathname.includes('/profile') || window.location.search.includes('profile=')) {
+      logger('✅ Profile modal detected via URL');
+      return true;
     }
 
     logger('❌ Profile modal NOT detected');
@@ -157,27 +392,68 @@ class ProfileAnalyzer {
   // Close the profile modal by clicking close button
   closeProfile() {
     try {
-      const closeSelectors = [
-        'button[aria-label*="Close"]',
-        'button[aria-label*="Back"]',
-        'button.Pos\\(a\\)',
-        '[data-testid="modal-close-button"]',
-        '.modal button:first-child',
-        'button[title*="Close"]',
-        'button[title*="Back"]'
+      // Strategy 1: Try DOWN arrow key (most reliable for closing profile)
+      logger('⌨️ Using DOWN arrow to close profile...');
+      const downArrowEvent = new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        code: 'ArrowDown',
+        keyCode: 40,
+        which: 40,
+        bubbles: true,
+        cancelable: true
+      });
+      
+      // Dispatch to multiple targets
+      const targets = [
+        document.activeElement,
+        document.querySelector('.Ovs\\(touch\\)'),
+        document.querySelector('.profileContent'),
+        document.body,
+        document
+      ].filter(Boolean);
+      
+      for (const target of targets) {
+        target.dispatchEvent(downArrowEvent);
+      }
+      
+      // Strategy 2: Click outside the modal to close it
+      const outsideClick = new MouseEvent('click', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        clientX: 10,  // Click far left
+        clientY: window.innerHeight / 2
+      });
+      
+      // Find backdrop or overlay to click
+      const overlaySelectors = [
+        '.Bdrs\\(8px\\)--ml',
+        '.Bgc\\(\\$c-ds-background-overlay\\)',
+        '[role="dialog"]',
+        '.modal-overlay'
       ];
       
-      for (const selector of closeSelectors) {
-        const closeBtn = document.querySelector(selector);
-        if (closeBtn && closeBtn.offsetParent !== null) {
-          logger('🚪 Closing profile by clicking close button');
-          closeBtn.click();
-          return true;
+      for (const selector of overlaySelectors) {
+        const overlay = document.querySelector(selector);
+        if (overlay) {
+          overlay.dispatchEvent(outsideClick);
+          break;
         }
       }
       
-      logger('⚠️ No close button found');
-      return false;
+      // Strategy 3: Try Escape as fallback
+      const escapeEvent = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        code: 'Escape',
+        keyCode: 27,
+        which: 27,
+        bubbles: true,
+        cancelable: true
+      });
+      document.dispatchEvent(escapeEvent);
+      
+      logger('🚪 Profile close command sent (DOWN arrow + Escape)');
+      return true;
     } catch (e) {
       logger(`❌ Error closing profile: ${e.message}`);
       return false;
@@ -215,68 +491,86 @@ class ProfileAnalyzer {
   }
 
   getBioText() {
-    // Try multiple selectors for bio content in the modal
-    const bioSelectors = [
-      '[data-testid="bio"]',
-      '[data-testid*="bio"]',
-      '.profileCard__bio',
-      '.bio',
-      '[aria-label*="bio"]',
-      '[aria-label*="Bio"]',
-      '.profileContent__bio',
-      '.profile-bio'
-    ];
-
-    // First, try to find the bio element directly
-    for (const selector of bioSelectors) {
-      const bioElement = document.querySelector(selector);
-      if (bioElement && bioElement.textContent) {
-        const bioText = bioElement.textContent.toLowerCase().trim();
-        logger(`📝 Found bio via ${selector} (${bioText.length} chars)`);
-        if (bioText.length > 0) {
-          return bioText;
-        }
-      }
+    // Look for bio in the scrollable profile content
+    const scrollContainer = document.querySelector('.Ovs\\(touch\\)');
+    if (!scrollContainer) {
+      logger('📝 No scroll container found');
+      return '';
     }
-
-    // Fallback 1: Look for profile-specific content containers
+    
+    // Bio is usually in a specific section BEFORE "Essentials"
+    // Find all text elements within the scroll container
+    const textElements = scrollContainer.querySelectorAll('.C\\(\\$c-ds-text-primary\\), .Typs\\(body-1-regular\\), .BreakWord');
+    
+    let bioText = '';
+    let foundBio = false;
+    
     try {
-      const profileContainers = document.querySelectorAll('[data-testid*="profile"], .profileContent, [class*="ProfileContent"]');
-      for (const container of profileContainers) {
-        if (!container || !container.offsetParent) continue;
-        
-        // Clone and clean the container
-        const clone = container.cloneNode(true);
-        
-        // Remove unwanted elements
-        clone.querySelectorAll('button, nav, header, script, style, img, svg').forEach(el => el.remove());
-        
-        const textContent = clone.textContent?.trim();
-        if (textContent && textContent.length > 10 && textContent.length < 2000) {
-          const bioText = textContent.toLowerCase();
-          logger(`📝 Extracted profile text from container (${bioText.length} chars)`);
-          return bioText;
+      for (const element of textElements) {
+        const text = element.textContent?.trim() || '';
+      
+      // Skip navigation and UI text
+      if (text.includes('Essentials') || 
+          text.includes('Lifestyle') || 
+          text.includes('Basics') ||
+          text.includes('Looking for') ||
+          text.includes('Languages') ||
+          text.includes('Verified') ||
+          text.includes('years') ||
+          text.length < 10) {
+        continue;
+      }
+      
+      // Bio is usually a longer text block
+      if (text.length > 30) {
+        // Check if this element is actually visible and not a duplicate
+        const rect = element.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          // Check if parent is not a section header
+          const parent = element.closest('section');
+          if (!parent || !parent.querySelector('h2')) {
+            bioText = text;
+            foundBio = true;
+            logger(`📝 Bio found: "${text.substring(0, 50)}..." (${text.length} chars)`);
+            break;
+          }
         }
       }
+      } // Close the for loop
     } catch (e) {
       logger(`⚠️ Bio extraction from profile container failed: ${e.message}`);
     }
 
-    // Fallback 2: Get all visible text content from the page and filter
-    try {
-      const bodyText = document.body.textContent?.toLowerCase() || '';
-      // Bio text is typically between 10 and 500 characters
-      // We'll return the full body text and let the filter check it
-      if (bodyText.length > 0) {
-        logger(`📝 Using full page text as fallback (${bodyText.length} chars)`);
-        return bodyText;
+    if (!foundBio) {
+      // Try more specific bio selectors within the scroll container
+      const bioSelectors = [
+        '.Px\\(16px\\)--ml.Pb\\(24px\\)--ml',
+        '.My\\(12px\\)',
+        '.BreakWord.Ws\\(nw\\)',
+        '.C\\(\\$c-ds-text-primary\\).Whs\\(pl\\)'
+      ];
+      
+      for (const selector of bioSelectors) {
+        const bioElement = scrollContainer.querySelector(selector);
+        if (bioElement && bioElement.textContent) {
+          const text = bioElement.textContent.trim();
+          if (text.length > 20 && 
+              !text.includes('Essentials') && 
+              !text.includes('Looking for')) {
+            bioText = text;
+            foundBio = true;
+            logger(`📝 Bio found with selector ${selector}: "${text.substring(0, 50)}..." (${text.length} chars)`);
+            break;
+          }
+        }
       }
-    } catch (e) {
-      logger(`⚠️ Fallback bio extraction failed: ${e.message}`);
     }
-
-    logger('⚠️ No bio text found');
-    return '';
+    
+    if (!bioText) {
+      logger('📝 No bio text found in profile - user may not have a bio');
+    }
+    
+    return bioText;
   }
 
   getGenderIdentity() {
@@ -431,7 +725,7 @@ class ProfileAnalyzer {
       }
       
       // Open the profile
-      const opened = this.openProfile();
+      const opened = await this.openProfile();
       logger(`🔓 Profile open attempt: ${opened}`);
       
       if (!opened) {
