@@ -84,12 +84,12 @@ class ProfileAnalyzer {
     }
   }
 
-  // Open the profile modal/info panel
+  // Open the profile modal by clicking on the card
   openProfile() {
     try {
-      logger('🔍 Attempting to open profile by clicking on card...');
+      logger('🔍 Opening profile by clicking card...');
       
-      // Procurar pela imagem/card do perfil e CLICAR nela
+      // Find the profile card image or container to click
       const cardSelectors = [
         '.keen-slider__slide:not(.keen-slider__slide--clone) img',
         '[data-testid="card-stack"] img',
@@ -102,22 +102,20 @@ class ProfileAnalyzer {
       ];
       
       for (const selector of cardSelectors) {
-        const elements = document.querySelectorAll(selector);
-        for (const element of elements) {
-          // Verificar se está visível
-          if (element && element.offsetParent !== null && element.offsetWidth > 0 && element.offsetHeight > 0) {
-            logger(`✅ Clicking on: ${selector}`);
-            element.click();
+        const cards = document.querySelectorAll(selector);
+        for (const card of cards) {
+          if (card && card.offsetParent !== null && card.offsetWidth > 0) {
+            logger(`✅ Found card with selector: ${selector}`);
+            card.click();
             return true;
           }
         }
       }
       
-      logger('❌ Could not find visible card to click');
+      logger('❌ No clickable card found');
       return false;
-      
     } catch (e) {
-      logger(`❌ Error opening profile: ${e.message}`);
+      logger(`💥 Error opening profile: ${e.message}`);
       return false;
     }
   }
@@ -156,35 +154,50 @@ class ProfileAnalyzer {
     return false;
   }
 
-  // Close the profile modal
+  // Close the profile modal by clicking close button
   closeProfile() {
     try {
       const closeSelectors = [
-        'button[aria-label="Close"]',
-        'button[aria-label*="back"]',
+        'button[aria-label*="Close"]',
         'button[aria-label*="Back"]',
+        'button.Pos\\(a\\)',
         '[data-testid="modal-close-button"]',
         '.modal button:first-child',
         'button[title*="Close"]',
         'button[title*="Back"]'
       ];
-
+      
       for (const selector of closeSelectors) {
         const closeBtn = document.querySelector(selector);
         if (closeBtn && closeBtn.offsetParent !== null) {
+          logger('🚪 Closing profile by clicking close button');
           closeBtn.click();
-          console.log(`✅ Closed profile modal with: ${selector}`);
           return true;
         }
       }
-
-      // Fallback: press Escape key
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27 }));
-      return true;
+      
+      logger('⚠️ No close button found');
+      return false;
     } catch (e) {
-      console.error('Error closing profile:', e);
+      logger(`❌ Error closing profile: ${e.message}`);
       return false;
     }
+  }
+
+  // Wait for modal to actually close
+  async waitForModalClose(timeout = 2000) {
+    const startTime = Date.now();
+    
+    while (Date.now() - startTime < timeout) {
+      if (!this.isProfileModalOpen()) {
+        logger('✅ Modal confirmed closed');
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    logger('⚠️ Modal may still be open after timeout');
+    return false;
   }
 
   // Wait for profile modal to open and load
@@ -408,6 +421,15 @@ class ProfileAnalyzer {
       logger('🚀 === STARTING BIO CHECK ===');
       logger(`📋 Filters enabled: Bio=${this.isBioFilterEnabled()}, Gender=${this.isGenderFilterEnabled()}, Advanced=${this.isAdvancedFilterEnabled()}`);
       
+      // IMPORTANT: Check if modal is already open from previous cycle
+      if (this.isProfileModalOpen()) {
+        logger('⚠️ Modal already open from previous cycle - closing it first');
+        this.closeProfile();
+        await this.waitForModalClose(1500);
+        // Wait a bit more before opening new one
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
       // Open the profile
       const opened = this.openProfile();
       logger(`🔓 Profile open attempt: ${opened}`);
@@ -419,12 +441,13 @@ class ProfileAnalyzer {
 
       // Wait for modal to open
       logger('⏳ Waiting for modal to load...');
-      const modalOpened = await this.waitForProfileModal(3000); // Aumentar timeout
+      const modalOpened = await this.waitForProfileModal(3000);
       logger(`📂 Modal opened: ${modalOpened}`);
       
       if (!modalOpened) {
         logger('❌ Modal did NOT open after 3s, ALLOWING profile');
-        this.closeProfile(); // Tentar fechar qualquer coisa que tenha aberto
+        this.closeProfile(); // Try to close anything that might have opened
+        await this.waitForModalClose(1000);
         return false;
       }
 
@@ -433,13 +456,16 @@ class ProfileAnalyzer {
       const shouldSkip = await this.shouldSkipProfile();
       logger(`🎯 Final decision: ${shouldSkip ? 'BLOCK ❌' : 'ALLOW ✅'}`);
 
-      // Close the profile modal
+      // Close the profile modal and WAIT for it to actually close
       logger('🚪 Closing modal...');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
       this.closeProfile();
       
-      // Wait for modal to close
-      await new Promise(resolve => setTimeout(resolve, 400));
+      // CRITICAL: Wait and verify modal actually closed
+      await this.waitForModalClose(2000);
+      
+      // Extra safety wait
+      await new Promise(resolve => setTimeout(resolve, 300));
       logger('🏁 === BIO CHECK COMPLETE ===');
 
       return shouldSkip;
@@ -449,6 +475,7 @@ class ProfileAnalyzer {
       // If there's an error, close modal and don't skip
       try {
         this.closeProfile();
+        await this.waitForModalClose(1000);
       } catch (closeError) {
         // Ignore close errors
       }

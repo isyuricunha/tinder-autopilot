@@ -14,6 +14,7 @@ class Swiper {
     this.superLiker = new SuperLiker();
   }
 
+
   start = () => {
     logger('Starting to swipe using a randomized interval');
     this.isRunning = true;
@@ -192,41 +193,94 @@ class Swiper {
   };
 
   pressLike = async () => {
-    const likeButton = this.hasLike();
-    if (!likeButton && !this.canSwipe()) {
+    // Check if we can swipe (has profile available)
+    if (!this.canSwipe()) {
       return false;
     }
 
     // Check if profile should be skipped based on bio (opens modal, checks, closes)
     const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
+    
     if (shouldSkip) {
-      // Skip this profile by pressing dislike instead
+      // Profile blocked - click dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         dislikeButton.click();
-        logger('⏭️ Skipped profile due to filter match');
+        logger('⏭️ ❌ Skipped profile (filter match)');
         return true;
+      } else {
+        // If we can't find dislike button, like it anyway to move forward
+        // This prevents getting stuck
+        logger('⚠️ No dislike button found, liking to continue...');
+        const likeButton = this.hasLike();
+        if (likeButton) {
+          likeButton.click();
+          logger('🔄 Liked blocked profile to avoid getting stuck');
+          return true;
+        }
+        return false;
       }
     }
 
-    likeButton.click();
-    document.getElementById('likeCount').innerHTML =
-      parseInt(document.getElementById('likeCount').innerHTML, 10) + 1;
-    return true;
+    // Profile passed all filters - click like button
+    const likeButton = this.hasLike();
+    if (likeButton) {
+      likeButton.click();
+      logger('✅ ❤️ Liked profile');
+      
+      // Update like counter
+      const likeCountEl = document.getElementById('likeCount');
+      if (likeCountEl) {
+        likeCountEl.innerHTML = parseInt(likeCountEl.innerHTML, 10) + 1;
+      }
+      
+      return true;
+    } else {
+      logger('⚠️ No like button found');
+      return false;
+    }
   };
 
   hasDislike = () => {
     const selectors = [
       "button[aria-label*='Pass']",
+      "button[aria-label*='Nope']",
       "button[data-testid='dislike']",
+      "button[data-testid='gamepad-dislike']",
+      "button[data-testid='gamepad-dislike-button']",
       "button[title*='Pass']",
+      "button[title*='Nope']",
       ".recsCardboard__cardsContainer button:first-child",
-      "[data-testid='gamepad-dislike']"
+      "[data-testid='gamepad-dislike']",
+      ".gamepad button:first-child",
+      ".Pos\\(a\\).B\\(0\\) button:first-child"
     ];
     
+    // First try gamepad container
+    const gamepadContainers = [
+      document.querySelector('[data-testid="gamepad"]'),
+      document.querySelector('.gamepad'),
+      document.querySelector('.Pos\\(a\\).B\\(0\\).Start\\(0\\).End\\(0\\)')
+    ].filter(Boolean);
+    
+    if (gamepadContainers.length > 0) {
+      for (const container of gamepadContainers) {
+        const buttons = container.querySelectorAll('button');
+        if (buttons.length >= 1) {
+          const firstButton = buttons[0]; // Dislike is usually first
+          if (firstButton && firstButton.offsetParent !== null) {
+            logger(`✅ Found dislike button in gamepad container`);
+            return firstButton;
+          }
+        }
+      }
+    }
+    
+    // Fallback to direct selectors
     for (const selector of selectors) {
       const button = document.querySelector(selector);
       if (button && button.offsetParent !== null) {
+        logger(`✅ Found dislike button with selector: ${selector}`);
         return button;
       }
     }
