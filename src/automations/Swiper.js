@@ -48,24 +48,9 @@ class Swiper {
   pressKey = (key, keyCode) => {
     try {
       const events = [
-        new KeyboardEvent('keydown', {
-          key: key,
-          code: key,
-          keyCode: keyCode,
-          which: keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }),
-        new KeyboardEvent('keyup', {
-          key: key,
-          code: key,
-          keyCode: keyCode,
-          which: keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: window
-        })
+        new KeyboardEvent('keydown', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window }),
+        new KeyboardEvent('keypress', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window }),
+        new KeyboardEvent('keyup', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window })
       ];
       
       // Try dispatching on different elements
@@ -75,7 +60,8 @@ class Swiper {
         document.activeElement,
         document.querySelector('[data-testid="card-stack"]'),
         document.querySelector('.recsCardboard__cards'),
-        document.querySelector('.gamepad-card')
+        document.querySelector('.gamepad-card'),
+        window
       ].filter(Boolean);
       
       for (const target of targets) {
@@ -400,12 +386,22 @@ class Swiper {
       "button[aria-label*='nope']",
       "button[aria-label*='Dislike']",
       "button[aria-label*='dislike']",
+      "button[aria-label*='Não' i]",
+      "button[aria-label*='Nao' i]",
+      "button[aria-label*='Recusar' i]",
+      "button[aria-label*='Não curtir' i]",
+      "button[aria-label*='Nao curtir' i]",
       "button[title*='Pass']",
       "button[title*='Nope']",
       "button[title*='pass']",
       "button[title*='nope']",
       "button[title*='Dislike']",
-      "button[title*='dislike']"
+      "button[title*='dislike']",
+      "button[title*='Não' i]",
+      "button[title*='Nao' i]",
+      "button[title*='Recusar' i]",
+      "button[title*='Não curtir' i]",
+      "button[title*='Nao curtir' i]"
     ];
     
     for (const selector of labelSelectors) {
@@ -423,7 +419,9 @@ class Swiper {
       "button[data-testid='gamepad-dislike-button']",
       "button[data-testid='game-stamp-dislike']",
       "[data-testid='gamepad-dislike']",
-      "[data-testid='dislike']"
+      "[data-testid='dislike']",
+      "[data-testid*='pass' i]",
+      "button[data-testid*='pass' i]"
     ];
     
     for (const selector of testIdSelectors) {
@@ -537,7 +535,7 @@ class Swiper {
         const hasText = firstButton.textContent.trim().length > 0;
         
         if (!hasText || ariaLabel.includes('pass') || ariaLabel.includes('nope') || 
-            ariaLabel.includes('dislike') || !ariaLabel.includes('profile')) {
+            ariaLabel.includes('dislike') || ariaLabel.includes('não') || ariaLabel.includes('nao') || !ariaLabel.includes('profile')) {
           logger(`✅ Found dislike button by position (leftmost bottom button)`);
           return firstButton;
         }
@@ -546,6 +544,24 @@ class Swiper {
       logger(`⚠️ Error finding dislike button by position: ${e.message}`);
     }
     
+    // Strategy 6: Generic back/close buttons sometimes act as pass in expanded views
+    try {
+      const candidates = Array.from(document.querySelectorAll('button, [role="button"]'));
+      for (const btn of candidates) {
+        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+        const title = (btn.getAttribute('title') || '').toLowerCase();
+        const dtid = (btn.getAttribute('data-testid') || '').toLowerCase();
+        const txt = (btn.textContent || '').toLowerCase();
+        const content = `${aria} ${title} ${dtid} ${txt}`;
+        if (content.includes('pass') || content.includes('nope') || content.includes('dislike') || content.includes('não') || content.includes('nao')) {
+          logger('✅ Found fallback dislike candidate by textual content');
+          return btn.closest('button') || btn;
+        }
+      }
+    } catch (e) {
+      logger(`⚠️ Error searching generic buttons for dislike: ${e.message}`);
+    }
+
     logger('❌ No dislike button found with any strategy');
     return null;
   };

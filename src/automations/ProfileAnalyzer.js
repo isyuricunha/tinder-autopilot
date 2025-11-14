@@ -148,16 +148,23 @@ class ProfileAnalyzer {
       
       // Strategy 2: Try UP arrow key as fallback
       logger('⌨️ Trying UP arrow key as fallback...');
-      const upArrowEvent = new KeyboardEvent('keydown', {
-        key: 'ArrowUp',
-        code: 'ArrowUp',
-        keyCode: 38,
-        which: 38,
-        bubbles: true,
-        cancelable: true
-      });
-      
-      document.dispatchEvent(upArrowEvent);
+      const upEvents = [
+        new KeyboardEvent('keydown', { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38, which: 38, bubbles: true, cancelable: true }),
+        new KeyboardEvent('keyup', { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38, which: 38, bubbles: true, cancelable: true })
+      ];
+      const upTargets = [
+        document.activeElement,
+        document.querySelector('[data-keyboard-gamepad="true"]'),
+        document.querySelector('.recsCardboard__cardsContainer'),
+        document.querySelector('[data-testid="card-stack"]'),
+        document.body,
+        document
+      ].filter(Boolean);
+      for (const ev of upEvents) {
+        for (const tgt of upTargets) {
+          tgt.dispatchEvent(ev);
+        }
+      }
       await new Promise(resolve => setTimeout(resolve, 500));
       
       if (this.isProfileModalOpen()) {
@@ -202,7 +209,9 @@ class ProfileAnalyzer {
       logger('🔍 Trying Enter/Space keys...');
       const keyEvents = [
         new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }),
-        new KeyboardEvent('keydown', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true })
+        new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }),
+        new KeyboardEvent('keydown', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true }),
+        new KeyboardEvent('keyup', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true })
       ];
       
       const keyTargets = [
@@ -210,7 +219,9 @@ class ProfileAnalyzer {
         document.querySelector('[data-keyboard-gamepad="true"]'),
         document.querySelector('.recsCardboard__cardsContainer'),
         document.querySelector('.keen-slider__slide:not(.keen-slider__slide--clone)'),
-        document.body
+        document.querySelector('[data-testid="card-stack"]'),
+        document.body,
+        document
       ].filter(Boolean);
       
       for (const event of keyEvents) {
@@ -255,6 +266,8 @@ class ProfileAnalyzer {
             
             logger(`👆 Clicking center of card: ${selector}`);
             card.dispatchEvent(clickEvent);
+            const dblClick = new MouseEvent('dblclick', { view: window, bubbles: true, cancelable: true, clientX: centerX, clientY: centerY });
+            card.dispatchEvent(dblClick);
             
             // Wait and check if modal opened
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -290,11 +303,11 @@ class ProfileAnalyzer {
     
     // But also verify it contains profile-specific content (not just any scrollable)
     const hasProfileContent = 
-      scrollContainer.querySelector('section[aria-labelledby]') || // Profile sections
-      scrollContainer.querySelector('.Px\\(16px\\)--ml') || // Profile padding
-      scrollContainer.querySelector('h2') || // Section headers
-      scrollContainer.textContent?.includes('Essentials') || // Profile text
-      scrollContainer.textContent?.includes('Lifestyle');
+      scrollContainer.querySelector('section[aria-labelledby]') ||
+      scrollContainer.querySelector('.Px\\(16px\\)--ml') ||
+      scrollContainer.querySelector('h2') ||
+      scrollContainer.querySelector('img') ||
+      scrollContainer.querySelector('.keen-slider');
     
     if (!hasProfileContent) {
       return false;
@@ -344,19 +357,13 @@ class ProfileAnalyzer {
     
     // Strategy 2: Check for profile-specific elements that only appear in expanded view
     const profileOnlyElements = [
-      // Essentials section
-      'h2:has-text("Essentials")',
-      'h2:has-text("Basics")',
-      'h2:has-text("Lifestyle")',
-      // Profile sections
       '[aria-labelledby*=":r"]',
-      // Bio header
       '.Mb\\(16px\\).C\\(\\$c-ds-text-secondary\\)',
-      // Multiple photo indicators
       '.keen-slider__slide:nth-child(3)',
-      // Back/close button specific to profile
-      'button[aria-label="Go back"]',
-      'button[aria-label="Close profile"]'
+      'button[aria-label*="back" i]',
+      'button[aria-label*="close" i]',
+      'button[title*="voltar" i]',
+      'button[title*="fechar" i]'
     ];
     
     for (const selector of profileOnlyElements) {
@@ -394,14 +401,10 @@ class ProfileAnalyzer {
     try {
       // Strategy 1: Try DOWN arrow key (most reliable for closing profile)
       logger('⌨️ Using DOWN arrow to close profile...');
-      const downArrowEvent = new KeyboardEvent('keydown', {
-        key: 'ArrowDown',
-        code: 'ArrowDown',
-        keyCode: 40,
-        which: 40,
-        bubbles: true,
-        cancelable: true
-      });
+      const downEvents = [
+        new KeyboardEvent('keydown', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true, cancelable: true }),
+        new KeyboardEvent('keyup', { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40, which: 40, bubbles: true, cancelable: true })
+      ];
       
       // Dispatch to multiple targets
       const targets = [
@@ -412,8 +415,10 @@ class ProfileAnalyzer {
         document
       ].filter(Boolean);
       
-      for (const target of targets) {
-        target.dispatchEvent(downArrowEvent);
+      for (const ev of downEvents) {
+        for (const target of targets) {
+          target.dispatchEvent(ev);
+        }
       }
       
       // Strategy 2: Click outside the modal to close it
@@ -442,15 +447,24 @@ class ProfileAnalyzer {
       }
       
       // Strategy 3: Try Escape as fallback
-      const escapeEvent = new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        which: 27,
-        bubbles: true,
-        cancelable: true
-      });
-      document.dispatchEvent(escapeEvent);
+      const escapeEvents = [
+        new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }),
+        new KeyboardEvent('keyup', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true })
+      ];
+      for (const ev of escapeEvents) document.dispatchEvent(ev);
+
+      const closeCandidates = Array.from(document.querySelectorAll('button, [role="button"]'));
+      for (const btn of closeCandidates) {
+        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+        const title = (btn.getAttribute('title') || '').toLowerCase();
+        const dtid = (btn.getAttribute('data-testid') || '').toLowerCase();
+        const txt = (btn.textContent || '').toLowerCase();
+        const content = `${aria} ${title} ${dtid} ${txt}`;
+        if (content.includes('back') || content.includes('close') || content.includes('voltar') || content.includes('fechar')) {
+          btn.click();
+          break;
+        }
+      }
       
       logger('🚪 Profile close command sent (DOWN arrow + Escape)');
       return true;
@@ -563,6 +577,24 @@ class ProfileAnalyzer {
             break;
           }
         }
+      }
+    }
+    
+    if (!bioText) {
+      try {
+        const candidates = Array.from(scrollContainer.querySelectorAll('p, div, span')).filter(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) return false;
+          if (el.closest('h1,h2,h3,header,nav,button')) return false;
+          const txt = (el.textContent || '').trim();
+          return txt.length > 30;
+        });
+        candidates.sort((a, b) => (b.textContent || '').length - (a.textContent || '').length);
+        if (candidates[0]) {
+          bioText = (candidates[0].textContent || '').trim();
+        }
+      } catch (e) {
+        // ignore
       }
     }
     
