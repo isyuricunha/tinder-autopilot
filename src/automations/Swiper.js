@@ -356,6 +356,11 @@ class Swiper {
       return false;
     }
 
+    // Profile passed all filters - try Super Like first (safely) then Like
+    if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
+      return true;
+    }
+
     // Profile passed all filters - click like button
     const likeButton = this.hasLike();
     if (likeButton) {
@@ -635,13 +640,6 @@ class Swiper {
     // Keep Swiping
     if (this.matchFound()) {
       setTimeout(this.run, generateRandomNumber(500, 900));
-      return;
-    }
-
-    // Try Super Like first if enabled and conditions are met
-    if (this.superLiker.pressSuperLike()) {
-      const interval = this.getLikeInterval();
-      setTimeout(this.run, interval);
       return;
     }
 

@@ -91,6 +91,31 @@ class ProfileAnalyzer {
       
       // Strategy 1: Find and click the actual info button on the card
       logger('🔍 Looking for info button on card...');
+      const getActiveCard = () => {
+        const cands = Array.from(document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)'));
+        const visible = cands.filter(el => {
+          if (!el || el.offsetParent === null) return false;
+          const r = el.getBoundingClientRect();
+          return r.width > 100 && r.height > 100;
+        });
+        if (visible.length === 0) return null;
+        let best = visible[0];
+        let maxArea = 0;
+        for (const el of visible) {
+          const r = el.getBoundingClientRect();
+          const area = r.width * r.height;
+          if (area > maxArea) { maxArea = area; best = el; }
+        }
+        return best;
+      };
+      const activeCard = getActiveCard();
+      const isSafeButton = (btn) => {
+        if (!btn) return false;
+        const s = `${btn.getAttribute('aria-label') || ''} ${btn.getAttribute('title') || ''} ${btn.getAttribute('data-testid') || ''} ${btn.textContent || ''}`.toLowerCase();
+        const forbidden = ['super', 'star', 'boost', 'report', 'denunciar', 'bloquear', 'block', 'menu', 'share', 'compartilhar', 'gostar', 'like', 'desfazer', 'undo', 'pass', 'nope', 'não', 'nao', 'recusar'];
+        if (forbidden.some(w => s.includes(w))) return false;
+        return true;
+      };
       
       // The info button is usually at the bottom of the current card
       const infoButtonSelectors = [
@@ -104,22 +129,20 @@ class ProfileAnalyzer {
         // Generic positioned button
         '.Expand button.Pos\\(a\\)',
         '.StretchedBox button.Pos\\(a\\)',
-        // Button with focus styles
-        'button.focus-button-style',
         // Any button at the bottom of the visible card
         '.keen-slider__slide--active button',
-        '.keen-slider__slide:first-child button',
-        // Last resort: any small button on the card
-        '.recsCardboard button[type="button"]'
+        '.keen-slider__slide:first-child button'
       ];
       
+      let clicks = 0; let limitReached = false; const maxClicks = 1;
       for (const selector of infoButtonSelectors) {
         try {
-          const buttons = document.querySelectorAll(selector);
+          const scope = activeCard || document;
+          const buttons = scope.querySelectorAll(selector);
           logger(`  Checking ${selector}: ${buttons.length} buttons found`);
           
           for (const button of buttons) {
-            if (button && button.offsetParent !== null && !button.disabled) {
+            if (button && button.offsetParent !== null && !button.disabled && isSafeButton(button)) {
               // Check if button is at the bottom of screen (info buttons are usually there)
               const rect = button.getBoundingClientRect();
               const isAtBottom = rect.top > window.innerHeight * 0.6;
@@ -138,9 +161,12 @@ class ProfileAnalyzer {
                   logger('✅ Successfully opened profile!');
                   return true;
                 }
+                clicks += 1;
+                if (clicks >= maxClicks) { limitReached = true; break; }
               }
             }
           }
+          if (limitReached) break;
         } catch (e) {
           // Continue to next selector
         }
@@ -157,8 +183,7 @@ class ProfileAnalyzer {
         document.querySelector('[data-keyboard-gamepad="true"]'),
         document.querySelector('.recsCardboard__cardsContainer'),
         document.querySelector('[data-testid="card-stack"]'),
-        document.body,
-        document
+        activeCard
       ].filter(Boolean);
       for (const ev of upEvents) {
         for (const tgt of upTargets) {
@@ -172,110 +197,24 @@ class ProfileAnalyzer {
         return true;
       }
       
-      // Strategy 3: Click on the card image itself (sometimes works)
-      logger('👆 Trying to click on card image...');
-      const imageSelectors = [
-        '.keen-slider__slide--active img',
-        '.keen-slider__slide:first-child img',
-        '.StretchedBox img',
-        '.Expand img'
-      ];
-      
-      for (const selector of imageSelectors) {
-        const img = document.querySelector(selector);
-        if (img && img.offsetParent !== null) {
-          const rect = img.getBoundingClientRect();
-          // Click bottom part of image (often triggers info)
-          const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: true,
-            clientX: rect.left + rect.width / 2,
-            clientY: rect.bottom - 50
-          });
-          
-          logger(`👆 Clicking bottom of image: ${selector}`);
-          img.dispatchEvent(clickEvent);
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-          if (this.isProfileModalOpen()) {
-            logger('✅ Opened profile by clicking image!');
-            return true;
-          }
-        }
-      }
-      
-      // Strategy 4: Try Enter or Space key as fallback
-      logger('🔍 Trying Enter/Space keys...');
-      const keyEvents = [
-        new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }),
-        new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }),
-        new KeyboardEvent('keydown', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true }),
-        new KeyboardEvent('keyup', { key: ' ', code: 'Space', keyCode: 32, which: 32, bubbles: true })
-      ];
-      
-      const keyTargets = [
-        document.activeElement,
-        document.querySelector('[data-keyboard-gamepad="true"]'),
-        document.querySelector('.recsCardboard__cardsContainer'),
-        document.querySelector('.keen-slider__slide:not(.keen-slider__slide--clone)'),
-        document.querySelector('[data-testid="card-stack"]'),
-        document.body,
-        document
-      ].filter(Boolean);
-      
-      for (const event of keyEvents) {
-        for (const target of keyTargets) {
-          target.dispatchEvent(event);
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          if (this.isProfileModalOpen()) {
-            logger(`✅ Opened profile with ${event.key} key`);
-            return true;
-          }
-        }
-      }
+      // Strategy 3 and 4 removed to avoid triggering unrelated UI (image click, Enter/Space)
       
       // Strategy 5: Click on specific areas of the card (fallback)
       logger('🔍 Trying to click card center...');
-      const cardSelectors = [
-        '.keen-slider__slide:not(.keen-slider__slide--clone)',
-        '[data-keyboard-gamepad="true"]',
-        '.recsCardboard__card',
-        '[data-testid="card-stack"] > div > div',
-        '.Expand.Animdur',
-        '.gamepad-card-stack__card'
-      ];
-      
-      for (const selector of cardSelectors) {
-        const cards = document.querySelectorAll(selector);
-        for (const card of cards) {
-          if (card && card.offsetParent !== null && card.offsetWidth > 0) {
-            // Click in the center of the card
-            const rect = card.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            const clickEvent = new MouseEvent('click', {
-              view: window,
-              bubbles: true,
-              cancelable: true,
-              clientX: centerX,
-              clientY: centerY
-            });
-            
-            logger(`👆 Clicking center of card: ${selector}`);
-            card.dispatchEvent(clickEvent);
-            const dblClick = new MouseEvent('dblclick', { view: window, bubbles: true, cancelable: true, clientX: centerX, clientY: centerY });
-            card.dispatchEvent(dblClick);
-            
-            // Wait and check if modal opened
-            await new Promise(resolve => setTimeout(resolve, 500));
-            if (this.isProfileModalOpen()) {
-              logger('✅ Opened profile by clicking card!');
-              return true;
-            }
-          }
+      const card = activeCard;
+      if (card && card.offsetParent !== null && card.offsetWidth > 0) {
+        const rect = card.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const clickEvent = new MouseEvent('click', { view: window, bubbles: true, cancelable: true, clientX: centerX, clientY: centerY });
+        logger(`👆 Clicking center of card: .keen-slider__slide`);
+        card.dispatchEvent(clickEvent);
+        const dblClick = new MouseEvent('dblclick', { view: window, bubbles: true, cancelable: true, clientX: centerX, clientY: centerY });
+        card.dispatchEvent(dblClick);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (this.isProfileModalOpen()) {
+          logger('✅ Opened profile by clicking card!');
+          return true;
         }
       }
       
@@ -665,7 +604,7 @@ class ProfileAnalyzer {
   async shouldSkipProfile() {
     // Check bio filtering
     if (this.isBioFilterEnabled()) {
-      const bioText = this.getBioText();
+      const bioText = (this.getBioText() || '').toLowerCase();
       if (bioText) {
         // Refresh blacklist from storage
         this.bioBlacklist = this.loadBioBlacklist();
