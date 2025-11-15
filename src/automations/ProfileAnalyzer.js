@@ -183,7 +183,9 @@ class ProfileAnalyzer {
         document.querySelector('[data-keyboard-gamepad="true"]'),
         document.querySelector('.recsCardboard__cardsContainer'),
         document.querySelector('[data-testid="card-stack"]'),
-        activeCard
+        activeCard,
+        document.body,
+        document
       ].filter(Boolean);
       for (const ev of upEvents) {
         for (const tgt of upTargets) {
@@ -236,29 +238,25 @@ class ProfileAnalyzer {
     
     // Look for the scrollable container
     const scrollContainer = document.querySelector('.Ovs\\(touch\\)');
-    if (!scrollContainer || scrollContainer.offsetParent === null) {
-      return false;
-    }
-    
-    // But also verify it contains profile-specific content (not just any scrollable)
-    const hasProfileContent = 
-      scrollContainer.querySelector('section[aria-labelledby]') ||
-      scrollContainer.querySelector('.Px\\(16px\\)--ml') ||
-      scrollContainer.querySelector('h2') ||
-      scrollContainer.querySelector('img') ||
-      scrollContainer.querySelector('.keen-slider');
-    
-    if (!hasProfileContent) {
-      return false;
-    }
-    
-    // Additional check: the container should be large (profile modal size)
-    const rect = scrollContainer.getBoundingClientRect();
-    const isLargeEnough = rect.width > 300 && rect.height > 400;
-    
-    if (isLargeEnough) {
-      logger(`✅ Profile modal detected (${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px)`);
-      return true;
+    if (scrollContainer && scrollContainer.offsetParent !== null) {
+      // Verify it contains profile-specific content (not just any scrollable)
+      const hasProfileContent = 
+        scrollContainer.querySelector('section[aria-labelledby]') ||
+        scrollContainer.querySelector('.Px\\(16px\\)--ml') ||
+        scrollContainer.querySelector('h2') ||
+        scrollContainer.querySelector('img') ||
+        scrollContainer.querySelector('.keen-slider');
+      
+      if (hasProfileContent) {
+        // Additional check: the container should be large (profile modal size)
+        const rect = scrollContainer.getBoundingClientRect();
+        const isLargeEnough = rect.width > 300 && rect.height > 400;
+        
+        if (isLargeEnough) {
+          logger(`✅ Profile modal detected (${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px)`);
+          return true;
+        }
+      }
     }
     
     // Fallback: Look for specific profile modal classes
@@ -428,10 +426,10 @@ class ProfileAnalyzer {
     logger('⚠️ Modal may still be open after timeout');
     return false;
   }
-
   // Wait for profile modal to open and load
   async waitForProfileModal(maxWait = 2000) {
     const startTime = Date.now();
+    
     while (Date.now() - startTime < maxWait) {
       if (this.isProfileModalOpen()) {
         // Wait a bit more for content to load
@@ -440,20 +438,33 @@ class ProfileAnalyzer {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+    
+    return false;
+  }
+
+  async waitForBioContent(maxWait = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < maxWait) {
+      const text = (this.getBioText() || '').trim();
+      if (text && text.length >= 10) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
     return false;
   }
 
   getBioText() {
     // Look for bio in the scrollable profile content
     const scrollContainer = document.querySelector('.Ovs\\(touch\\)');
+    const scope = (scrollContainer && scrollContainer.offsetParent !== null) ? scrollContainer : document;
     if (!scrollContainer) {
-      logger('📝 No scroll container found');
-      return '';
+      logger('📝 No scroll container found, falling back to document scope');
     }
     
     // Bio is usually in a specific section BEFORE "Essentials"
     // Find all text elements within the scroll container
-    const textElements = scrollContainer.querySelectorAll('.C\\(\\$c-ds-text-primary\\), .Typs\\(body-1-regular\\), .BreakWord');
+    const textElements = scope.querySelectorAll('.C\\(\\$c-ds-text-primary\\), .Typs\\(body-1-regular\\), .BreakWord');
     
     let bioText = '';
     let foundBio = false;
@@ -470,6 +481,8 @@ class ProfileAnalyzer {
           text.includes('Languages') ||
           text.includes('Verified') ||
           text.includes('years') ||
+          text.toLowerCase().includes('last message') ||
+          text.toLowerCase().includes('mensagem') ||
           text.length < 10) {
         continue;
       }
@@ -504,7 +517,7 @@ class ProfileAnalyzer {
       ];
       
       for (const selector of bioSelectors) {
-        const bioElement = scrollContainer.querySelector(selector);
+        const bioElement = scope.querySelector(selector);
         if (bioElement && bioElement.textContent) {
           const text = bioElement.textContent.trim();
           if (text.length > 20 && 
@@ -521,7 +534,7 @@ class ProfileAnalyzer {
     
     if (!bioText) {
       try {
-        const candidates = Array.from(scrollContainer.querySelectorAll('p, div, span')).filter(el => {
+        const candidates = Array.from(scope.querySelectorAll('p, div, span')).filter(el => {
           const rect = el.getBoundingClientRect();
           if (rect.width === 0 || rect.height === 0) return false;
           if (el.closest('h1,h2,h3,header,nav,button')) return false;
@@ -700,24 +713,39 @@ class ProfileAnalyzer {
       logger(`🔓 Profile open attempt: ${opened}`);
       
       if (!opened) {
-        logger('❌ FAILED to open profile, ALLOWING by default (to be safe)');
+        const requireModal = this.isBioFilterEnabled() || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
+        if (requireModal) {
+          logger('❌ FAILED to open profile, SKIPPING due to filters enabled');
+          return true;
+        }
+        logger('❌ FAILED to open profile, ALLOWING by default (no filters)');
         return false;
       }
 
       // Wait for modal to open
       logger('⏳ Waiting for modal to load...');
-      const modalOpened = await this.waitForProfileModal(3000);
+      const modalOpened = await this.waitForProfileModal((this.isBioFilterEnabled() || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled()) ? 5000 : 3000);
       logger(`📂 Modal opened: ${modalOpened}`);
       
       if (!modalOpened) {
-        logger('❌ Modal did NOT open after 3s, ALLOWING profile');
-        this.closeProfile(); // Try to close anything that might have opened
+        const requireModal = this.isBioFilterEnabled() || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
+        if (requireModal) {
+          logger('❌ Modal did NOT open after timeout, SKIPPING due to filters enabled');
+          this.closeProfile();
+          await this.waitForModalClose(1000);
+          return true;
+        }
+        logger('❌ Modal did NOT open after timeout, ALLOWING profile (no filters)');
+        this.closeProfile();
         await this.waitForModalClose(1000);
         return false;
       }
 
       // Check if should skip
       logger('🔬 Analyzing bio content...');
+      if (this.isBioFilterEnabled()) {
+        await this.waitForBioContent(5000);
+      }
       const shouldSkip = await this.shouldSkipProfile();
       logger(`🎯 Final decision: ${shouldSkip ? 'BLOCK ❌' : 'ALLOW ✅'}`);
 

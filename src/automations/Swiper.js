@@ -8,6 +8,8 @@ class Swiper {
 
   isRunning = false;
 
+  profileFirstSeen = {};
+
   constructor() {
     this.interactions = new Interactions();
     this.profileAnalyzer = new ProfileAnalyzer();
@@ -56,11 +58,13 @@ class Swiper {
       // Try dispatching on different elements
       const targets = [
         document,
+        document.documentElement,
         document.body,
         document.activeElement,
         document.querySelector('[data-testid="card-stack"]'),
         document.querySelector('.recsCardboard__cards'),
         document.querySelector('.gamepad-card'),
+        document.querySelector('[role="application"]'),
         window
       ].filter(Boolean);
       
@@ -77,6 +81,69 @@ class Swiper {
     }
   };
 
+  // Simulate a real swipe-left drag gesture on the visible card
+  simulateSwipeLeft = async () => {
+    try {
+      const cardSelectors = [
+        '.keen-slider__slide:not(.keen-slider__slide--clone)',
+        '[data-testid="card-stack"] > div > div',
+        '.Expand',
+        '.StretchedBox',
+        '.gamepad-card'
+      ];
+      let card = null;
+      for (const sel of cardSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) { card = el; break; }
+      }
+      if (!card) return false;
+      const rect = card.getBoundingClientRect();
+      const startX = rect.left + rect.width * 0.6;
+      const startY = rect.top + rect.height * 0.5;
+      const endX = rect.left - 50; // clearly left of the card
+      const steps = 4;
+      const dx = (endX - startX) / steps;
+      const dy = 0;
+
+      const dispatch = (type, x, y, extra={}) => {
+        try {
+          if (window.PointerEvent) {
+            card.dispatchEvent(new PointerEvent(type, {bubbles:true,cancelable:true,clientX:x,clientY:y,buttons:1,pointerId:1,pointerType:'mouse', ...extra}));
+          } else {
+            const evtType = type.replace('pointer', 'mouse');
+            card.dispatchEvent(new MouseEvent(evtType, {bubbles:true,cancelable:true,clientX:x,clientY:y,buttons:1, ...extra}));
+          }
+        } catch {}
+      };
+
+      const dispatchTouch = (t, x, y) => {
+        try {
+          if ('TouchEvent' in window && 'Touch' in window) {
+            const touch = new Touch({identifier: Date.now(), target: card, clientX: x, clientY: y, radiusX: 2, radiusY: 2, rotationAngle: 0, force: 0.5});
+            const ev = new TouchEvent(t, {bubbles: true, cancelable: true, touches: t==='touchend'?[]:[touch], targetTouches: t==='touchend'?[]:[touch], changedTouches: [touch]});
+            card.dispatchEvent(ev);
+          }
+        } catch {}
+      };
+
+      dispatch('pointerdown', startX, startY);
+      dispatchTouch('touchstart', startX, startY);
+      for (let i=1;i<=steps;i++) {
+        dispatch('pointermove', startX + dx*i, startY + dy*i);
+        dispatchTouch('touchmove', startX + dx*i, startY + dy*i);
+        await new Promise(r => setTimeout(r, 30));
+      }
+      dispatch('pointerup', startX + dx*steps, startY + dy*steps);
+      dispatchTouch('touchend', startX + dx*steps, startY + dy*steps);
+
+      await new Promise(r => setTimeout(r, 300));
+      return true;
+    } catch (e) {
+      logger(`⚠️ Swipe simulation failed: ${e.message}`);
+      return false;
+    }
+  }
+
   // Save current profile ID to detect changes
   getCurrentProfileId = () => {
     try {
@@ -86,18 +153,25 @@ class Swiper {
                           document.querySelector('h1');
       
       if (nameElement) {
-        return nameElement.textContent;
+        const txt = (nameElement.textContent || '').trim();
+        if (txt) return `name:${txt}`;
       }
       
       // Fallback: use first image src as identifier
       const firstImage = document.querySelector('.keen-slider__slide img, [data-testid="card-stack"] img');
       if (firstImage && firstImage.src) {
-        return firstImage.src;
+        return `img:${firstImage.src}`;
       }
       
-      return Date.now().toString(); // Fallback to timestamp
+      // As a last resort, try to use visible slide index
+      const slides = Array.from(document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)'));
+      const visible = slides.filter(el => el && el.offsetParent !== null);
+      const idx = visible.length ? slides.indexOf(visible[0]) : -1;
+      if (idx >= 0) return `slideIndex:${idx}`;
+      
+      return null;
     } catch (e) {
-      return Date.now().toString();
+      return null;
     }
   };
 
@@ -255,40 +329,56 @@ class Swiper {
       return false;
     }
 
+    // Track when current profile was first seen for gating
+    const profileId = this.getCurrentProfileId();
+    if (!this.profileFirstSeen[profileId]) {
+      this.profileFirstSeen[profileId] = Date.now();
+    }
+
     // Check if profile should be skipped based on bio (opens modal, checks, closes)
     const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
     
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
       logger('🚫 Profile should be skipped, attempting to dislike...');
+      const skipStartId = this.getCurrentProfileId();
+      // Make sure any modal/overlay is closed
+      try {
+        this.profileAnalyzer.closeProfile();
+        await this.profileAnalyzer.waitForModalClose(1200);
+      } catch {}
       
       // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         try {
+          const currentProfileId = this.getCurrentProfileId();
           dislikeButton.click();
-          logger('⏭️ ❌ Skipped profile using dislike button');
-          return true;
+          await new Promise(resolve => setTimeout(resolve, 600));
+          const newProfileId = this.getCurrentProfileId();
+          if (currentProfileId !== newProfileId || !this.hasProfile()) {
+            logger('⏭️ ❌ Skipped profile using dislike button');
+            return true;
+          } else {
+            logger(`⚠️ Dislike button click did not change profile; falling back to keyboard (id before=${currentProfileId}, after=${newProfileId})`);
+          }
         } catch (e) {
           logger(`⚠️ Error clicking dislike button: ${e.message}`);
         }
       }
       
       // Method 2: Try keyboard shortcut (ArrowLeft for dislike)
-      logger('⌨️ Trying keyboard shortcut for dislike...');
+      logger('⌨️ Trying keyboard shortcut for dislike (ArrowLeft)...');
       const currentProfileId = this.getCurrentProfileId();
-      
-      // Try pressing the ArrowLeft key
-      this.pressKey('ArrowLeft', 37);
-      
-      // Wait for action to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Check if profile changed
-      const newProfileId = this.getCurrentProfileId();
-      if (currentProfileId !== newProfileId || !this.hasProfile()) {
-        logger('⏭️ ❌ Skipped profile using keyboard shortcut');
-        return true;
+      for (let i=0;i<3;i++) {
+        this.pressKey('ArrowLeft', 37);
+        await new Promise(resolve => setTimeout(resolve, 250));
+        const newProfileId = this.getCurrentProfileId();
+        if (currentProfileId !== newProfileId || !this.hasProfile()) {
+          logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
+          return true;
+        }
+        logger(`↩️ ArrowLeft attempt ${i+1}/3 did not change profile (id=${currentProfileId})`);
       }
       
       // Try alternative keyboard shortcuts
@@ -310,43 +400,17 @@ class Swiper {
         }
       }
       
-      // Method 3: Try clicking in the left area of the card (swipe left gesture)
-      logger('👆 Trying to simulate left swipe...');
-      try {
-        const cardSelectors = [
-          '.keen-slider__slide:not(.keen-slider__slide--clone)',
-          '[data-testid="card-stack"] > div > div',
-          '.Expand',
-          '.StretchedBox'
-        ];
-        
-        for (const selector of cardSelectors) {
-          const card = document.querySelector(selector);
-          if (card && card.offsetParent !== null) {
-            const rect = card.getBoundingClientRect();
-            const leftX = rect.left + 10;
-            const centerY = rect.top + rect.height / 2;
-            
-            const clickEvent = new MouseEvent('click', {
-              view: window,
-              bubbles: true,
-              cancelable: true,
-              clientX: leftX,
-              clientY: centerY
-            });
-            
-            card.dispatchEvent(clickEvent);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            if (!this.hasProfile()) {
-              logger('⏭️ ❌ Skipped profile using left click simulation');
-              return true;
-            }
-            break;
-          }
+      // Method 3: Simulate a real swipe-left drag
+      logger('�️ Simulating swipe-left drag...');
+      const swipeOk = await this.simulateSwipeLeft();
+      if (swipeOk) {
+        await new Promise(r => setTimeout(r, 400));
+        const afterSwipeId = this.getCurrentProfileId();
+        if (currentProfileId !== afterSwipeId || !this.hasProfile()) {
+          logger('⏭️ ❌ Skipped profile using swipe-left drag');
+          return true;
         }
-      } catch (e) {
-        logger(`⚠️ Left swipe simulation failed: ${e.message}`);
+        logger(`⚠️ Swipe-left drag did not change profile (id before=${currentProfileId}, after=${afterSwipeId})`);
       }
       
       // Last resort: Report that we couldn't dislike and return false to try again
@@ -354,6 +418,17 @@ class Swiper {
       logger('🛑 Stopping autopilot to prevent unwanted likes...');
       this.isRunning = false; // Stop the autopilot
       return false;
+    }
+
+    // Enforce minimum wait when Bio filter is enabled
+    const minGateMs = this.profileAnalyzer.isBioFilterEnabled() ? 5000 : 0;
+    if (minGateMs > 0) {
+      const elapsed = Date.now() - (this.profileFirstSeen[profileId] || Date.now());
+      if (elapsed < minGateMs) {
+        const waitMs = minGateMs - elapsed;
+        logger(`⏳ Waiting ${waitMs}ms before like due to bio filter`);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
+      }
     }
 
     // Profile passed all filters - try Super Like first (safely) then Like
