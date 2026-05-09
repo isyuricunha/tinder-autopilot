@@ -18,6 +18,9 @@ import { waitUntilElementExists, logger } from '../misc/helper';
 import { insertCss } from '../misc/insert-css';
 
 class Sidebar {
+  // CRITICAL FIX: Track event listeners for cleanup
+  eventListeners = [];
+
   constructor() {
     this.injectModernStyles();
     this.sidebar();
@@ -29,6 +32,22 @@ class Sidebar {
 
     this.events();
   }
+
+  // CRITICAL FIX: Add event listener with tracking for cleanup
+  addTrackedListener = (element, event, handler) => {
+    if (element) {
+      element.addEventListener(event, handler);
+      this.eventListeners.push({ element, event, handler });
+    }
+  };
+
+  // CRITICAL FIX: Remove all tracked listeners
+  removeAllListeners = () => {
+    this.eventListeners.forEach(({ element, event, handler }) => {
+      element.removeEventListener(event, handler);
+    });
+    this.eventListeners = [];
+  };
 
   injectModernStyles() {
     insertCss(`
@@ -161,14 +180,18 @@ class Sidebar {
     // Also add a manual trigger for testing
     window.updateSliderStates = () => this.updateSliderStates();
 
-    document.getElementById('messageToSend').addEventListener('blur', (e) => {
-      localStorage.setItem('TinderAutopilot/MessengerDefault', JSON.stringify(e.target.value));
-    });
+    // CRITICAL FIX: Use tracked listeners for cleanup
+    const messageField = document.getElementById('messageToSend');
+    if (messageField) {
+      this.addTrackedListener(messageField, 'blur', (e) => {
+        localStorage.setItem('TinderAutopilot/MessengerDefault', JSON.stringify(e.target.value));
+      });
+    }
 
     // Save bio blacklist when user updates it
     const bioBlacklistField = document.getElementById('bioBlacklist');
     if (bioBlacklistField) {
-      bioBlacklistField.addEventListener('blur', (e) => {
+      this.addTrackedListener(bioBlacklistField, 'blur', (e) => {
         const value = e.target.value.trim();
         localStorage.setItem('TinderAutopilot/bioBlacklist', value);
         logger(`💾 Saved banned words: ${value}`);
@@ -178,7 +201,7 @@ class Sidebar {
     // Save gender filter when user updates it
     const genderFilterField = document.getElementById('genderFilter');
     if (genderFilterField) {
-      genderFilterField.addEventListener('blur', (e) => {
+      this.addTrackedListener(genderFilterField, 'blur', (e) => {
         const value = e.target.value.trim();
         localStorage.setItem('TinderAutopilot/genderFilter', value);
         logger(`💾 Saved gender filter: ${value}`);

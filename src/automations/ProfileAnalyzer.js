@@ -96,10 +96,6 @@ class ProfileAnalyzer {
   // Open the profile modal by clicking on the card
   async openProfile() {
     try {
-      logger('🔍 Opening profile modal...');
-
-      // Strategy 1: Find and click the actual info button on the card
-      logger('🔍 Looking for info button on card...');
       const getActiveCard = () => {
         const cands = Array.from(
           document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)')
@@ -176,7 +172,6 @@ class ProfileAnalyzer {
         try {
           const scope = activeCard || document;
           const buttons = scope.querySelectorAll(selector);
-          logger(`  Checking ${selector}: ${buttons.length} buttons found`);
 
           for (const button of buttons) {
             if (
@@ -193,14 +188,11 @@ class ProfileAnalyzer {
               const isSmallButton = rect.width < 100 && rect.height < 100;
 
               if (isAtBottom || isSmallButton) {
-                logger(`✅ Clicking potential info button: ${selector}`);
-                logger(`  Position: ${rect.left},${rect.top} Size: ${rect.width}x${rect.height}`);
                 button.click();
 
                 // Wait and check if modal opened
                 await new Promise((resolve) => setTimeout(resolve, 500));
                 if (this.isProfileModalOpen()) {
-                  logger('✅ Successfully opened profile!');
                   return true;
                 }
                 clicks += 1;
@@ -218,7 +210,6 @@ class ProfileAnalyzer {
       }
 
       // Strategy 2: Try UP arrow key as fallback
-      logger('⌨️ Trying UP arrow key as fallback...');
       const upEvents = [
         new KeyboardEvent('keydown', {
           key: 'ArrowUp',
@@ -254,14 +245,12 @@ class ProfileAnalyzer {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       if (this.isProfileModalOpen()) {
-        logger('✅ Opened profile with UP arrow!');
         return true;
       }
 
       // Strategy 3 and 4 removed to avoid triggering unrelated UI (image click, Enter/Space)
 
       // Strategy 5: Click on specific areas of the card (fallback)
-      logger('🔍 Trying to click card center...');
       const card = activeCard;
       if (card && card.offsetParent !== null && card.offsetWidth > 0) {
         const rect = card.getBoundingClientRect();
@@ -274,7 +263,6 @@ class ProfileAnalyzer {
           clientX: centerX,
           clientY: centerY
         });
-        logger(`👆 Clicking center of card: .keen-slider__slide`);
         card.dispatchEvent(clickEvent);
         const dblClick = new MouseEvent('dblclick', {
           view: window,
@@ -286,19 +274,12 @@ class ProfileAnalyzer {
         card.dispatchEvent(dblClick);
         await new Promise((resolve) => setTimeout(resolve, 500));
         if (this.isProfileModalOpen()) {
-          logger('✅ Opened profile by clicking card!');
           return true;
         }
       }
 
-      logger('❌ WARNING: Could not open profile with any method!');
-      logger('🔍 The extension may not be able to check bios.');
-      logger('💡 TIP: Try manually pressing UP arrow to see if profile opens.');
-
-      // Return false - we couldn't open the profile
       return false;
     } catch (e) {
-      logger(`💥 Error opening profile: ${e.message}`);
       return false;
     }
   }
@@ -306,7 +287,6 @@ class ProfileAnalyzer {
   // Check if profile modal is open
   isProfileModalOpen() {
     // Check for scroll container AND profile elements
-
     // Look for the scrollable container using structural selector
     const scrollContainer =
       document.querySelector('div[class*="M(16px)"]') || document.querySelector('.M\\(16px\\)');
@@ -325,9 +305,6 @@ class ProfileAnalyzer {
         const isLargeEnough = rect.width > 300 && rect.height > 400;
 
         if (isLargeEnough) {
-          logger(
-            `✅ Profile modal detected (${rect.width.toFixed(0)}x${rect.height.toFixed(0)}px)`
-          );
           return true;
         }
       }
@@ -355,10 +332,6 @@ class ProfileAnalyzer {
               // Additional check: profile should be wider than a card
               const rect = element.getBoundingClientRect();
               if (rect.width > 400 || rect.height > 500) {
-                logger(
-                  `✅ Profile modal detected via ${selector} (${element.textContent?.length || 0
-                  } chars, ${rect.width}x${rect.height}px)`
-                );
                 return true;
               }
             }
@@ -384,7 +357,6 @@ class ProfileAnalyzer {
       try {
         const element = document.querySelector(selector);
         if (element && element.offsetParent !== null) {
-          logger(`✅ Profile modal detected via unique element: ${selector}`);
           return true;
         }
       } catch (e) {
@@ -397,7 +369,6 @@ class ProfileAnalyzer {
     const hasHiddenCards =
       cardStack && (cardStack.style.display === 'none' || cardStack.style.visibility === 'hidden');
     if (hasHiddenCards) {
-      logger('✅ Profile modal detected (card stack hidden)');
       return true;
     }
 
@@ -406,11 +377,9 @@ class ProfileAnalyzer {
       window.location.pathname.includes('/profile') ||
       window.location.search.includes('profile=')
     ) {
-      logger('✅ Profile modal detected via URL');
       return true;
     }
 
-    logger('❌ Profile modal NOT detected');
     return false;
   }
 
@@ -576,14 +545,11 @@ class ProfileAnalyzer {
       if (bioElement) {
         const bioText = bioElement.textContent?.trim().replace(/\s+/g, ' ') || '';
         if (bioText.length > 0 && bioText.length < 2000) {
-          logger(
-            `📝 Bio extracted via CSS selector: "${bioText.substring(0, 50)}..." (${bioText.length} chars)`
-          );
           return bioText;
         }
       }
     } catch (e) {
-      logger(`⚠️ Bio extraction via CSS selector failed: ${e.message}`);
+      // ignore
     }
 
     // Strategy 2: Find "About me" h2 and get the sibling div text
@@ -598,16 +564,13 @@ class ProfileAnalyzer {
           if (bioDiv) {
             const bioText = bioDiv.textContent?.trim().replace(/\s+/g, ' ') || '';
             if (bioText.length > 0 && bioText.length < 2000) {
-              logger(
-                `📝 Bio extracted via About me card: "${bioText.substring(0, 50)}..." (${bioText.length} chars)`
-              );
               return bioText;
             }
           }
         }
       }
     } catch (e) {
-      logger(`⚠️ Bio extraction via About me card failed: ${e.message}`);
+      // ignore
     }
 
     // Strategy 3: Fallback to original structural selector approach
@@ -615,9 +578,6 @@ class ProfileAnalyzer {
       document.querySelector('div[class*="M(16px)"]') || document.querySelector('.M\\(16px\\)');
     const scope =
       scrollContainer && scrollContainer.offsetParent !== null ? scrollContainer : document;
-    if (!scrollContainer) {
-      logger('📝 No scroll container found, falling back to document scope');
-    }
 
     let bioText = '';
     let foundBio = false;
@@ -660,14 +620,10 @@ class ProfileAnalyzer {
         if (bioCandidate.length > 10 && bioCandidate.length < 2000) {
           bioText = bioCandidate;
           foundBio = true;
-          logger(
-            `📝 Bio extracted from container: "${bioText.substring(0, 50)}..." (${bioText.length
-            } chars)`
-          );
         }
       }
     } catch (e) {
-      logger(`⚠️ Bio extraction from container failed: ${e.message}`);
+      // ignore
     }
 
     // Strategy 4: Try finding bio text using structural selectors
@@ -687,16 +643,12 @@ class ProfileAnalyzer {
             if (filteredText.length > 10 && !filteredText.match(/^\d+$/)) {
               bioText = filteredText;
               foundBio = true;
-              logger(
-                `📝 Bio found via section: "${bioText.substring(0, 50)}..." (${bioText.length
-                } chars)`
-              );
               break;
             }
           }
         }
       } catch (e) {
-        logger(`⚠️ Bio extraction from sections failed: ${e.message}`);
+        // ignore
       }
     }
 
@@ -714,17 +666,10 @@ class ProfileAnalyzer {
         if (candidates[0]) {
           bioText = (candidates[0].textContent || '').trim();
           foundBio = true;
-          logger(
-            `📝 Bio found via fallback: "${bioText.substring(0, 50)}..." (${bioText.length} chars)`
-          );
         }
       } catch (e) {
         // ignore
       }
-    }
-
-    if (!bioText) {
-      logger('📝 No bio text found in profile - user may not have a bio');
     }
 
     return bioText;
@@ -809,13 +754,9 @@ class ProfileAnalyzer {
       // Check if bio contains any blacklisted words
       for (const blacklistedWord of this.bioBlacklist) {
         if (bioText.includes(blacklistedWord)) {
-          logger(`⛔ BLOCKED - Bio contains: "${blacklistedWord}"`);
           return true;
         }
       }
-      logger(`✅ Bio checked - no banned words found`);
-    } else {
-      logger(`ℹ️ No bio found to check`);
     }
 
     // Check gender filtering
@@ -831,7 +772,6 @@ class ProfileAnalyzer {
           );
 
           if (shouldSkip) {
-            logger(`⚠️ Skipped profile - gender: "${genderIdentity}"`);
             return true;
           }
         }
@@ -848,25 +788,18 @@ class ProfileAnalyzer {
       // Age filtering
       const age = this.getAge();
       if (age && (age < this.ageRange.min || age > this.ageRange.max)) {
-        logger(
-          `⚠️ Skipped profile - age ${age} outside range ${this.ageRange.min}-${this.ageRange.max}`
-        );
         return true;
       }
 
       // Distance filtering
       const distance = this.getDistance();
       if (distance && distance.value > this.maxDistance) {
-        logger(
-          `⚠️ Skipped profile - distance ${distance.value}${distance.unit} > ${this.maxDistance}`
-        );
         return true;
       }
 
       // Photo count filtering
       const photoCount = this.getPhotoCount();
       if (photoCount < this.minPhotoCount) {
-        logger(`⚠️ Skipped profile - only ${photoCount} photos (min: ${this.minPhotoCount})`);
         return true;
       }
     }
@@ -887,18 +820,11 @@ class ProfileAnalyzer {
         !this.isGenderFilterEnabled() &&
         !this.isAdvancedFilterEnabled()
       ) {
-        logger('ℹ️ No filters enabled, allowing profile');
         return false; // Don't skip
       }
 
-      logger('🚀 === STARTING BIO CHECK ===');
-      logger(
-        `📋 Filters enabled: Bio=${this.isBioFilterEnabled()}, Gender=${this.isGenderFilterEnabled()}, Advanced=${this.isAdvancedFilterEnabled()}`
-      );
-
       // IMPORTANT: Check if modal is already open from previous cycle
       if (this.isProfileModalOpen()) {
-        logger('⚠️ Modal already open from previous cycle - closing it first');
         this.closeProfile();
         await this.waitForModalClose(1500);
         // Wait a bit more before opening new one
@@ -907,51 +833,41 @@ class ProfileAnalyzer {
 
       // Open the profile
       const opened = await this.openProfile();
-      logger(`🔓 Profile open attempt: ${opened}`);
 
       if (!opened) {
         const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
         if (requireModal) {
-          logger('❌ FAILED to open profile, SKIPPING due to filters enabled');
           return true;
         }
-        logger('❌ FAILED to open profile, ALLOWING by default (no filters)');
         return false;
       }
 
       // Wait for modal to open
-      logger('⏳ Waiting for modal to load...');
       const modalOpened = await this.waitForProfileModal(
         hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled()
           ? 5000
           : 3000
       );
-      logger(`📂 Modal opened: ${modalOpened}`);
 
       if (!modalOpened) {
         const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
         if (requireModal) {
-          logger('❌ Modal did NOT open after timeout, SKIPPING due to filters enabled');
           this.closeProfile();
           await this.waitForModalClose(1000);
           return true;
         }
-        logger('❌ Modal did NOT open after timeout, ALLOWING profile (no filters)');
         this.closeProfile();
         await this.waitForModalClose(1000);
         return false;
       }
 
       // Check if should skip
-      logger('🔬 Analyzing bio content...');
       if (hasBlacklist) {
         await this.waitForBioContent(5000);
       }
       const shouldSkip = await this.shouldSkipProfile();
-      logger(`🎯 Final decision: ${shouldSkip ? 'BLOCK ❌' : 'ALLOW ✅'}`);
 
       // Close the profile modal and WAIT for it to actually close
-      logger('🚪 Closing modal...');
       await new Promise((resolve) => setTimeout(resolve, 200));
       this.closeProfile();
 
@@ -960,11 +876,9 @@ class ProfileAnalyzer {
 
       // Extra safety wait
       await new Promise((resolve) => setTimeout(resolve, 300));
-      logger('🏁 === BIO CHECK COMPLETE ===');
 
       return shouldSkip;
     } catch (e) {
-      logger(`💥 EXCEPTION in checkProfileWithModal: ${e.message}`);
       console.error('Error checking profile with modal:', e);
       // If there's an error, close modal and don't skip
       try {

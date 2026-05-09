@@ -10,6 +10,9 @@ class Swiper {
 
   profileFirstSeen = {};
 
+  // CRITICAL FIX: Track active timers for cleanup
+  activeTimers = new Set();
+
   constructor() {
     this.interactions = new Interactions();
     this.profileAnalyzer = new ProfileAnalyzer();
@@ -25,6 +28,28 @@ class Swiper {
   stop = () => {
     this.isRunning = false;
     logger('Autopilot stopped ⛔️');
+    this.clearAllTimers(); // CRITICAL FIX: Clear all timers on stop
+  };
+
+  // CRITICAL FIX: Clear all active timers to prevent memory leaks
+  clearAllTimers = () => {
+    this.activeTimers.forEach((timerId) => {
+      clearTimeout(timerId);
+    });
+    this.activeTimers.clear();
+    logger('🧹 Cleared all active timers');
+  };
+
+  // CRITICAL FIX: Schedule profile cleanup to prevent memory leak
+  scheduleProfileCleanup = (profileId) => {
+    // Limit profileFirstSeen to 100 entries max
+    const keys = Object.keys(this.profileFirstSeen);
+    if (keys.length > 100) {
+      // Remove oldest entries
+      const toRemove = keys.slice(0, keys.length - 99);
+      toRemove.forEach((key) => delete this.profileFirstSeen[key]);
+      logger(`🧹 Cleaned up ${toRemove.length} old profile entries`);
+    }
   };
 
   canSwipe = () => {
@@ -430,6 +455,8 @@ class Swiper {
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using dislike button');
+            // CRITICAL FIX: Clean up profile entry after processing
+            delete this.profileFirstSeen[profileId];
             return true;
           } else {
             logger(
@@ -450,6 +477,8 @@ class Swiper {
         const newProfileId = this.getCurrentProfileId();
         if (currentProfileId !== newProfileId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
+          // CRITICAL FIX: Clean up profile entry after processing
+          delete this.profileFirstSeen[profileId];
           return true;
         }
         logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
@@ -470,6 +499,8 @@ class Swiper {
         const latestProfileId = this.getCurrentProfileId();
         if (currentProfileId !== latestProfileId || !this.hasProfile()) {
           logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
+          // CRITICAL FIX: Clean up profile entry after processing
+          delete this.profileFirstSeen[profileId];
           return true;
         }
       }
@@ -482,6 +513,8 @@ class Swiper {
         const afterSwipeId = this.getCurrentProfileId();
         if (currentProfileId !== afterSwipeId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using swipe-left drag');
+          // CRITICAL FIX: Clean up profile entry after processing
+          delete this.profileFirstSeen[profileId];
           return true;
         }
         logger(
@@ -511,6 +544,8 @@ class Swiper {
 
     // Profile passed all filters - try Super Like first (safely) then Like
     if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
+      // CRITICAL FIX: Clean up profile entry after processing
+      delete this.profileFirstSeen[profileId];
       return true;
     }
 
@@ -526,6 +561,10 @@ class Swiper {
         likeCountEl.innerHTML = parseInt(likeCountEl.innerHTML, 10) + 1;
       }
 
+      // CRITICAL FIX: Clean up profile entry after processing
+      delete this.profileFirstSeen[profileId];
+      // CRITICAL FIX: Schedule cleanup of old entries
+      this.scheduleProfileCleanup(profileId);
       return true;
     } else {
       logger('⚠️ No like button found');
