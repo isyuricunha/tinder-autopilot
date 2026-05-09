@@ -37,17 +37,19 @@ class Interactions {
   closeInstructions = () => {
     // Homescreen modal blocks us
     try {
-      if (document.querySelector('[data-testid="addToHomeScreen"]')) {
-        document
-          .querySelector('[data-testid="addToHomeScreen"]')
-          .parentElement.querySelector('button:nth-of-type(2)')
-          .click();
-        logger('Closing add to homescreen modal');
-        return true;
+      const addToHomeEl = document.querySelector('[data-testid="addToHomeScreen"]');
+      if (addToHomeEl && addToHomeEl.parentElement) {
+        const closeBtn = addToHomeEl.parentElement.querySelector('button:nth-of-type(2)');
+        if (closeBtn) {
+          closeBtn.click();
+          logger('Closing add to homescreen modal');
+          return true;
+        }
       }
     } catch (e) {
       return false;
     }
+    return false;
   };
 
   closeMatchFound = () => {
@@ -76,15 +78,18 @@ class Interactions {
 
   closeModal = () => {
     try {
-      const modal = document.querySelector('[role="dialog"]').parentElement.parentElement;
+      const dialog = document.querySelector('[role="dialog"]');
+      if (!dialog || !dialog.parentElement) return false;
+      const modal = dialog.parentElement.parentElement;
       if (modal) {
-        document.querySelector('[role="dialog"]').parentElement.click();
+        dialog.parentElement.click();
         logger('Closing modal');
         return true;
       }
     } catch (e) {
       return false;
     }
+    return false;
   };
 }
 

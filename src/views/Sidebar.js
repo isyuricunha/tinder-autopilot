@@ -89,7 +89,9 @@ class Sidebar {
   }
 
   insertBefore = (el, referenceNode) => {
-    referenceNode.parentNode.insertBefore(el, referenceNode);
+    if (referenceNode && referenceNode.parentNode) {
+      referenceNode.parentNode.insertBefore(el, referenceNode);
+    }
   };
 
   sidebar = () => {
