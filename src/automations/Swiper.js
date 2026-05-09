@@ -160,7 +160,7 @@ class Swiper {
               })
             );
           }
-        } catch {}
+        } catch { }
       };
 
       const dispatchTouch = (t, x, y) => {
@@ -185,7 +185,7 @@ class Swiper {
             });
             card.dispatchEvent(ev);
           }
-        } catch {}
+        } catch { }
       };
 
       dispatch('pointerdown', startX, startY);
@@ -418,7 +418,7 @@ class Swiper {
       try {
         this.profileAnalyzer.closeProfile();
         await this.profileAnalyzer.waitForModalClose(1200);
-      } catch {}
+      } catch { }
 
       // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
@@ -496,8 +496,10 @@ class Swiper {
       return false;
     }
 
-    // Enforce minimum wait when Bio filter is enabled
-    const minGateMs = this.profileAnalyzer.isBioFilterEnabled() ? 5000 : 0;
+    // Enforce minimum wait when bio blacklist exists (always apply if blacklist has words)
+    this.profileAnalyzer.bioBlacklist = this.profileAnalyzer.loadBioBlacklist();
+    const hasBlacklist = this.profileAnalyzer.bioBlacklist && this.profileAnalyzer.bioBlacklist.length > 0;
+    const minGateMs = hasBlacklist ? 5000 : 0;
     if (minGateMs > 0) {
       const elapsed = Date.now() - (this.profileFirstSeen[profileId] || Date.now());
       if (elapsed < minGateMs) {

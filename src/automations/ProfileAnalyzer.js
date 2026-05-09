@@ -125,9 +125,8 @@ class ProfileAnalyzer {
       const activeCard = getActiveCard();
       const isSafeButton = (btn) => {
         if (!btn) return false;
-        const s = `${btn.getAttribute('aria-label') || ''} ${btn.getAttribute('title') || ''} ${
-          btn.getAttribute('data-testid') || ''
-        } ${btn.textContent || ''}`.toLowerCase();
+        const s = `${btn.getAttribute('aria-label') || ''} ${btn.getAttribute('title') || ''} ${btn.getAttribute('data-testid') || ''
+          } ${btn.textContent || ''}`.toLowerCase();
         const forbidden = [
           'super',
           'star',
@@ -357,8 +356,7 @@ class ProfileAnalyzer {
               const rect = element.getBoundingClientRect();
               if (rect.width > 400 || rect.height > 500) {
                 logger(
-                  `✅ Profile modal detected via ${selector} (${
-                    element.textContent?.length || 0
+                  `✅ Profile modal detected via ${selector} (${element.textContent?.length || 0
                   } chars, ${rect.width}x${rect.height}px)`
                 );
                 return true;
@@ -571,7 +569,48 @@ class ProfileAnalyzer {
   }
 
   getBioText() {
-    // Look for bio in the scrollable profile content using structural selector
+    // Strategy 1: Use CSS selector for bio text based on real Tinder HTML structure
+    // The bio is in a div with class "Typs(body-1-regular)" inside the "About me" card
+    try {
+      const bioElement = document.querySelector('.Typs\\(body-1-regular\\)');
+      if (bioElement) {
+        const bioText = bioElement.textContent?.trim().replace(/\s+/g, ' ') || '';
+        if (bioText.length > 0 && bioText.length < 2000) {
+          logger(
+            `📝 Bio extracted via CSS selector: "${bioText.substring(0, 50)}..." (${bioText.length} chars)`
+          );
+          return bioText;
+        }
+      }
+    } catch (e) {
+      logger(`⚠️ Bio extraction via CSS selector failed: ${e.message}`);
+    }
+
+    // Strategy 2: Find "About me" h2 and get the sibling div text
+    try {
+      const aboutMeHeading = Array.from(document.querySelectorAll('h2')).find(el =>
+        el.textContent?.trim() === 'About me'
+      );
+      if (aboutMeHeading) {
+        const aboutMeCard = aboutMeHeading.closest('[class*="Bgc($c-ds-background-primary)"]');
+        if (aboutMeCard) {
+          const bioDiv = aboutMeCard.querySelector('.Typs\\(body-1-regular\\)');
+          if (bioDiv) {
+            const bioText = bioDiv.textContent?.trim().replace(/\s+/g, ' ') || '';
+            if (bioText.length > 0 && bioText.length < 2000) {
+              logger(
+                `📝 Bio extracted via About me card: "${bioText.substring(0, 50)}..." (${bioText.length} chars)`
+              );
+              return bioText;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      logger(`⚠️ Bio extraction via About me card failed: ${e.message}`);
+    }
+
+    // Strategy 3: Fallback to original structural selector approach
     const scrollContainer =
       document.querySelector('div[class*="M(16px)"]') || document.querySelector('.M\\(16px\\)');
     const scope =
@@ -580,17 +619,13 @@ class ProfileAnalyzer {
       logger('📝 No scroll container found, falling back to document scope');
     }
 
-    // Strategy 1: Extract text from the profile content container directly
-    // The bio text appears as raw text nodes inside the container
     let bioText = '';
     let foundBio = false;
 
     try {
       if (scrollContainer && scrollContainer.offsetParent !== null) {
-        // Get all text content from the container
         const allText = scrollContainer.textContent || '';
 
-        // Split by common UI text markers and extract the bio portion
         const uiMarkers = [
           'Essentials',
           'Lifestyle',
@@ -606,7 +641,6 @@ class ProfileAnalyzer {
           'Block'
         ];
 
-        // Find text before the first UI marker
         let bioCandidate = allText;
         let firstMarkerIndex = allText.length;
 
@@ -621,16 +655,13 @@ class ProfileAnalyzer {
           bioCandidate = allText.substring(0, firstMarkerIndex);
         }
 
-        // Clean up the text - remove extra whitespace and newlines
         bioCandidate = bioCandidate.trim().replace(/\s+/g, ' ');
 
-        // Validate: bio should be reasonable length and not just UI text
         if (bioCandidate.length > 10 && bioCandidate.length < 2000) {
           bioText = bioCandidate;
           foundBio = true;
           logger(
-            `📝 Bio extracted from container: "${bioText.substring(0, 50)}..." (${
-              bioText.length
+            `📝 Bio extracted from container: "${bioText.substring(0, 50)}..." (${bioText.length
             } chars)`
           );
         }
@@ -639,10 +670,9 @@ class ProfileAnalyzer {
       logger(`⚠️ Bio extraction from container failed: ${e.message}`);
     }
 
-    // Strategy 2: Try finding bio text using structural selectors
+    // Strategy 4: Try finding bio text using structural selectors
     if (!foundBio) {
       try {
-        // Look for text content in profile sections
         const profileSections = scope.querySelectorAll(
           'section, div[class*="profile"], div[class*="content"]'
         );
@@ -650,7 +680,6 @@ class ProfileAnalyzer {
         for (const section of profileSections) {
           const text = section.textContent?.trim() || '';
           if (text.length > 20 && text.length < 2000) {
-            // Filter out UI text
             const filteredText = text
               .split(/Essentials|Lifestyle|Basics|Looking for|Languages|Verified/i)[0]
               .trim();
@@ -659,8 +688,7 @@ class ProfileAnalyzer {
               bioText = filteredText;
               foundBio = true;
               logger(
-                `📝 Bio found via section: "${bioText.substring(0, 50)}..." (${
-                  bioText.length
+                `📝 Bio found via section: "${bioText.substring(0, 50)}..." (${bioText.length
                 } chars)`
               );
               break;
@@ -672,7 +700,7 @@ class ProfileAnalyzer {
       }
     }
 
-    // Strategy 3: Fallback - look for any substantial text block
+    // Strategy 5: Fallback - look for any substantial text block
     if (!bioText) {
       try {
         const candidates = Array.from(scope.querySelectorAll('p, div, span')).filter((el) => {
@@ -772,24 +800,22 @@ class ProfileAnalyzer {
 
   // Check bio for banned words (call this AFTER opening the profile modal)
   async shouldSkipProfile() {
-    // Check bio filtering
-    if (this.isBioFilterEnabled()) {
-      const bioText = (this.getBioText() || '').toLowerCase();
-      if (bioText) {
-        // Refresh blacklist from storage
-        this.bioBlacklist = this.loadBioBlacklist();
+    // Always check bio blacklist if it exists (independent of UI checkbox)
+    const bioText = (this.getBioText() || '').toLowerCase();
+    if (bioText) {
+      // Refresh blacklist from storage
+      this.bioBlacklist = this.loadBioBlacklist();
 
-        // Check if bio contains any blacklisted words
-        for (const blacklistedWord of this.bioBlacklist) {
-          if (bioText.includes(blacklistedWord)) {
-            logger(`⛔ BLOCKED - Bio contains: "${blacklistedWord}"`);
-            return true;
-          }
+      // Check if bio contains any blacklisted words
+      for (const blacklistedWord of this.bioBlacklist) {
+        if (bioText.includes(blacklistedWord)) {
+          logger(`⛔ BLOCKED - Bio contains: "${blacklistedWord}"`);
+          return true;
         }
-        logger(`✅ Bio checked - no banned words found`);
-      } else {
-        logger(`ℹ️ No bio found to check`);
       }
+      logger(`✅ Bio checked - no banned words found`);
+    } else {
+      logger(`ℹ️ No bio found to check`);
     }
 
     // Check gender filtering
@@ -851,9 +877,13 @@ class ProfileAnalyzer {
   // Main method to check profile with modal opening
   async checkProfileWithModal() {
     try {
-      // If bio filter is not enabled, skip the check
+      // Check if blacklist exists and has words (always apply blacklist if it exists)
+      this.bioBlacklist = this.loadBioBlacklist();
+      const hasBlacklist = this.bioBlacklist && this.bioBlacklist.length > 0;
+
+      // If no filters enabled at all, skip the check
       if (
-        !this.isBioFilterEnabled() &&
+        !hasBlacklist &&
         !this.isGenderFilterEnabled() &&
         !this.isAdvancedFilterEnabled()
       ) {
@@ -880,10 +910,7 @@ class ProfileAnalyzer {
       logger(`🔓 Profile open attempt: ${opened}`);
 
       if (!opened) {
-        const requireModal =
-          this.isBioFilterEnabled() ||
-          this.isGenderFilterEnabled() ||
-          this.isAdvancedFilterEnabled();
+        const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
         if (requireModal) {
           logger('❌ FAILED to open profile, SKIPPING due to filters enabled');
           return true;
@@ -895,17 +922,14 @@ class ProfileAnalyzer {
       // Wait for modal to open
       logger('⏳ Waiting for modal to load...');
       const modalOpened = await this.waitForProfileModal(
-        this.isBioFilterEnabled() || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled()
+        hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled()
           ? 5000
           : 3000
       );
       logger(`📂 Modal opened: ${modalOpened}`);
 
       if (!modalOpened) {
-        const requireModal =
-          this.isBioFilterEnabled() ||
-          this.isGenderFilterEnabled() ||
-          this.isAdvancedFilterEnabled();
+        const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
         if (requireModal) {
           logger('❌ Modal did NOT open after timeout, SKIPPING due to filters enabled');
           this.closeProfile();
@@ -920,7 +944,7 @@ class ProfileAnalyzer {
 
       // Check if should skip
       logger('🔬 Analyzing bio content...');
-      if (this.isBioFilterEnabled()) {
+      if (hasBlacklist) {
         await this.waitForBioContent(5000);
       }
       const shouldSkip = await this.shouldSkipProfile();
