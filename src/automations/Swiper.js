@@ -451,6 +451,18 @@ class Swiper {
         try {
           const currentProfileId = this.getCurrentProfileId();
           dislikeButton.click();
+
+          // FIX: Wait for modal to close after dislike (Tinder doesn't auto-close expanded profile)
+          logger('🚪 Waiting for modal to close after dislike...');
+          await this.profileAnalyzer.waitForModalClose(2000);
+
+          // FIX: If modal still open, explicitly close it
+          if (this.profileAnalyzer.isProfileModalOpen()) {
+            logger('🚪 Modal still open, forcing close...');
+            this.profileAnalyzer.closeProfile();
+            await this.profileAnalyzer.waitForModalClose(1500);
+          }
+
           await new Promise((resolve) => setTimeout(resolve, 600));
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
