@@ -538,35 +538,44 @@ class ProfileAnalyzer {
   }
 
   getBioText() {
-    // Strategy 1: Use CSS selector for bio text based on real Tinder HTML structure
-    // The bio is in a div with class "Typs(body-1-regular)" inside the "About me" card
+    // Strategy 1: Find "About me" / "Sobre mim" heading and get the bio text from the same card
     try {
-      const bioElement = document.querySelector('.Typs\\(body-1-regular\\)');
-      if (bioElement) {
-        const bioText = bioElement.textContent?.trim().replace(/\s+/g, ' ') || '';
-        if (bioText.length > 0 && bioText.length < 2000) {
-          return bioText;
+      const aboutMeHeadings = ['About me', 'Sobre mim'];
+      const aboutMeHeading = Array.from(document.querySelectorAll('h2')).find(el =>
+        aboutMeHeadings.includes(el.textContent?.trim())
+      );
+
+      if (aboutMeHeading) {
+        // Find the parent card containing the heading
+        const aboutMeCard = aboutMeHeading.closest('[class*="Bgc($c-ds-background-primary)"]') ||
+          aboutMeHeading.closest('section') ||
+          aboutMeHeading.parentElement;
+
+        if (aboutMeCard) {
+          // Get all text elements within the card
+          const bioElements = aboutMeCard.querySelectorAll('.Typs\\(body-1-regular\\)');
+          for (const bioEl of bioElements) {
+            const bioText = bioEl.textContent?.trim().replace(/\s+/g, ' ');
+            if (bioText && bioText.length > 0 && bioText.length < 2000) {
+              // Make sure we're not getting the heading text itself
+              if (bioText !== 'About me' && bioText !== 'Sobre mim') {
+                return bioText;
+              }
+            }
+          }
         }
       }
     } catch (e) {
       // ignore
     }
 
-    // Strategy 2: Find "About me" h2 and get the sibling div text
+    // Strategy 2: Fallback - direct selector (may pick wrong element but maintains compatibility)
     try {
-      const aboutMeHeading = Array.from(document.querySelectorAll('h2')).find(el =>
-        el.textContent?.trim() === 'About me'
-      );
-      if (aboutMeHeading) {
-        const aboutMeCard = aboutMeHeading.closest('[class*="Bgc($c-ds-background-primary)"]');
-        if (aboutMeCard) {
-          const bioDiv = aboutMeCard.querySelector('.Typs\\(body-1-regular\\)');
-          if (bioDiv) {
-            const bioText = bioDiv.textContent?.trim().replace(/\s+/g, ' ') || '';
-            if (bioText.length > 0 && bioText.length < 2000) {
-              return bioText;
-            }
-          }
+      const bioElement = document.querySelector('.Typs\\(body-1-regular\\)');
+      if (bioElement) {
+        const bioText = bioElement.textContent?.trim().replace(/\s+/g, ' ') || '';
+        if (bioText.length > 0 && bioText.length < 2000) {
+          return bioText;
         }
       }
     } catch (e) {
