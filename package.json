@@ -11,7 +11,8 @@
     "minor": "dotenv release-it -- minor --ci",
     "patch": "dotenv release-it -- patch --ci",
     "start": "webpack --mode development --watch",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "lint": "eslint src/**/*.js"
   },
   "dependencies": {
     "lodash": "^4.17.21"

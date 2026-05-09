@@ -67,8 +67,20 @@ ${
 }
 `;
 
-const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, step = 1, unit = '', parentToggle = null }) => `
-<div class="slider-container" data-parent="${parentToggle || ''}" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+const sliderGenerator = ({
+  className,
+  label,
+  helpText,
+  min,
+  max,
+  defaultValue,
+  step = 1,
+  unit = '',
+  parentToggle = null
+}) => `
+<div class="slider-container" data-parent="${
+  parentToggle || ''
+}" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 16px; cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -117,7 +129,10 @@ const sliderGenerator = ({ className, label, helpText, min, max, defaultValue, s
         </label>
     </div>
 </div>
-${helpText && `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`}
+${
+  helpText &&
+  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
+}
 `;
 
 const autopilot = `
@@ -168,7 +183,8 @@ const autopilot = `
         ${textboxGenerator({
           className: 'genderFilter',
           placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
-          helpText: 'Profiles with these gender identities will be skipped. Leave empty to disable.',
+          helpText:
+            'Profiles with these gender identities will be skipped. Leave empty to disable.',
           defaultValue: ''
         })}
         ${titleGenerator('Advanced Filtering')}

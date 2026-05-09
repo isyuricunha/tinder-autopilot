@@ -12,14 +12,14 @@ class Interactions {
     // Try multiple selectors for navigation
     const selectors = [
       "a[href='/app/recs']",
-      "a[href='/app/matches']", 
+      "a[href='/app/matches']",
       "[data-testid='recs-tab']",
       "[data-testid='matches-tab']",
       "nav button[aria-label*='Discover']",
-      "nav div:nth-child(1) > span",
-      ".navTab:first-child button"
+      'nav div:nth-child(1) > span',
+      '.navTab:first-child button'
     ];
-    
+
     for (const selector of selectors) {
       const elements = document.querySelectorAll(selector);
       if (elements.length > 0) {
@@ -30,7 +30,7 @@ class Interactions {
         }
       }
     }
-    
+
     return false;
   };
 
@@ -59,7 +59,7 @@ class Interactions {
         '.modal button:first-child',
         'button[title*="Close"]'
       ];
-      
+
       for (const selector of selectors) {
         const modal = document.querySelector(selector);
         if (modal && modal.offsetParent !== null) {

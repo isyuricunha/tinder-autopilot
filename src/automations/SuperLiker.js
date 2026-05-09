@@ -22,7 +22,7 @@ class SuperLiker {
     try {
       const today = new Date().toDateString();
       const lastDate = this.getLastSuperLikeDate();
-      
+
       if (lastDate === today) {
         return parseInt(localStorage.getItem('TinderAutopilot/superLikeCount') || '0');
       } else {
@@ -56,18 +56,19 @@ class SuperLiker {
       "button[aria-label*='Super Like']",
       "button[data-testid='super-like']",
       "button[title*='Super Like']",
-      ".recsCardboard__cardsContainer button:nth-child(3)", // Middle button
+      '.recsCardboard__cardsContainer button:nth-child(3)', // Middle button
       "[data-testid='gamepad-super-like']",
       "button[aria-label*='Star']"
     ];
-    
+
     for (const selector of selectors) {
       const button = document.querySelector(selector);
-      if (button && button.offsetParent !== null) { // Check if visible
+      if (button && button.offsetParent !== null) {
+        // Check if visible
         return button;
       }
     }
-    
+
     // Fallback to XPath
     try {
       const xpath = "//span[text()='Super Like']";
@@ -90,25 +91,25 @@ class SuperLiker {
 
     // Get Super Like strategy from settings
     const strategy = this.getSuperLikeStrategy();
-    
+
     switch (strategy) {
       case 'random':
         // 10% chance to Super Like
         return Math.random() < 0.1;
-      
+
       case 'verified':
         // Super Like verified profiles only
         return this.isProfileVerified();
-      
+
       case 'photos':
         // Super Like profiles with many photos
         return this.getPhotoCount() >= 5;
-      
+
       case 'distance':
         // Super Like nearby profiles
         const distance = this.getDistance();
         return distance && distance.value <= 10;
-      
+
       default:
         return false;
     }
@@ -117,7 +118,10 @@ class SuperLiker {
   isEnabled() {
     try {
       const checkbox = document.querySelector(`${this.selector} .toggleSwitch > div`);
-      return checkbox && checkbox.style.cssText.includes('background: linear-gradient(135deg, #ff6b35, #ff8c42)');
+      return (
+        checkbox &&
+        checkbox.style.cssText.includes('background: linear-gradient(135deg, #ff6b35, #ff8c42)')
+      );
     } catch (e) {
       return false;
     }
@@ -150,11 +154,7 @@ class SuperLiker {
   }
 
   getPhotoCount() {
-    const photoSelectors = [
-      '.keen-slider__slide img',
-      '[data-testid="photo"]',
-      '.slider img'
-    ];
+    const photoSelectors = ['.keen-slider__slide img', '[data-testid="photo"]', '.slider img'];
 
     let maxCount = 0;
     for (const selector of photoSelectors) {
@@ -197,13 +197,13 @@ class SuperLiker {
     if (this.shouldSuperLike()) {
       superLikeButton.click();
       this.incrementSuperLikeCount();
-      
+
       // Update counter in UI
       const counterElement = document.getElementById('superLikeCount');
       if (counterElement) {
         counterElement.innerHTML = parseInt(counterElement.innerHTML, 10) + 1;
       }
-      
+
       logger(`⭐ Super Like used! (${this.todayCount}/${this.dailyLimit} today)`);
       return true;
     }

@@ -16,7 +16,6 @@ class Swiper {
     this.superLiker = new SuperLiker();
   }
 
-
   start = () => {
     logger('Starting to swipe using a randomized interval');
     this.isRunning = true;
@@ -31,18 +30,19 @@ class Swiper {
   canSwipe = () => {
     const likeButton = this.hasLike();
     const hasProfile = this.hasProfile();
-    const noBlockingModals = !document.querySelector('.beacon__circle') && 
-                            !document.querySelector('[data-testid="modal"]') &&
-                            !document.querySelector('.modal') &&
-                            !document.querySelector('[role="dialog"]');
-    
+    const noBlockingModals =
+      !document.querySelector('.beacon__circle') &&
+      !document.querySelector('[data-testid="modal"]') &&
+      !document.querySelector('.modal') &&
+      !document.querySelector('[role="dialog"]');
+
     if (!likeButton) {
       logger('🔍 Debug: No like button found');
     }
     if (!hasProfile) {
       logger('🔍 Debug: No profile detected');
     }
-    
+
     return likeButton && hasProfile && noBlockingModals;
   };
 
@@ -50,11 +50,35 @@ class Swiper {
   pressKey = (key, keyCode) => {
     try {
       const events = [
-        new KeyboardEvent('keydown', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window }),
-        new KeyboardEvent('keypress', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window }),
-        new KeyboardEvent('keyup', { key: key, code: key, keyCode: keyCode, which: keyCode, bubbles: true, cancelable: true, view: window })
+        new KeyboardEvent('keydown', {
+          key: key,
+          code: key,
+          keyCode: keyCode,
+          which: keyCode,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        }),
+        new KeyboardEvent('keypress', {
+          key: key,
+          code: key,
+          keyCode: keyCode,
+          which: keyCode,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        }),
+        new KeyboardEvent('keyup', {
+          key: key,
+          code: key,
+          keyCode: keyCode,
+          which: keyCode,
+          bubbles: true,
+          cancelable: true,
+          view: window
+        })
       ];
-      
+
       // Try dispatching on different elements
       const targets = [
         document,
@@ -67,13 +91,13 @@ class Swiper {
         document.querySelector('[role="application"]'),
         window
       ].filter(Boolean);
-      
+
       for (const target of targets) {
         for (const event of events) {
           target.dispatchEvent(event);
         }
       }
-      
+
       return true;
     } catch (e) {
       logger(`⚠️ Error pressing key ${key}: ${e.message}`);
@@ -94,7 +118,10 @@ class Swiper {
       let card = null;
       for (const sel of cardSelectors) {
         const el = document.querySelector(sel);
-        if (el && el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) { card = el; break; }
+        if (el && el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) {
+          card = el;
+          break;
+        }
       }
       if (!card) return false;
       const rect = card.getBoundingClientRect();
@@ -105,13 +132,33 @@ class Swiper {
       const dx = (endX - startX) / steps;
       const dy = 0;
 
-      const dispatch = (type, x, y, extra={}) => {
+      const dispatch = (type, x, y, extra = {}) => {
         try {
           if (window.PointerEvent) {
-            card.dispatchEvent(new PointerEvent(type, {bubbles:true,cancelable:true,clientX:x,clientY:y,buttons:1,pointerId:1,pointerType:'mouse', ...extra}));
+            card.dispatchEvent(
+              new PointerEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y,
+                buttons: 1,
+                pointerId: 1,
+                pointerType: 'mouse',
+                ...extra
+              })
+            );
           } else {
             const evtType = type.replace('pointer', 'mouse');
-            card.dispatchEvent(new MouseEvent(evtType, {bubbles:true,cancelable:true,clientX:x,clientY:y,buttons:1, ...extra}));
+            card.dispatchEvent(
+              new MouseEvent(evtType, {
+                bubbles: true,
+                cancelable: true,
+                clientX: x,
+                clientY: y,
+                buttons: 1,
+                ...extra
+              })
+            );
           }
         } catch {}
       };
@@ -119,8 +166,23 @@ class Swiper {
       const dispatchTouch = (t, x, y) => {
         try {
           if ('TouchEvent' in window && 'Touch' in window) {
-            const touch = new Touch({identifier: Date.now(), target: card, clientX: x, clientY: y, radiusX: 2, radiusY: 2, rotationAngle: 0, force: 0.5});
-            const ev = new TouchEvent(t, {bubbles: true, cancelable: true, touches: t==='touchend'?[]:[touch], targetTouches: t==='touchend'?[]:[touch], changedTouches: [touch]});
+            const touch = new Touch({
+              identifier: Date.now(),
+              target: card,
+              clientX: x,
+              clientY: y,
+              radiusX: 2,
+              radiusY: 2,
+              rotationAngle: 0,
+              force: 0.5
+            });
+            const ev = new TouchEvent(t, {
+              bubbles: true,
+              cancelable: true,
+              touches: t === 'touchend' ? [] : [touch],
+              targetTouches: t === 'touchend' ? [] : [touch],
+              changedTouches: [touch]
+            });
             card.dispatchEvent(ev);
           }
         } catch {}
@@ -128,47 +190,52 @@ class Swiper {
 
       dispatch('pointerdown', startX, startY);
       dispatchTouch('touchstart', startX, startY);
-      for (let i=1;i<=steps;i++) {
-        dispatch('pointermove', startX + dx*i, startY + dy*i);
-        dispatchTouch('touchmove', startX + dx*i, startY + dy*i);
-        await new Promise(r => setTimeout(r, 30));
+      for (let i = 1; i <= steps; i++) {
+        dispatch('pointermove', startX + dx * i, startY + dy * i);
+        dispatchTouch('touchmove', startX + dx * i, startY + dy * i);
+        await new Promise((r) => setTimeout(r, 30));
       }
-      dispatch('pointerup', startX + dx*steps, startY + dy*steps);
-      dispatchTouch('touchend', startX + dx*steps, startY + dy*steps);
+      dispatch('pointerup', startX + dx * steps, startY + dy * steps);
+      dispatchTouch('touchend', startX + dx * steps, startY + dy * steps);
 
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 300));
       return true;
     } catch (e) {
       logger(`⚠️ Swipe simulation failed: ${e.message}`);
       return false;
     }
-  }
+  };
 
   // Save current profile ID to detect changes
   getCurrentProfileId = () => {
     try {
       // Try to get a unique identifier from the current profile
-      const nameElement = document.querySelector('h1[aria-label*="years"]') || 
-                          document.querySelector('[itemprop="name"]') ||
-                          document.querySelector('h1');
-      
+      const nameElement =
+        document.querySelector('h1[aria-label*="years"]') ||
+        document.querySelector('[itemprop="name"]') ||
+        document.querySelector('h1');
+
       if (nameElement) {
         const txt = (nameElement.textContent || '').trim();
         if (txt) return `name:${txt}`;
       }
-      
+
       // Fallback: use first image src as identifier
-      const firstImage = document.querySelector('.keen-slider__slide img, [data-testid="card-stack"] img');
+      const firstImage = document.querySelector(
+        '.keen-slider__slide img, [data-testid="card-stack"] img'
+      );
       if (firstImage && firstImage.src) {
         return `img:${firstImage.src}`;
       }
-      
+
       // As a last resort, try to use visible slide index
-      const slides = Array.from(document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)'));
-      const visible = slides.filter(el => el && el.offsetParent !== null);
+      const slides = Array.from(
+        document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)')
+      );
+      const visible = slides.filter((el) => el && el.offsetParent !== null);
       const idx = visible.length ? slides.indexOf(visible[0]) : -1;
       if (idx >= 0) return `slideIndex:${idx}`;
-      
+
       return null;
     } catch (e) {
       return null;
@@ -180,32 +247,37 @@ class Swiper {
     const profileSelectors = [
       // Main card containers
       '[data-testid="card-stack"]',
-      '[data-testid="profileCard"]', 
+      '[data-testid="profileCard"]',
       '.recsCardboard__card',
       '.Expand.enterAnimationContainer > div',
-      
+
       // Image containers
       '.keen-slider__slide:not(.keen-slider__slide--clone)',
       '.StretchedBox img',
-      
+
       // Profile content areas
       '[data-testid="card-stack"] > div > div',
       '.gamepad-card',
       '.profileCard',
-      
+
       // Fallback selectors
       '.Expand',
       '.StretchedBox'
     ];
 
     console.log('🔍 Checking for profile...');
-    
+
     for (const selector of profileSelectors) {
       const elements = document.querySelectorAll(selector);
       console.log(`  ${selector}: ${elements.length} elements`);
-      
+
       for (const element of elements) {
-        if (element && element.offsetParent !== null && element.offsetWidth > 0 && element.offsetHeight > 0) {
+        if (
+          element &&
+          element.offsetParent !== null &&
+          element.offsetWidth > 0 &&
+          element.offsetHeight > 0
+        ) {
           console.log(`✅ Profile found with selector: ${selector}`);
           return true;
         }
@@ -220,7 +292,7 @@ class Swiper {
       '.keen-slider img',
       '[data-testid="card-stack"] img'
     ];
-    
+
     for (const selector of imageSelectors) {
       const images = document.querySelectorAll(selector);
       console.log(`  Images ${selector}: ${images.length} found`);
@@ -248,7 +320,7 @@ class Swiper {
       "button[data-testid='gamepad-like-button']",
       "button[title='Like']",
       "button[title*='Like']",
-      ".gamepad__button--like"
+      '.gamepad__button--like'
     ];
 
     // Search within the gamepad/footer area if present to reduce false positives
@@ -337,7 +409,7 @@ class Swiper {
 
     // Check if profile should be skipped based on bio (opens modal, checks, closes)
     const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
-    
+
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
       logger('🚫 Profile should be skipped, attempting to dislike...');
@@ -347,72 +419,76 @@ class Swiper {
         this.profileAnalyzer.closeProfile();
         await this.profileAnalyzer.waitForModalClose(1200);
       } catch {}
-      
+
       // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         try {
           const currentProfileId = this.getCurrentProfileId();
           dislikeButton.click();
-          await new Promise(resolve => setTimeout(resolve, 600));
+          await new Promise((resolve) => setTimeout(resolve, 600));
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using dislike button');
             return true;
           } else {
-            logger(`⚠️ Dislike button click did not change profile; falling back to keyboard (id before=${currentProfileId}, after=${newProfileId})`);
+            logger(
+              `⚠️ Dislike button click did not change profile; falling back to keyboard (id before=${currentProfileId}, after=${newProfileId})`
+            );
           }
         } catch (e) {
           logger(`⚠️ Error clicking dislike button: ${e.message}`);
         }
       }
-      
+
       // Method 2: Try keyboard shortcut (ArrowLeft for dislike)
       logger('⌨️ Trying keyboard shortcut for dislike (ArrowLeft)...');
       const currentProfileId = this.getCurrentProfileId();
-      for (let i=0;i<3;i++) {
+      for (let i = 0; i < 3; i++) {
         this.pressKey('ArrowLeft', 37);
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise((resolve) => setTimeout(resolve, 250));
         const newProfileId = this.getCurrentProfileId();
         if (currentProfileId !== newProfileId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
           return true;
         }
-        logger(`↩️ ArrowLeft attempt ${i+1}/3 did not change profile (id=${currentProfileId})`);
+        logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
       }
-      
+
       // Try alternative keyboard shortcuts
       logger('⌨️ Trying alternative keyboard shortcuts...');
       const shortcuts = [
-        { key: 'a', keyCode: 65 },  // 'a' key sometimes used for pass
-        { key: 'x', keyCode: 88 },  // 'x' key for reject
-        { key: 'Escape', keyCode: 27 }  // Escape to close/skip
+        { key: 'a', keyCode: 65 }, // 'a' key sometimes used for pass
+        { key: 'x', keyCode: 88 }, // 'x' key for reject
+        { key: 'Escape', keyCode: 27 } // Escape to close/skip
       ];
-      
+
       for (const shortcut of shortcuts) {
         this.pressKey(shortcut.key, shortcut.keyCode);
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
         const latestProfileId = this.getCurrentProfileId();
         if (currentProfileId !== latestProfileId || !this.hasProfile()) {
           logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
           return true;
         }
       }
-      
+
       // Method 3: Simulate a real swipe-left drag
       logger('�️ Simulating swipe-left drag...');
       const swipeOk = await this.simulateSwipeLeft();
       if (swipeOk) {
-        await new Promise(r => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 400));
         const afterSwipeId = this.getCurrentProfileId();
         if (currentProfileId !== afterSwipeId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using swipe-left drag');
           return true;
         }
-        logger(`⚠️ Swipe-left drag did not change profile (id before=${currentProfileId}, after=${afterSwipeId})`);
+        logger(
+          `⚠️ Swipe-left drag did not change profile (id before=${currentProfileId}, after=${afterSwipeId})`
+        );
       }
-      
+
       // Last resort: Report that we couldn't dislike and return false to try again
       logger('❌ CRITICAL: Could not dislike profile! Manual intervention may be needed.');
       logger('🛑 Stopping autopilot to prevent unwanted likes...');
@@ -427,7 +503,7 @@ class Swiper {
       if (elapsed < minGateMs) {
         const waitMs = minGateMs - elapsed;
         logger(`⏳ Waiting ${waitMs}ms before like due to bio filter`);
-        await new Promise(resolve => setTimeout(resolve, waitMs));
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
       }
     }
 
@@ -441,13 +517,13 @@ class Swiper {
     if (likeButton) {
       likeButton.click();
       logger('✅ ❤️ Liked profile');
-      
+
       // Update like counter
       const likeCountEl = document.getElementById('likeCount');
       if (likeCountEl) {
         likeCountEl.innerHTML = parseInt(likeCountEl.innerHTML, 10) + 1;
       }
-      
+
       return true;
     } else {
       logger('⚠️ No like button found');
@@ -457,7 +533,7 @@ class Swiper {
 
   hasDislike = () => {
     logger('🔍 Searching for dislike button...');
-    
+
     // Strategy 1: Find by aria-label or title
     const labelSelectors = [
       "button[aria-label*='Pass']",
@@ -483,7 +559,7 @@ class Swiper {
       "button[title*='Não curtir' i]",
       "button[title*='Nao curtir' i]"
     ];
-    
+
     for (const selector of labelSelectors) {
       const button = document.querySelector(selector);
       if (button && button.offsetParent !== null && !button.disabled) {
@@ -491,7 +567,7 @@ class Swiper {
         return button;
       }
     }
-    
+
     // Strategy 2: Find by data-testid
     const testIdSelectors = [
       "button[data-testid='dislike']",
@@ -503,7 +579,7 @@ class Swiper {
       "[data-testid*='pass' i]",
       "button[data-testid*='pass' i]"
     ];
-    
+
     for (const selector of testIdSelectors) {
       const button = document.querySelector(selector);
       if (button && button.offsetParent !== null && !button.disabled) {
@@ -514,7 +590,7 @@ class Swiper {
         }
       }
     }
-    
+
     // Strategy 3: Find by position in gamepad (dislike is usually the first button)
     const gamepadSelectors = [
       '[data-testid="gamepad"]',
@@ -523,7 +599,7 @@ class Swiper {
       '.recsGamepad',
       '[class*="gamepad"]'
     ];
-    
+
     for (const selector of gamepadSelectors) {
       const gamepad = document.querySelector(selector);
       if (gamepad) {
@@ -532,21 +608,33 @@ class Swiper {
         if (buttons.length >= 2) {
           // In Tinder, the order is usually: Dislike (1st), Super Like (2nd), Like (3rd)
           const firstButton = buttons[0];
-          
+
           // Verify it's not a Super Like or Like button
           if (firstButton && firstButton.offsetParent !== null && !firstButton.disabled) {
             const ariaLabel = (firstButton.getAttribute('aria-label') || '').toLowerCase();
             const title = (firstButton.getAttribute('title') || '').toLowerCase();
             const testId = (firstButton.getAttribute('data-testid') || '').toLowerCase();
-            
+
             // Make sure it's not Like or Super Like
-            if (!ariaLabel.includes('like') && !title.includes('like') && !testId.includes('like') &&
-                !ariaLabel.includes('super') && !title.includes('super') && !testId.includes('super') &&
-                !ariaLabel.includes('boost') && !title.includes('boost') && !testId.includes('boost')) {
+            if (
+              !ariaLabel.includes('like') &&
+              !title.includes('like') &&
+              !testId.includes('like') &&
+              !ariaLabel.includes('super') &&
+              !title.includes('super') &&
+              !testId.includes('super') &&
+              !ariaLabel.includes('boost') &&
+              !title.includes('boost') &&
+              !testId.includes('boost')
+            ) {
               logger(`✅ Found dislike button as first button in gamepad: ${selector}`);
               return firstButton;
-            } else if (ariaLabel.includes('nope') || ariaLabel.includes('pass') || 
-                       title.includes('nope') || title.includes('pass')) {
+            } else if (
+              ariaLabel.includes('nope') ||
+              ariaLabel.includes('pass') ||
+              title.includes('nope') ||
+              title.includes('pass')
+            ) {
               logger(`✅ Found dislike button by content in gamepad: ${selector}`);
               return firstButton;
             }
@@ -554,7 +642,7 @@ class Swiper {
         }
       }
     }
-    
+
     // Strategy 4: Find by SVG content (X icon)
     try {
       const buttons = document.querySelectorAll('button');
@@ -572,12 +660,12 @@ class Swiper {
                 return button;
               }
             }
-            
+
             // Check fill color - dislike button often has red/pink colors
             const fill = svg.getAttribute('fill') || '';
             const style = window.getComputedStyle(svg);
             const color = style.fill || style.color || '';
-            
+
             if (fill.includes('#ff4458') || color.includes('rgb(255, 68, 88)')) {
               logger(`✅ Found dislike button by red/pink SVG color`);
               return button;
@@ -588,34 +676,41 @@ class Swiper {
     } catch (e) {
       logger(`⚠️ Error searching for dislike button by SVG: ${e.message}`);
     }
-    
+
     // Strategy 5: Find by computed styles and position
     try {
       // Get all buttons at the bottom of the screen
-      const buttons = Array.from(document.querySelectorAll('button')).filter(btn => {
+      const buttons = Array.from(document.querySelectorAll('button')).filter((btn) => {
         if (!btn.offsetParent || btn.disabled) return false;
         const rect = btn.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         // Button should be in the bottom 25% of the screen
         return rect.top > viewportHeight * 0.75;
       });
-      
+
       // Sort buttons by horizontal position (left to right)
       buttons.sort((a, b) => {
         const aRect = a.getBoundingClientRect();
         const bRect = b.getBoundingClientRect();
         return aRect.left - bRect.left;
       });
-      
+
       // Dislike button is typically the leftmost action button
       if (buttons.length >= 2) {
         const firstButton = buttons[0];
         // Verify it's not a navigation button
         const ariaLabel = (firstButton.getAttribute('aria-label') || '').toLowerCase();
         const hasText = firstButton.textContent.trim().length > 0;
-        
-        if (!hasText || ariaLabel.includes('pass') || ariaLabel.includes('nope') || 
-            ariaLabel.includes('dislike') || ariaLabel.includes('não') || ariaLabel.includes('nao') || !ariaLabel.includes('profile')) {
+
+        if (
+          !hasText ||
+          ariaLabel.includes('pass') ||
+          ariaLabel.includes('nope') ||
+          ariaLabel.includes('dislike') ||
+          ariaLabel.includes('não') ||
+          ariaLabel.includes('nao') ||
+          !ariaLabel.includes('profile')
+        ) {
           logger(`✅ Found dislike button by position (leftmost bottom button)`);
           return firstButton;
         }
@@ -623,7 +718,7 @@ class Swiper {
     } catch (e) {
       logger(`⚠️ Error finding dislike button by position: ${e.message}`);
     }
-    
+
     // Strategy 6: Generic back/close buttons sometimes act as pass in expanded views
     try {
       const candidates = Array.from(document.querySelectorAll('button, [role="button"]'));
@@ -633,7 +728,13 @@ class Swiper {
         const dtid = (btn.getAttribute('data-testid') || '').toLowerCase();
         const txt = (btn.textContent || '').toLowerCase();
         const content = `${aria} ${title} ${dtid} ${txt}`;
-        if (content.includes('pass') || content.includes('nope') || content.includes('dislike') || content.includes('não') || content.includes('nao')) {
+        if (
+          content.includes('pass') ||
+          content.includes('nope') ||
+          content.includes('dislike') ||
+          content.includes('não') ||
+          content.includes('nao')
+        ) {
           logger('✅ Found fallback dislike candidate by textual content');
           return btn.closest('button') || btn;
         }
@@ -655,7 +756,7 @@ class Swiper {
       '.modal button[aria-label*="Close"]',
       '.matchModal button:first-child'
     ];
-    
+
     for (const selector of selectors) {
       const buttons = document.querySelectorAll(selector);
       if (buttons.length > 0) {
@@ -669,7 +770,7 @@ class Swiper {
         }
       }
     }
-    
+
     return false;
   };
 

@@ -2,7 +2,7 @@ import { insertCss } from '../misc/insert-css';
 
 class Instagram {
   modalSelector = '#modal-manager';
-  
+
   imageSelector = `${this.modalSelector} div[style*="instagram"]`;
 
   observer;

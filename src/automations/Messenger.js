@@ -68,15 +68,20 @@ class Messenger {
   // Check if message was already sent by comparing normalized versions
   hasMessageBeenSent = (messageList, messageTemplate, matchName) => {
     if (!messageList || messageList.length === 0) return false;
-    
+
     const normalizedTemplate = this.normalizeMessageForComparison(messageTemplate, matchName);
-    
+
     // Also check variations without name replacement
-    const templateWithoutName = messageTemplate.replace('{name}', '').trim().toLowerCase().replace(/[^a-zA-Z0-9]+/g, '-');
-    
-    return messageList.some(sentMsg => 
-      sentMsg.includes(normalizedTemplate) || 
-      (templateWithoutName && sentMsg.includes(templateWithoutName))
+    const templateWithoutName = messageTemplate
+      .replace('{name}', '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9]+/g, '-');
+
+    return messageList.some(
+      (sentMsg) =>
+        sentMsg.includes(normalizedTemplate) ||
+        (templateWithoutName && sentMsg.includes(templateWithoutName))
     );
   };
 
@@ -84,12 +89,12 @@ class Messenger {
     const matchList = keyBy(r, 'id');
     const batchSize = 10; // Process in smaller batches to prevent memory issues
     const matchIds = Object.keys(matchList);
-    
+
     logger(`Processing ${matchIds.length} matches in batches of ${batchSize}`);
 
     for (let i = 0; i < matchIds.length; i += batchSize) {
       if (!this.isRunningMessage) break;
-      
+
       const batch = matchIds.slice(i, i + batchSize);
       const batchPromises = [];
 
@@ -100,7 +105,7 @@ class Messenger {
         const match = matchList[matchID];
         const messageTemplate = get(document.getElementById('messageToSend'), 'value', '');
         const matchName = get(match, 'person.name', '');
-        
+
         if (!messageTemplate.trim() || !matchName) {
           logger(` Skipping match - missing template or name`);
           continue;
@@ -113,7 +118,7 @@ class Messenger {
             .then((messageList) => {
               this.checkedMessage += 1;
               logger(`Checked ${this.checkedMessage}/${this.allMatches.length}`);
-              
+
               const alreadySent = this.hasMessageBeenSent(messageList, messageTemplate, matchName);
               return !alreadySent;
             })
@@ -142,11 +147,11 @@ class Messenger {
       // Wait for current batch to complete before processing next
       if (batchPromises.length > 0) {
         await Promise.allSettled(batchPromises);
-        
+
         // Memory cleanup between batches
         if (i + batchSize < matchIds.length) {
-          logger(`Batch ${Math.floor(i/batchSize) + 1} completed. Waiting before next batch...`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second pause between batches
+          logger(`Batch ${Math.floor(i / batchSize) + 1} completed. Waiting before next batch...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second pause between batches
         }
       }
     }

@@ -96,7 +96,8 @@ class Sidebar {
     // sidebar.js
     const el = document.createElement('aside');
     el.className = 'H(100%) Fld(c) Pos(r) Flxg(0) Fxs(0) Flxb(25%) Miw(325px) Maw(375px)';
-    el.style.cssText = 'background: #000000; color: #ffffff; z-index: 9999999; border-right: 1px solid #333333; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);';
+    el.style.cssText =
+      'background: #000000; color: #ffffff; z-index: 9999999; border-right: 1px solid #333333; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);';
     el.innerHTML = infoBanner;
     this.insertBefore(el, document.querySelector('aside:first-of-type'));
 
@@ -149,12 +150,12 @@ class Sidebar {
 
     // Initialize slider values from localStorage
     this.initializeSliders();
-    
+
     // Set initial slider states based on toggle positions
     setTimeout(() => {
       this.updateSliderStates();
     }, 1000);
-    
+
     // Also add a manual trigger for testing
     window.updateSliderStates = () => this.updateSliderStates();
 
@@ -195,7 +196,7 @@ class Sidebar {
     sliders.forEach(({ id, defaultValue, unit }) => {
       const slider = document.getElementById(id);
       const valueDisplay = document.getElementById(`${id}Value`);
-      
+
       if (slider && valueDisplay) {
         const storedValue = localStorage.getItem(`TinderAutopilot/${id}`) || defaultValue;
         slider.value = storedValue;
@@ -235,18 +236,18 @@ class Sidebar {
       console.warn(`Element not found for selector: ${selector}`);
       return;
     }
-    
+
     element.onclick = (e) => {
       e.preventDefault();
 
       const isOn = getCheckboxValue(selector);
       toggleCheckbox(selector);
-      
+
       // Update dependent sliders with a small delay to ensure toggle state is updated
       setTimeout(() => {
         this.updateSliderStates();
       }, 50);
-      
+
       if (isOn && stop) stop();
       if (!isOn && start) start();
     };
@@ -254,7 +255,7 @@ class Sidebar {
 
   updateSliderStates = () => {
     console.log('🔧 updateSliderStates called');
-    
+
     // Manual slider mapping since the data-parent approach isn't working
     const sliderMappings = [
       { sliderId: 'likeInterval', parentSelector: '.tinderAutopilot' },
@@ -263,17 +264,18 @@ class Sidebar {
       { sliderId: 'maxDistance', parentSelector: '.tinderAutopilotAdvancedFilter' },
       { sliderId: 'minPhotoCount', parentSelector: '.tinderAutopilotAdvancedFilter' }
     ];
-    
+
     sliderMappings.forEach(({ sliderId, parentSelector }) => {
       const slider = document.getElementById(sliderId);
-      const container = slider?.closest('.slider-container') || slider?.parentElement?.parentElement?.parentElement;
-      
+      const container =
+        slider?.closest('.slider-container') || slider?.parentElement?.parentElement?.parentElement;
+
       if (slider && container) {
         const isParentEnabled = getCheckboxValue(parentSelector);
         console.log(`Slider ${sliderId} - Parent ${parentSelector} enabled: ${isParentEnabled}`);
-        
+
         slider.disabled = !isParentEnabled;
-        
+
         // Update visual state
         if (isParentEnabled) {
           container.style.opacity = '1';
@@ -294,27 +296,31 @@ class Sidebar {
 const getCheckboxValue = (selector) => {
   const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
   console.log(`🔍 Toggle element for ${selector}:`, toggleElement);
-  
+
   if (toggleElement) {
     const style = toggleElement.style.cssText;
     const background = toggleElement.style.background;
     console.log(`🎨 Style: ${style}`);
     console.log(`🎨 Background: ${background}`);
-    
+
     // Check multiple ways the toggle might be "on"
-    const isOnByGradient = style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') || 
-                          style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-                          background.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
-                          background.includes('linear-gradient(135deg, #ff6b35, #ff8c42)');
-    
-    const isOnByBorder = style.includes('border: 2px solid rgb(255, 107, 53)') || 
-                        style.includes('border: 2px solid #ff6b35');
-    
+    const isOnByGradient =
+      style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
+      style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
+      background.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
+      background.includes('linear-gradient(135deg, #ff6b35, #ff8c42)');
+
+    const isOnByBorder =
+      style.includes('border: 2px solid rgb(255, 107, 53)') ||
+      style.includes('border: 2px solid #ff6b35');
+
     const isOn = isOnByGradient || isOnByBorder;
-    console.log(`✅ getCheckboxValue(${selector}): ${isOn} (gradient: ${isOnByGradient}, border: ${isOnByBorder})`);
+    console.log(
+      `✅ getCheckboxValue(${selector}): ${isOn} (gradient: ${isOnByGradient}, border: ${isOnByBorder})`
+    );
     return isOn;
   }
-  
+
   console.log(`❌ getCheckboxValue(${selector}): false (element not found)`);
   return false;
 };
@@ -323,7 +329,7 @@ const toggleCheckbox = (selector) => {
   const isOn = getCheckboxValue(selector);
   const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
   const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
-  
+
   if (toggleElement && innerElement) {
     toggleElement.style.cssText = isOn ? offToggle : onToggle;
     innerElement.style.cssText = isOn ? offToggleInner : onToggleInner;
