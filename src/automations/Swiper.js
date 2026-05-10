@@ -445,12 +445,16 @@ class Swiper {
         await this.profileAnalyzer.waitForModalClose(1200);
       } catch { }
 
+      // Track if dislike button click was executed (to avoid double-execution)
+      let dislikeExecuted = false;
+
       // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         try {
           const currentProfileId = this.getCurrentProfileId();
           dislikeButton.click();
+          dislikeExecuted = true;
 
           // FIX: Wait for modal to close after dislike (Tinder doesn't auto-close expanded profile)
           logger('🚪 Waiting for modal to close after dislike...');
@@ -463,7 +467,8 @@ class Swiper {
             await this.profileAnalyzer.waitForModalClose(1500);
           }
 
-          await new Promise((resolve) => setTimeout(resolve, 600));
+          // FIX: Increased wait time from 600ms to 1500ms to allow DOM to update
+          await new Promise((resolve) => setTimeout(resolve, 1500));
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using dislike button');
@@ -472,7 +477,7 @@ class Swiper {
             return true;
           } else {
             logger(
-              `⚠️ Dislike button click did not change profile; falling back to keyboard (id before=${currentProfileId}, after=${newProfileId})`
+              `⚠️ Dislike button click did not change profile (id before=${currentProfileId}, after=${newProfileId})`
             );
           }
         } catch (e) {
@@ -481,19 +486,31 @@ class Swiper {
       }
 
       // Method 2: Try keyboard shortcut (ArrowLeft for dislike)
-      logger('⌨️ Trying keyboard shortcut for dislike (ArrowLeft)...');
-      const currentProfileId = this.getCurrentProfileId();
-      for (let i = 0; i < 3; i++) {
-        this.pressKey('ArrowLeft', 37);
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        const newProfileId = this.getCurrentProfileId();
-        if (currentProfileId !== newProfileId || !this.hasProfile()) {
-          logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
-          // CRITICAL FIX: Clean up profile entry after processing
-          delete this.profileFirstSeen[profileId];
-          return true;
+      // FIX: Only execute fallback if dislike button was clicked but didn't work
+      // (not just if the verification failed)
+      if (dislikeExecuted) {
+        logger('⌨️ Trying keyboard shortcut for dislike (ArrowLeft) as fallback...');
+
+        // FIX: Verify modal is closed before attempting keyboard fallback
+        if (this.profileAnalyzer.isProfileModalOpen()) {
+          logger('🚪 Modal still open, closing before keyboard fallback...');
+          this.profileAnalyzer.closeProfile();
+          await this.profileAnalyzer.waitForModalClose(1500);
         }
-        logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
+
+        const currentProfileId = this.getCurrentProfileId();
+        for (let i = 0; i < 3; i++) {
+          this.pressKey('ArrowLeft', 37);
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          const newProfileId = this.getCurrentProfileId();
+          if (currentProfileId !== newProfileId || !this.hasProfile()) {
+            logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
+            // CRITICAL FIX: Clean up profile entry after processing
+            delete this.profileFirstSeen[profileId];
+            return true;
+          }
+          logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
+        }
       }
 
       // Try alternative keyboard shortcuts
