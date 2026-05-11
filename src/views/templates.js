@@ -139,16 +139,6 @@ const autopilot = `
   'Auto like',
   'Begin automatically swiping right on all profiles.'
 )}
-        ${sliderGenerator({
-  className: 'likeInterval',
-  label: 'Like Interval',
-  helpText: 'Time between each like in seconds.',
-  min: 1,
-  max: 10,
-  defaultValue: 3,
-  unit: 's',
-  parentToggle: 'tinderAutopilot'
-})}
         ${checkboxGenerator(
   'tinderAutopilotHideMine',
   'Only show unanswered messages',

@@ -229,7 +229,6 @@ class Sidebar {
 
   initializeSliders = () => {
     const sliders = [
-      { id: 'likeInterval', defaultValue: 3, unit: 's' },
       { id: 'minAge', defaultValue: 18, unit: ' years' },
       { id: 'maxAge', defaultValue: 35, unit: ' years' },
       { id: 'maxDistance', defaultValue: 50, unit: ' km' },
@@ -315,7 +314,6 @@ class Sidebar {
 
     // Manual slider mapping since the data-parent approach isn't working
     const sliderMappings = [
-      { sliderId: 'likeInterval', parentSelector: '.tinderAutopilot' },
       { sliderId: 'minAge', parentSelector: '.tinderAutopilotAdvancedFilter' },
       { sliderId: 'maxAge', parentSelector: '.tinderAutopilotAdvancedFilter' },
       { sliderId: 'maxDistance', parentSelector: '.tinderAutopilotAdvancedFilter' },

@@ -411,15 +411,6 @@ class Swiper {
     return null;
   };
 
-  getLikeInterval = () => {
-    try {
-      const stored = localStorage.getItem('TinderAutopilot/likeInterval');
-      return stored ? parseInt(stored) * 1000 : 3000; // Convert to milliseconds
-    } catch (e) {
-      return 3000; // Default 3 seconds
-    }
-  };
-
   pressLike = async () => {
     // Check if we can swipe (has profile available)
     if (!this.canSwipe()) {
@@ -926,8 +917,7 @@ class Swiper {
     // What we came here to do, swipe right!
     this.pressLike().then((success) => {
       if (success) {
-        const interval = this.getLikeInterval();
-        setTimeout(this.run, interval);
+        setTimeout(this.run, generateRandomNumber(3000, 4000));
       } else {
         logger('No profiles found. Waiting 4s');
         setTimeout(this.run, generateRandomNumber(3000, 4000));
