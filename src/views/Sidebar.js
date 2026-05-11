@@ -130,7 +130,10 @@ class Sidebar {
       <div style="overflow: hidden; background: #000000; position: relative; height: 100%;">
         <div style="background: #000000; padding-bottom: 24px; font-size: 16px; height: 100%; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #ff6b35 #1a1a1a; color: #ffffff;" class="custom-scrollbar">
           ${topBanner}
-          ${counterLogs(0, 0)}
+          ${counterLogs(0, 0, 0)}
+          <div style="margin: 0 12px 16px 12px; display: flex; gap: 8px;">
+            <button id="resetCounters" style="width: 100%; padding: 10px 16px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">Reset Counters</button>
+          </div>
           ${autopilot}
           ${massMessage}
           ${loggerHeader}
@@ -143,6 +146,21 @@ class Sidebar {
   };
 
   events = () => {
+    // Initialize counter values from localStorage
+    this.initializeCounters();
+
+    // Reset counters button
+    const resetButton = document.getElementById('resetCounters');
+    if (resetButton) {
+      this.addTrackedListener(resetButton, 'click', () => {
+        localStorage.setItem('TinderAutopilot/likeCount', '0');
+        localStorage.setItem('TinderAutopilot/matchCount', '0');
+        localStorage.setItem('TinderAutopilot/deslikeCount', '0');
+        this.initializeCounters();
+        logger('🔄 Counters reset');
+      });
+    }
+
     // Auto unmatch
     waitUntilElementExists('img[alt="No Reason"]', () => {
       document.querySelector('ul li:last-of-type button').click();
@@ -253,6 +271,20 @@ class Sidebar {
         genderFilterField.value = storedGenderFilter;
       }
     }
+  };
+
+  initializeCounters = () => {
+    const likeCountEl = document.getElementById('likeCount');
+    const matchCountEl = document.getElementById('matchCount');
+    const deslikeCountEl = document.getElementById('deslikeCount');
+
+    const likeCount = parseInt(localStorage.getItem('TinderAutopilot/likeCount') || '0', 10);
+    const matchCount = parseInt(localStorage.getItem('TinderAutopilot/matchCount') || '0', 10);
+    const deslikeCount = parseInt(localStorage.getItem('TinderAutopilot/deslikeCount') || '0', 10);
+
+    if (likeCountEl) likeCountEl.textContent = likeCount;
+    if (matchCountEl) matchCountEl.textContent = matchCount;
+    if (deslikeCountEl) deslikeCountEl.textContent = deslikeCount;
   };
 
   bindCheckbox = (selector, start = false, stop = false) => {
