@@ -4,8 +4,7 @@ class Interactions {
   isOnMatchesPage = () => {
     return (
       window.location.toString().indexOf('app/recs') !== -1 ||
-      window.location.toString().indexOf('app/matches') !== -1 ||
-      window.location.toString().indexOf('app/explore') !== -1
+      window.location.toString().indexOf('app/matches') !== -1
     );
   };
 
