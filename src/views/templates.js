@@ -37,10 +37,9 @@ const textboxGenerator = ({ className, placeholder, helpText, defaultValue }) =>
         </label>
     </div>
 </div>
-${
-  helpText &&
+${helpText &&
   `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
-}
+  }
 `;
 
 const checkboxGenerator = (className, label, helpText = '') => `
@@ -61,10 +60,9 @@ const checkboxGenerator = (className, label, helpText = '') => `
         </label>
     </div>
 </div>
-${
-  helpText &&
+${helpText &&
   `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
-}
+  }
 `;
 
 const sliderGenerator = ({
@@ -78,9 +76,8 @@ const sliderGenerator = ({
   unit = '',
   parentToggle = null
 }) => `
-<div class="slider-container" data-parent="${
-  parentToggle || ''
-}" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+<div class="slider-container" data-parent="${parentToggle || ''
+  }" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 16px; cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -129,116 +126,115 @@ const sliderGenerator = ({
         </label>
     </div>
 </div>
-${
-  helpText &&
+${helpText &&
   `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
-}
+  }
 `;
 
 const autopilot = `
     <div class="Mt(20px)--ml Mt(16px)--s">
         ${titleGenerator('Main Settings')}
         ${checkboxGenerator(
-          'tinderAutopilot',
-          'Auto like',
-          'Begin automatically swiping right on all profiles.'
-        )}
+  'tinderAutopilot',
+  'Auto like',
+  'Begin automatically swiping right on all profiles.'
+)}
         ${sliderGenerator({
-          className: 'likeInterval',
-          label: 'Like Interval',
-          helpText: 'Time between each like in seconds.',
-          min: 1,
-          max: 10,
-          defaultValue: 3,
-          unit: 's',
-          parentToggle: 'tinderAutopilot'
-        })}
+  className: 'likeInterval',
+  label: 'Like Interval',
+  helpText: 'Time between each like in seconds.',
+  min: 1,
+  max: 10,
+  defaultValue: 3,
+  unit: 's',
+  parentToggle: 'tinderAutopilot'
+})}
         ${checkboxGenerator(
-          'tinderAutopilotHideMine',
-          'Only show unanswered messages',
-          'Useful if you just sent an auto message to a ton of people and only want to see the ones that responded.'
-        )}
+  'tinderAutopilotHideMine',
+  'Only show unanswered messages',
+  'Useful if you just sent an auto message to a ton of people and only want to see the ones that responded.'
+)}
         ${checkboxGenerator(
-          'tinderAutopilotAnonymous',
-          'Anonymous Mode',
-          'Hide profile pictures so you can take screenshots.'
-        )}
+  'tinderAutopilotAnonymous',
+  'Anonymous Mode',
+  'Hide profile pictures so you can take screenshots.'
+)}
         ${titleGenerator('Bio Filtering')}
         ${checkboxGenerator(
-          'tinderAutopilotBioFilter',
-          'Enable Bio Filtering',
-          'Skip profiles based on bio content.'
-        )}
+  'tinderAutopilotBioFilter',
+  'Enable Bio Filtering',
+  'Skip profiles based on bio content.'
+)}
         ${textboxGenerator({
-          className: 'bioBlacklist',
-          placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
-          helpText: 'Profiles containing these words will be skipped automatically.',
-          defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
-        })}
+  className: 'bioBlacklist',
+  placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
+  helpText: 'Profiles containing these words will be skipped automatically.',
+  defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
+})}
         ${checkboxGenerator(
-          'tinderAutopilotGenderFilter',
-          'Enable Gender Filtering',
-          'Skip profiles based on gender identity.'
-        )}
+  'tinderAutopilotGenderFilter',
+  'Enable Gender Filtering',
+  'Skip profiles based on gender identity.'
+)}
         ${textboxGenerator({
-          className: 'genderFilter',
-          placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
-          helpText:
-            'Profiles with these gender identities will be skipped. Leave empty to disable.',
-          defaultValue: ''
-        })}
+  className: 'genderFilter',
+  placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
+  helpText:
+    'Profiles with these gender identities will be skipped. Leave empty to disable.',
+  defaultValue: ''
+})}
         ${titleGenerator('Advanced Filtering')}
         ${checkboxGenerator(
-          'tinderAutopilotAdvancedFilter',
-          'Enable Advanced Filtering',
-          'Filter profiles by age, distance, and photo count.'
-        )}
+  'tinderAutopilotAdvancedFilter',
+  'Enable Advanced Filtering',
+  'Filter profiles by age, distance, and photo count.'
+)}
         ${sliderGenerator({
-          className: 'minAge',
-          label: 'Minimum Age',
-          helpText: 'Skip profiles below this age.',
-          min: 18,
-          max: 50,
-          defaultValue: 18,
-          unit: ' years',
-          parentToggle: 'tinderAutopilotAdvancedFilter'
-        })}
+  className: 'minAge',
+  label: 'Minimum Age',
+  helpText: 'Skip profiles below this age.',
+  min: 18,
+  max: 50,
+  defaultValue: 18,
+  unit: ' years',
+  parentToggle: 'tinderAutopilotAdvancedFilter'
+})}
         ${sliderGenerator({
-          className: 'maxAge',
-          label: 'Maximum Age',
-          helpText: 'Skip profiles above this age.',
-          min: 18,
-          max: 99,
-          defaultValue: 35,
-          unit: ' years',
-          parentToggle: 'tinderAutopilotAdvancedFilter'
-        })}
+  className: 'maxAge',
+  label: 'Maximum Age',
+  helpText: 'Skip profiles above this age.',
+  min: 18,
+  max: 99,
+  defaultValue: 35,
+  unit: ' years',
+  parentToggle: 'tinderAutopilotAdvancedFilter'
+})}
         ${sliderGenerator({
-          className: 'maxDistance',
-          label: 'Maximum Distance',
-          helpText: 'Skip profiles farther than this distance.',
-          min: 1,
-          max: 100,
-          defaultValue: 50,
-          unit: ' km',
-          parentToggle: 'tinderAutopilotAdvancedFilter'
-        })}
+  className: 'maxDistance',
+  label: 'Maximum Distance',
+  helpText: 'Skip profiles farther than this distance.',
+  min: 1,
+  max: 100,
+  defaultValue: 50,
+  unit: ' km',
+  parentToggle: 'tinderAutopilotAdvancedFilter'
+})}
         ${sliderGenerator({
-          className: 'minPhotoCount',
-          label: 'Minimum Photos',
-          helpText: 'Skip profiles with fewer photos.',
-          min: 1,
-          max: 9,
-          defaultValue: 3,
-          unit: ' photos',
-          parentToggle: 'tinderAutopilotAdvancedFilter'
-        })}
+  className: 'minPhotoCount',
+  label: 'Minimum Photos',
+  helpText: 'Skip profiles with fewer photos.',
+  min: 1,
+  max: 9,
+  defaultValue: 3,
+  unit: ' photos',
+  parentToggle: 'tinderAutopilotAdvancedFilter'
+})}
         ${titleGenerator('Super Like Settings')}
         ${checkboxGenerator(
-          'tinderAutopilotSuperLike',
-          'Enable Super Like Automation',
-          'Automatically use Super Likes based on strategy (5 per day limit).'
-        )}
+  'tinderAutopilotSuperLike',
+  'Enable Super Like Automation',
+  'Automatically use Super Likes based on strategy (5 per day limit).'
+)}
         <div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
           <div style="padding: 16px;">
             <label style="color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;">Super Like Strategy</label>
@@ -270,34 +266,47 @@ ${textboxGenerator({
 
 const loggerHeader = `<div style="margin-top: 16px;">${titleGenerator('Activity')}</div>`;
 
-const counterLogs = (likeCount, matchCount) => `
+const counterLogs = (likeCount, matchCount, deslikeCount) => `
 <div style="margin: 32px 12px 24px 12px; display: flex; gap: 8px;">
-<div style="position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;">
-  <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%);">
+  <div style="position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;">
+    <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%);">
       <span style="width: 40px; height: 40px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
         <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#000000"/>
+          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#000000"/>
         </svg>
       </span>
-  </div>
-  <div style="margin-top: 8px;">
-      <h3 style="font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;"><span id="likeCount">${likeCount}</span></h3>
+    </div>
+    <div style="margin-top: 8px;">
+      <h3 style="font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;"><span id="likeCount"></span></h3>
       <span style="color: #ff6b35; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Liked</span>
+    </div>
   </div>
-</div>
-<div style="position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;">
-  <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%);">
+  <div style="position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;">
+    <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%);">
       <span style="width: 40px; height: 40px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
         <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none">
-            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#000000"/>
+          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#000000"/>
         </svg>
       </span>
-  </div>
-  <div style="margin-top: 8px;">
-      <h3 style="font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;"><span id="matchCount">${matchCount}</span></h3>
+    </div>
+    <div style="margin-top: 8px;">
+      <h3 style="font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;"><span id="matchCount"></span></h3>
       <span style="color: #ff6b35; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Matched</span>
+    </div>
   </div>
-</div>
+  <div style="position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;">
+    <div style="position: absolute; left: 50%; top: -20px; transform: translateX(-50%);">
+      <span style="width: 40px; height: 40px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+        <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19z" fill="#000000"/>
+        </svg>
+      </span>
+    </div>
+    <div style="margin-top: 8px;">
+      <h3 style="font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;"><span id="deslikeCount"></span></h3>
+      <span style="color: #ff6b35; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Desliked</span>
+    </div>
+  </div>
 </div>
 `;
 
