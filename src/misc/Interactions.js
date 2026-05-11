@@ -81,6 +81,16 @@ class Interactions {
     try {
       const dialog = document.querySelector('[role="dialog"]');
       if (!dialog || !dialog.parentElement) return false;
+      // Check if actually visible/blocking
+      const style = getComputedStyle(dialog);
+      if (
+        style.visibility === 'hidden' ||
+        style.opacity === '0' ||
+        dialog.offsetParent === null ||
+        dialog.getAttribute('aria-hidden') === 'true'
+      ) {
+        return false;
+      }
       const modal = dialog.parentElement.parentElement;
       if (modal) {
         dialog.parentElement.click();
