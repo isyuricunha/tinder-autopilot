@@ -472,6 +472,13 @@ class Swiper {
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using dislike button');
+            // Update deslike counter
+            const deslikeCountEl = document.getElementById('deslikeCount');
+            if (deslikeCountEl) {
+              const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
+              deslikeCountEl.textContent = currentCount + 1;
+              localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+            }
             // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
             return true;
@@ -505,6 +512,13 @@ class Swiper {
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
+            // Update deslike counter
+            const deslikeCountEl = document.getElementById('deslikeCount');
+            if (deslikeCountEl) {
+              const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
+              deslikeCountEl.textContent = currentCount + 1;
+              localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+            }
             // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
             return true;
@@ -528,6 +542,13 @@ class Swiper {
         const latestProfileId = this.getCurrentProfileId();
         if (currentProfileId !== latestProfileId || !this.hasProfile()) {
           logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
+          // Update deslike counter
+          const deslikeCountEl = document.getElementById('deslikeCount');
+          if (deslikeCountEl) {
+            const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
+            deslikeCountEl.textContent = currentCount + 1;
+            localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+          }
           // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
           return true;
@@ -542,6 +563,13 @@ class Swiper {
         const afterSwipeId = this.getCurrentProfileId();
         if (currentProfileId !== afterSwipeId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using swipe-left drag');
+          // Update deslike counter
+          const deslikeCountEl = document.getElementById('deslikeCount');
+          if (deslikeCountEl) {
+            const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
+            deslikeCountEl.textContent = currentCount + 1;
+            localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+          }
           // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
           return true;
@@ -587,7 +615,9 @@ class Swiper {
       // Update like counter
       const likeCountEl = document.getElementById('likeCount');
       if (likeCountEl) {
-        likeCountEl.innerHTML = parseInt(likeCountEl.innerHTML, 10) + 1;
+        const currentCount = parseInt(likeCountEl.textContent, 10) || 0;
+        likeCountEl.textContent = currentCount + 1;
+        localStorage.setItem('TinderAutopilot/likeCount', String(currentCount + 1));
       }
 
       // CRITICAL FIX: Clean up profile entry after processing
@@ -832,8 +862,12 @@ class Swiper {
       if (buttons.length > 0) {
         const button = buttons[0];
         if (button && button.offsetParent !== null) {
-          document.getElementById('matchCount').innerHTML =
-            parseInt(document.getElementById('matchCount').innerHTML, 10) + 1;
+          const matchCountEl = document.getElementById('matchCount');
+          if (matchCountEl) {
+            const currentCount = parseInt(matchCountEl.textContent, 10) || 0;
+            matchCountEl.textContent = currentCount + 1;
+            localStorage.setItem('TinderAutopilot/matchCount', String(currentCount + 1));
+          }
           logger("Congrats! We've got a match! 🤡");
           button.click();
           return true;
