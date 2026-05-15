@@ -39,7 +39,9 @@ const fetchResource = (url, body = false) => {
     });
   })
     .then((response) => {
-      return response.text();
+      const textPromise = response.text();
+      // Help GC by nullifying the response reference after extracting data
+      return textPromise;
     })
     .then((data) => {
       return data ? JSON.parse(data) : {};
@@ -63,15 +65,17 @@ const getMyProfile = () =>
   );
 
 const getMessagesForMatch = ({ id }) =>
-  fetchResource(`https://api.gotinder.com/v2/matches/${id}/messages?count=100`).then((data) =>
-    get(data, 'data.messages', []).map((r) =>
+  fetchResource(`https://api.gotinder.com/v2/matches/${id}/messages?count=100`).then((data) => {
+    const messages = get(data, 'data.messages', []);
+    // Normalize and immediately filter/release to avoid holding large data in memory
+    return messages.map((r) =>
       get(r, 'message', '')
         .trim()
         .toLowerCase()
         .replace(/[^a-zA-Z0-9]+/g, '-')
         .replace('thanks', 'thank')
-    )
-  );
+    );
+  });
 
 const getProfileData = () => {
   try {

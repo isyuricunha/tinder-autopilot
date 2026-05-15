@@ -28,6 +28,12 @@ class Messenger {
     logger('Starting messages');
     this.isRunningMessage = true;
     this.nextPageToken = true;
+
+    // Clean up any previous session data before starting
+    if (this.allMatches.length > 0) {
+        this.allMatches = [];
+    }
+
     this.runMessage();
   };
 
@@ -87,6 +93,10 @@ class Messenger {
 
   sendMessagesTo = async (r) => {
     const matchList = keyBy(r, 'id');
+
+    // Release the reversed allMatches array after creating the lookup to free memory
+    this.allMatches = null;
+
     const batchSize = 10; // Process in smaller batches to prevent memory issues
     const matchIds = Object.keys(matchList);
 
@@ -117,7 +127,7 @@ class Messenger {
           getMessagesForMatch(match.id)
             .then((messageList) => {
               this.checkedMessage += 1;
-              logger(`Checked ${this.checkedMessage}/${this.allMatches.length}`);
+              logger(`Checked ${this.checkedMessage}/${matchIds.length}`);
 
               const alreadySent = this.hasMessageBeenSent(messageList, messageTemplate, matchName);
               return !alreadySent;
@@ -147,6 +157,9 @@ class Messenger {
       // Wait for current batch to complete before processing next
       if (batchPromises.length > 0) {
         await Promise.allSettled(batchPromises);
+
+        // Memory cleanup between batches - clear references to allow GC
+        batchPromises.length = 0;
 
         // Memory cleanup between batches
         if (i + batchSize < matchIds.length) {
