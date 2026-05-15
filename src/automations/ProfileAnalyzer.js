@@ -1,4 +1,5 @@
 import { logger } from '../misc/helper';
+import AIProfileFilter from './AIProfileFilter';
 
 class ProfileAnalyzer {
   constructor() {
@@ -7,6 +8,7 @@ class ProfileAnalyzer {
     this.ageRange = this.loadAgeRange();
     this.maxDistance = this.loadMaxDistance();
     this.minPhotoCount = this.loadMinPhotoCount();
+    this.aiFilter = new AIProfileFilter();
   }
 
   loadBioBlacklist() {
@@ -823,11 +825,15 @@ class ProfileAnalyzer {
       this.bioBlacklist = this.loadBioBlacklist();
       const hasBlacklist = this.bioBlacklist && this.bioBlacklist.length > 0;
 
+      // Check if AI filter is enabled
+      const isAIFilterEnabled = AIProfileFilter.isEnabled();
+
       // If no filters enabled at all, skip the check
       if (
         !hasBlacklist &&
         !this.isGenderFilterEnabled() &&
-        !this.isAdvancedFilterEnabled()
+        !this.isAdvancedFilterEnabled() &&
+        !isAIFilterEnabled
       ) {
         return false; // Don't skip
       }
@@ -844,7 +850,11 @@ class ProfileAnalyzer {
       const opened = await this.openProfile();
 
       if (!opened) {
-        const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
+        const requireModal =
+          hasBlacklist ||
+          this.isGenderFilterEnabled() ||
+          this.isAdvancedFilterEnabled() ||
+          isAIFilterEnabled;
         if (requireModal) {
           return true;
         }
@@ -853,13 +863,20 @@ class ProfileAnalyzer {
 
       // Wait for modal to open
       const modalOpened = await this.waitForProfileModal(
-        hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled()
+        hasBlacklist ||
+        this.isGenderFilterEnabled() ||
+        this.isAdvancedFilterEnabled() ||
+        isAIFilterEnabled
           ? 5000
           : 3000
       );
 
       if (!modalOpened) {
-        const requireModal = hasBlacklist || this.isGenderFilterEnabled() || this.isAdvancedFilterEnabled();
+        const requireModal =
+          hasBlacklist ||
+          this.isGenderFilterEnabled() ||
+          this.isAdvancedFilterEnabled() ||
+          isAIFilterEnabled;
         if (requireModal) {
           this.closeProfile();
           await this.waitForModalClose(1000);
@@ -874,17 +891,34 @@ class ProfileAnalyzer {
       if (hasBlacklist) {
         await this.waitForBioContent(5000);
       }
-      const shouldSkip = await this.shouldSkipProfile();
+      let shouldSkip = await this.shouldSkipProfile();
+
+      // If traditional filters passed, run AI filter if enabled
+      if (!shouldSkip && isAIFilterEnabled) {
+        const bioText = this.getBioText() || '';
+        logger('🤖 AI Filter enabled, analyzing profile...');
+        try {
+          const aiResult = await this.aiFilter.analyze({ bio: bioText });
+          if (!aiResult.shouldSwipe) {
+            shouldSkip = true;
+            logger(`🤖 AI Filter rejected profile: ${aiResult.reason}`);
+          } else {
+            logger(`🤖 AI Filter approved profile: ${aiResult.reason}`);
+          }
+        } catch (error) {
+          logger(`⚠️ AI Filter analysis failed: ${error.message}`);
+        }
+      }
 
       // Close the profile modal and WAIT for it to actually close
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((_resolve) => setTimeout(_resolve, 200));
       this.closeProfile();
 
       // CRITICAL: Wait and verify modal actually closed
       await this.waitForModalClose(2000);
 
       // Extra safety wait
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((_resolve) => setTimeout(_resolve, 300));
 
       return shouldSkip;
     } catch (e) {
@@ -893,7 +927,7 @@ class ProfileAnalyzer {
       try {
         this.closeProfile();
         await this.waitForModalClose(1000);
-      } catch (closeError) {
+      } catch (_closeError) {
         // Ignore close errors
       }
       return false;

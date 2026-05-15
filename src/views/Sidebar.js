@@ -225,6 +225,46 @@ class Sidebar {
         logger(`💾 Saved gender filter: ${value}`);
       });
     }
+
+    // Save AI filter settings when user updates them
+    const aiApiUrlField = document.getElementById('aiApiUrl');
+    if (aiApiUrlField) {
+      this.addTrackedListener(aiApiUrlField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/aiApiUrl', value);
+        logger(`💾 Saved AI API URL`);
+      });
+    }
+
+    const aiApiKeyField = document.getElementById('aiApiKey');
+    if (aiApiKeyField) {
+      this.addTrackedListener(aiApiKeyField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/aiApiKey', value);
+        logger(`💾 Saved AI API Key`);
+      });
+    }
+
+    const aiModelField = document.getElementById('aiModel');
+    if (aiModelField) {
+      this.addTrackedListener(aiModelField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/aiModel', value);
+        logger(`💾 Saved AI Model: ${value}`);
+      });
+    }
+
+    const aiFilterRulesField = document.getElementById('aiFilterRules');
+    if (aiFilterRulesField) {
+      this.addTrackedListener(aiFilterRulesField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        localStorage.setItem('TinderAutopilot/aiFilterRules', value);
+        logger(`💾 Saved AI Filter Rules`);
+      });
+    }
+
+    // Bind AI filter checkbox
+    this.bindCheckbox('.tinderAutopilotAIProfileFilter');
   };
 
   initializeSliders = () => {
@@ -268,6 +308,39 @@ class Sidebar {
       const storedGenderFilter = localStorage.getItem('TinderAutopilot/genderFilter');
       if (storedGenderFilter) {
         genderFilterField.value = storedGenderFilter;
+      }
+    }
+
+    // Initialize AI filter settings
+    const aiApiUrlField = document.getElementById('aiApiUrl');
+    if (aiApiUrlField) {
+      const storedUrl = localStorage.getItem('TinderAutopilot/aiApiUrl');
+      if (storedUrl) {
+        aiApiUrlField.value = storedUrl;
+      }
+    }
+
+    const aiApiKeyField = document.getElementById('aiApiKey');
+    if (aiApiKeyField) {
+      const storedKey = localStorage.getItem('TinderAutopilot/aiApiKey');
+      if (storedKey) {
+        aiApiKeyField.value = storedKey;
+      }
+    }
+
+    const aiModelField = document.getElementById('aiModel');
+    if (aiModelField) {
+      const storedModel = localStorage.getItem('TinderAutopilot/aiModel');
+      if (storedModel) {
+        aiModelField.value = storedModel;
+      }
+    }
+
+    const aiFilterRulesField = document.getElementById('aiFilterRules');
+    if (aiFilterRulesField) {
+      const storedRules = localStorage.getItem('TinderAutopilot/aiFilterRules');
+      if (storedRules) {
+        aiFilterRulesField.value = storedRules;
       }
     }
   };

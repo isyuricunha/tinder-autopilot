@@ -237,6 +237,36 @@ const autopilot = `
           </div>
         </div>
         <div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">Choose when to automatically use Super Likes. Limited to 5 per day.</div>
+        ${titleGenerator('AI Profile Filtering')}
+        ${checkboxGenerator(
+  'tinderAutopilotAIProfileFilter',
+  'Enable AI Profile Filter',
+  'Use an LLM to intelligently decide which profiles to skip.'
+)}
+        ${textboxGenerator({
+  className: 'aiApiUrl',
+  placeholder: 'https://api.openai.com/v1/chat/completions',
+  helpText: 'OpenAI-compatible API endpoint. Required for AI filtering.',
+  defaultValue: 'https://api.openai.com/v1/chat/completions'
+})}
+        ${textboxGenerator({
+  className: 'aiApiKey',
+  placeholder: 'sk-... or your API key',
+  helpText: 'Your API key. Stored in localStorage. Never shared.',
+  defaultValue: ''
+})}
+        ${textboxGenerator({
+  className: 'aiModel',
+  placeholder: 'gpt-4o-mini',
+  helpText: 'Model name. e.g. gpt-4o, claude-3-sonnet, llama-3-8b-8192, etc.',
+  defaultValue: 'gpt-4o-mini'
+})}
+        ${textboxGenerator({
+  className: 'aiFilterRules',
+  placeholder: 'Ignore profiles: trans, man, male, couples, onlyfans, commercial...',
+  helpText: 'Describe your swipe preferences. The AI will use these rules.',
+  defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.'
+})}
   </div>
 `;
 
