@@ -953,10 +953,16 @@ class ProfileAnalyzer {
         logger('🤖 AI Filter enabled, analyzing profile...');
         try {
           const aiResult = await this.aiFilter.analyze({ bio: bioText, name: profileName });
-          if (!aiResult.shouldSwipe) {
+
+          if (aiResult.shouldSwipe === 'neutral') {
+            // IA failed — do not change the traditional filter decision
+            logger(`🤖 AI Filter failed/neutral, relying on traditional filter result`);
+          } else if (!aiResult.shouldSwipe) {
+            // IA explicitly says NO
             shouldSkip = true;
             logger(`🤖 AI Filter rejected profile: ${aiResult.reason}`);
           } else {
+            // IA explicitly says YES
             logger(`🤖 AI Filter approved profile: ${aiResult.reason}`);
           }
         } catch (error) {

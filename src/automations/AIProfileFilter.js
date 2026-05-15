@@ -68,7 +68,7 @@ class AIProfileFilter {
   async analyze({ bio, name, imageBase64 }) {
     if (!this.apiUrl) {
       logger('⚠️ AI Filter URL not configured, skipping AI analysis');
-      return { shouldSwipe: true, reason: 'AI not configured' };
+      return { shouldSwipe: 'neutral', reason: 'AI not configured' };
     }
 
     try {
@@ -85,14 +85,14 @@ class AIProfileFilter {
       if (!response.ok) {
         const errorText = await response.text();
         logger(`⚠️ AI API error: ${response.status} ${errorText}`);
-        return { shouldSwipe: true, reason: 'API error, defaulting to yes' };
+        return { shouldSwipe: 'neutral', reason: 'API error' };
       }
 
       const data = await response.json();
       return this.parseResponse(data);
     } catch (error) {
       logger(`⚠️ AI Filter failed: ${error.message}`);
-      return { shouldSwipe: true, reason: `Error: ${error.message}` };
+      return { shouldSwipe: 'neutral', reason: `Error: ${error.message}` };
     }
   }
 
