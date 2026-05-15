@@ -61,17 +61,18 @@ class AIProfileFilter {
    * Analyze a Tinder profile using an LLM.
    * @param {Object} params
    * @param {string} params.bio - The extracted bio text
+   * @param {string|null} params.name - The profile name
    * @param {string|null} params.imageBase64 - Optional screenshot base64
    * @returns {Promise<{shouldSwipe: boolean, reason: string}>}
    */
-  async analyze({ bio, imageBase64 }) {
+  async analyze({ bio, name, imageBase64 }) {
     if (!this.apiUrl) {
       logger('⚠️ AI Filter URL not configured, skipping AI analysis');
       return { shouldSwipe: true, reason: 'AI not configured' };
     }
 
     try {
-      const body = this.buildRequestBody(bio, imageBase64);
+      const body = this.buildRequestBody(bio, imageBase64, name);
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
@@ -98,7 +99,7 @@ class AIProfileFilter {
   // ----------------------------------------------------------------
   // Build OpenAI-compatible request body
   // ----------------------------------------------------------------
-  buildRequestBody(bio, imageBase64) {
+  buildRequestBody(bio, imageBase64, name) {
     const systemMessage = `You are a smart Tinder profile filter. Your job is to decide whether to swipe right (yes) or left (no) on a Tinder profile, based on the user's preference rules.
 
 USER RULES:
@@ -120,9 +121,10 @@ RESPONSE FORMAT (valid JSON only):
     const content = [];
 
     // Always include text prompt
+    const nameSection = name ? `NAME: ${name}\n` : '';
     content.push({
       type: 'text',
-      text: `BIO: ${bio || '(no bio)'}`
+      text: `${nameSection}BIO: ${bio || '(no bio)'}`
     });
 
     // If vision is enabled and image is provided

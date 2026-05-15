@@ -686,6 +686,59 @@ class ProfileAnalyzer {
     return bioText;
   }
 
+  // Extract profile name from the DOM
+  getProfileName() {
+    try {
+      // Strategy 1: Look for h1 with aria-label containing name and age
+      const h1Elements = document.querySelectorAll('h1');
+      for (const h1 of h1Elements) {
+        const ariaLabel = h1.getAttribute('aria-label');
+        if (ariaLabel) {
+          // aria-label often contains "Name Age years"
+          const match = ariaLabel.match(/^([^\d]+)/);
+          if (match) {
+            const name = match[1].replace(/years?\s*$/, '').trim();
+            if (name && name.length > 0 && name.length < 100) {
+              return name;
+            }
+          }
+        }
+      }
+
+      // Strategy 2: Look for display-1 class elements containing the name
+      const nameSelectors = [
+        '[class*="display-1"]',
+        '[class*="display-2"]',
+        '[class*="Fxs(1)"][class*="Fxw(w)"] span:first-child'
+      ];
+
+      for (const selector of nameSelectors) {
+        const elements = document.querySelectorAll(selector);
+        for (const el of elements) {
+          const text = el.textContent?.trim();
+          if (text && text.length > 0 && text.length < 100 && !/^\d+$/.test(text)) {
+            if (!/years?$/i.test(text)) {
+              return text;
+            }
+          }
+        }
+      }
+
+      // Strategy 3: Look for the first span within h1 that is not just a number
+      const h1Span = document.querySelector('h1 span:first-child');
+      if (h1Span) {
+        const name = h1Span.textContent?.trim();
+        if (name && name.length > 0 && name.length < 100 && !/^\d+$/.test(name)) {
+          return name;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   getGenderIdentity() {
     // Look for gender/identity information in profile essentials
     const genderSelectors = [
@@ -896,9 +949,10 @@ class ProfileAnalyzer {
       // If traditional filters passed, run AI filter if enabled
       if (!shouldSkip && isAIFilterEnabled) {
         const bioText = this.getBioText() || '';
+        const profileName = this.getProfileName();
         logger('🤖 AI Filter enabled, analyzing profile...');
         try {
-          const aiResult = await this.aiFilter.analyze({ bio: bioText });
+          const aiResult = await this.aiFilter.analyze({ bio: bioText, name: profileName });
           if (!aiResult.shouldSwipe) {
             shouldSkip = true;
             logger(`🤖 AI Filter rejected profile: ${aiResult.reason}`);
