@@ -187,6 +187,9 @@ class Sidebar {
     this.bindCheckbox('.tinderAutopilotAdvancedFilter');
     this.bindCheckbox('.tinderAutopilotSuperLike');
 
+    // Initialize saved toggle states from localStorage
+    this.initializeToggles();
+
     // Initialize slider values from localStorage
     this.initializeSliders();
 
@@ -265,6 +268,33 @@ class Sidebar {
 
     // Bind AI filter checkbox
     this.bindCheckbox('.tinderAutopilotAIProfileFilter');
+  };
+
+  initializeToggles = () => {
+    // Restore saved toggle states from localStorage for non-excluded toggles
+    const toggleMappings = [
+      { selector: '.tinderAutopilotAnonymous', start: this.anonymous?.start, stop: this.anonymous?.stop },
+      { selector: '.tinderAutopilotHideMine', start: this.hideUnanswered?.start, stop: this.hideUnanswered?.stop },
+      { selector: '.tinderAutopilotBioFilter' },
+      { selector: '.tinderAutopilotGenderFilter' },
+      { selector: '.tinderAutopilotAdvancedFilter' },
+      { selector: '.tinderAutopilotSuperLike' },
+      { selector: '.tinderAutopilotAIProfileFilter' }
+    ];
+
+    toggleMappings.forEach(({ selector, start, stop }) => {
+      const savedState = localStorage.getItem(`TinderAutopilot/toggleState/${selector}`);
+      if (savedState === 'true') {
+        const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
+        const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
+        if (toggleElement && innerElement) {
+          toggleElement.style.cssText = onToggle;
+          innerElement.style.cssText = onToggleInner;
+          // Trigger start callback if available
+          if (start) start();
+        }
+      }
+    });
   };
 
   initializeSliders = () => {
@@ -366,11 +396,32 @@ class Sidebar {
       return;
     }
 
+    // Restore saved state from localStorage (except for Auto Like, Auto Message, and New Matches Only)
+    const excludedSelectors = ['.tinderAutopilot', '.tinderAutopilotMessage', '.tinderAutopilotMessageNewOnly'];
+    if (!excludedSelectors.includes(selector)) {
+      const savedState = localStorage.getItem(`TinderAutopilot/toggleState/${selector}`);
+      if (savedState === 'true') {
+        const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
+        const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
+        if (toggleElement && innerElement) {
+          toggleElement.style.cssText = onToggle;
+          innerElement.style.cssText = onToggleInner;
+          // Trigger start callback if the automation should be running
+          if (start) start();
+        }
+      }
+    }
+
     element.onclick = (e) => {
       e.preventDefault();
 
       const isOn = getCheckboxValue(selector);
       toggleCheckbox(selector);
+
+      // Save state to localStorage (except for excluded selectors)
+      if (!excludedSelectors.includes(selector)) {
+        localStorage.setItem(`TinderAutopilot/toggleState/${selector}`, !isOn);
+      }
 
       // Update dependent sliders with a small delay to ensure toggle state is updated
       setTimeout(() => {
