@@ -1,4 +1,5 @@
-import { logger } from '../misc/helper';
+import { errorLog, logger, warnLog } from '../misc/helper';
+import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
 class ProfileAnalyzer {
@@ -24,7 +25,7 @@ class ProfileAnalyzer {
         return words;
       }
     } catch (e) {
-      console.warn('Failed to load bio blacklist', e);
+      warnLog('Failed to load bio blacklist', e);
     }
     const defaults = ['trans', 'onlyfans', 'premium', 'cashapp', 'venmo'];
     logger(`📝 Using default banned words: ${defaults.join(', ')}`);
@@ -42,7 +43,7 @@ class ProfileAnalyzer {
           .filter((word) => word.length > 0);
       }
     } catch (e) {
-      console.warn('Failed to load gender filter', e);
+      warnLog('Failed to load gender filter', e);
     }
     return []; // Empty means no filtering
   }
@@ -53,7 +54,7 @@ class ProfileAnalyzer {
       const maxAge = localStorage.getItem('TinderAutopilot/maxAge') || '99';
       return { min: parseInt(minAge), max: parseInt(maxAge) };
     } catch (e) {
-      console.warn('Failed to load age range', e);
+      warnLog('Failed to load age range', e);
       return { min: 18, max: 99 };
     }
   }
@@ -63,7 +64,7 @@ class ProfileAnalyzer {
       const stored = localStorage.getItem('TinderAutopilot/maxDistance');
       return stored ? parseInt(stored) : 999; // 999 = no limit
     } catch (e) {
-      console.warn('Failed to load max distance', e);
+      warnLog('Failed to load max distance', e);
       return 999;
     }
   }
@@ -73,26 +74,13 @@ class ProfileAnalyzer {
       const stored = localStorage.getItem('TinderAutopilot/minPhotoCount');
       return stored ? parseInt(stored) : 1; // Minimum 1 photo by default
     } catch (e) {
-      console.warn('Failed to load min photo count', e);
+      warnLog('Failed to load min photo count', e);
       return 1;
     }
   }
 
   isBioFilterEnabled() {
-    try {
-      const checkbox = document.querySelector('.tinderAutopilotBioFilter .toggleSwitch > div');
-      if (!checkbox) return false;
-
-      const style = checkbox.style.cssText;
-      const isEnabled =
-        style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-        style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))');
-
-      logger(`🔍 Bio Filter Status: ${isEnabled}`);
-      return isEnabled;
-    } catch (e) {
-      return false;
-    }
+    return getCheckboxValue('.tinderAutopilotBioFilter');
   }
 
   // Open the profile modal by clicking on the card
@@ -778,33 +766,11 @@ class ProfileAnalyzer {
   }
 
   isGenderFilterEnabled() {
-    try {
-      const checkbox = document.querySelector('.tinderAutopilotGenderFilter .toggleSwitch > div');
-      if (!checkbox) return false;
-
-      const style = checkbox.style.cssText;
-      return (
-        style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-        style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))')
-      );
-    } catch (e) {
-      return false;
-    }
+    return getCheckboxValue('.tinderAutopilotGenderFilter');
   }
 
   isAdvancedFilterEnabled() {
-    try {
-      const checkbox = document.querySelector('.tinderAutopilotAdvancedFilter .toggleSwitch > div');
-      if (!checkbox) return false;
-
-      const style = checkbox.style.cssText;
-      return (
-        style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-        style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))')
-      );
-    } catch (e) {
-      return false;
-    }
+    return getCheckboxValue('.tinderAutopilotAdvancedFilter');
   }
 
   // Check bio for banned words (call this AFTER opening the profile modal)
@@ -982,7 +948,7 @@ class ProfileAnalyzer {
 
       return shouldSkip;
     } catch (e) {
-      console.error('Error checking profile with modal:', e);
+      errorLog('Error checking profile with modal:', e);
       // If there's an error, close modal and don't skip
       try {
         this.closeProfile();

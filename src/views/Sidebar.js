@@ -1,26 +1,22 @@
-import {
-  onToggle,
-  offToggle,
-  topBanner,
-  autopilot,
-  infoBanner,
-  massMessage,
-  loggerHeader,
-  counterLogs,
-  offToggleInner,
-  onToggleInner
-} from './templates';
 import Messenger from '../automations/Messenger';
 import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
-import { waitUntilElementExists, logger } from '../misc/helper';
+import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { insertCss } from '../misc/insert-css';
 import {
   getExtensionStorageValue,
   setExtensionStorageValue,
   removeExtensionStorageValue
 } from '../misc/extension-storage';
+import { getSetting, setSetting, setJsonSetting, getToggleState } from '../misc/settings-store';
+import { resetCounters, renderCounters } from '../misc/counter-store';
+import { createSidebarElement, renderSidebarContent } from './sidebar-renderer';
+import {
+  getCheckboxValue,
+  toggleCheckbox,
+  setToggleState as setToggleControlState
+} from './toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
@@ -121,35 +117,11 @@ class Sidebar {
   };
 
   sidebar = () => {
-    // sidebar.js
-    const el = document.createElement('aside');
-    el.className = 'H(100%) Fld(c) Pos(r) Flxg(0) Fxs(0) Flxb(25%) Miw(325px) Maw(375px)';
-    el.style.cssText =
-      'background: #000000; color: #ffffff; z-index: 9999999; border-right: 1px solid #333333; box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);';
-    el.innerHTML = infoBanner;
+    const el = createSidebarElement();
     this.insertBefore(el, document.querySelector('aside:first-of-type'));
 
     this.infoBanner = document.querySelector('#infoBanner');
-
-    this.infoBanner.innerHTML = `
-  <nav style="position: relative; height: 100%; background: #000000;">
-    <div style="height: 100%;">
-      <div style="overflow: hidden; background: #000000; position: relative; height: 100%;">
-        <div style="background: #000000; padding-bottom: 24px; font-size: 16px; height: 100%; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #ff6b35 #1a1a1a; color: #ffffff;" class="custom-scrollbar">
-          ${topBanner}
-          ${counterLogs(0, 0, 0)}
-          <div style="margin: 0 12px 16px 12px; display: flex; gap: 8px;">
-            <button id="resetCounters" style="width: 100%; padding: 10px 16px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">Reset Counters</button>
-          </div>
-          ${autopilot}
-          ${massMessage}
-          ${loggerHeader}
-          <div class="txt" style="overflow-y: auto; height: auto; max-height: 250px; margin: 12px; padding: 12px; background: #1a1a1a; border-radius: 12px; border: 1px solid #333333; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; font-size: 11px; line-height: 1.4;"></div>
-        </div>
-      </div>
-    </div>
-  </nav>
-`;
+    renderSidebarContent(this.infoBanner);
   };
 
   events = () => {
@@ -160,9 +132,7 @@ class Sidebar {
     const resetButton = document.getElementById('resetCounters');
     if (resetButton) {
       this.addTrackedListener(resetButton, 'click', () => {
-        localStorage.setItem('TinderAutopilot/likeCount', '0');
-        localStorage.setItem('TinderAutopilot/matchCount', '0');
-        localStorage.setItem('TinderAutopilot/deslikeCount', '0');
+        resetCounters();
         this.initializeCounters();
         logger('🔄 Counters reset');
       });
@@ -212,7 +182,7 @@ class Sidebar {
     const messageField = document.getElementById('messageToSend');
     if (messageField) {
       this.addTrackedListener(messageField, 'blur', (e) => {
-        localStorage.setItem('TinderAutopilot/MessengerDefault', JSON.stringify(e.target.value));
+        setJsonSetting('MessengerDefault', e.target.value);
       });
     }
 
@@ -221,7 +191,7 @@ class Sidebar {
     if (bioBlacklistField) {
       this.addTrackedListener(bioBlacklistField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/bioBlacklist', value);
+        setSetting('bioBlacklist', value);
         logger(`💾 Saved banned words: ${value}`);
       });
     }
@@ -231,7 +201,7 @@ class Sidebar {
     if (genderFilterField) {
       this.addTrackedListener(genderFilterField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/genderFilter', value);
+        setSetting('genderFilter', value);
         logger(`💾 Saved gender filter: ${value}`);
       });
     }
@@ -241,7 +211,7 @@ class Sidebar {
     if (aiReasoningEffortField) {
       this.addTrackedListener(aiReasoningEffortField, 'change', (e) => {
         const value = e.target.value;
-        localStorage.setItem('TinderAutopilot/aiReasoningEffort', value);
+        setSetting('aiReasoningEffort', value);
         logger(`💾 Saved AI Reasoning Effort: ${value}`);
       });
     }
@@ -251,7 +221,7 @@ class Sidebar {
     if (aiApiUrlField) {
       this.addTrackedListener(aiApiUrlField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/aiApiUrl', value);
+        setSetting('aiApiUrl', value);
         logger(`💾 Saved AI API URL`);
       });
     }
@@ -290,7 +260,7 @@ class Sidebar {
     if (aiModelField) {
       this.addTrackedListener(aiModelField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/aiModel', value);
+        setSetting('aiModel', value);
         logger(`💾 Saved AI Model: ${value}`);
       });
     }
@@ -299,7 +269,7 @@ class Sidebar {
     if (aiFilterRulesField) {
       this.addTrackedListener(aiFilterRulesField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/aiFilterRules', value);
+        setSetting('aiFilterRules', value);
         logger(`💾 Saved AI Filter Rules`);
       });
     }
@@ -321,16 +291,9 @@ class Sidebar {
     ];
 
     toggleMappings.forEach(({ selector, start, stop }) => {
-      const savedState = localStorage.getItem(`TinderAutopilot/toggleState/${selector}`);
-      if (savedState === 'true') {
-        const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
-        const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
-        if (toggleElement && innerElement) {
-          toggleElement.style.cssText = onToggle;
-          innerElement.style.cssText = onToggleInner;
-          // Trigger start callback if available
-          if (start) start();
-        }
+      if (getToggleState(selector)) {
+        setToggleControlState(selector, true);
+        if (start) start();
       }
     });
   };
@@ -348,7 +311,7 @@ class Sidebar {
       const valueDisplay = document.getElementById(`${id}Value`);
 
       if (slider && valueDisplay) {
-        const storedValue = localStorage.getItem(`TinderAutopilot/${id}`) || defaultValue;
+        const storedValue = getSetting(id, defaultValue);
         slider.value = storedValue;
         valueDisplay.textContent = storedValue + unit;
       }
@@ -357,14 +320,14 @@ class Sidebar {
     // Initialize Super Like strategy dropdown
     const strategySelect = document.getElementById('superLikeStrategy');
     if (strategySelect) {
-      const storedStrategy = localStorage.getItem('TinderAutopilot/superLikeStrategy') || 'random';
+      const storedStrategy = getSetting('superLikeStrategy', 'random');
       strategySelect.value = storedStrategy;
     }
 
     // Initialize bio blacklist textarea
     const bioBlacklistField = document.getElementById('bioBlacklist');
     if (bioBlacklistField) {
-      const storedBlacklist = localStorage.getItem('TinderAutopilot/bioBlacklist');
+      const storedBlacklist = getSetting('bioBlacklist');
       if (storedBlacklist) {
         bioBlacklistField.value = storedBlacklist;
       }
@@ -373,7 +336,7 @@ class Sidebar {
     // Initialize gender filter textarea
     const genderFilterField = document.getElementById('genderFilter');
     if (genderFilterField) {
-      const storedGenderFilter = localStorage.getItem('TinderAutopilot/genderFilter');
+      const storedGenderFilter = getSetting('genderFilter');
       if (storedGenderFilter) {
         genderFilterField.value = storedGenderFilter;
       }
@@ -382,7 +345,7 @@ class Sidebar {
     // Initialize AI filter settings
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
-      const storedUrl = localStorage.getItem('TinderAutopilot/aiApiUrl');
+      const storedUrl = getSetting('aiApiUrl');
       if (storedUrl) {
         aiApiUrlField.value = storedUrl;
       }
@@ -413,7 +376,7 @@ class Sidebar {
 
     const aiModelField = document.getElementById('aiModel');
     if (aiModelField) {
-      const storedModel = localStorage.getItem('TinderAutopilot/aiModel');
+      const storedModel = getSetting('aiModel');
       if (storedModel) {
         aiModelField.value = storedModel;
       }
@@ -421,7 +384,7 @@ class Sidebar {
 
     const aiFilterRulesField = document.getElementById('aiFilterRules');
     if (aiFilterRulesField) {
-      const storedRules = localStorage.getItem('TinderAutopilot/aiFilterRules');
+      const storedRules = getSetting('aiFilterRules');
       if (storedRules) {
         aiFilterRulesField.value = storedRules;
       }
@@ -430,7 +393,7 @@ class Sidebar {
     // Initialize reasoning effort dropdown
     const aiReasoningEffortField = document.getElementById('aiReasoningEffort');
     if (aiReasoningEffortField) {
-      const storedEffort = localStorage.getItem('TinderAutopilot/aiReasoningEffort');
+      const storedEffort = getSetting('aiReasoningEffort');
       if (storedEffort) {
         aiReasoningEffortField.value = storedEffort;
       } else {
@@ -441,23 +404,13 @@ class Sidebar {
   };
 
   initializeCounters = () => {
-    const likeCountEl = document.getElementById('likeCount');
-    const matchCountEl = document.getElementById('matchCount');
-    const deslikeCountEl = document.getElementById('deslikeCount');
-
-    const likeCount = parseInt(localStorage.getItem('TinderAutopilot/likeCount') || '0', 10);
-    const matchCount = parseInt(localStorage.getItem('TinderAutopilot/matchCount') || '0', 10);
-    const deslikeCount = parseInt(localStorage.getItem('TinderAutopilot/deslikeCount') || '0', 10);
-
-    if (likeCountEl) likeCountEl.textContent = likeCount;
-    if (matchCountEl) matchCountEl.textContent = matchCount;
-    if (deslikeCountEl) deslikeCountEl.textContent = deslikeCount;
+    renderCounters();
   };
 
   bindCheckbox = (selector, start = false, stop = false) => {
     const element = document.querySelector(selector);
     if (!element) {
-      console.warn(`Element not found for selector: ${selector}`);
+      warnLog(`Element not found for selector: ${selector}`);
       return;
     }
 
@@ -468,16 +421,9 @@ class Sidebar {
       '.tinderAutopilotMessageNewOnly'
     ];
     if (!excludedSelectors.includes(selector)) {
-      const savedState = localStorage.getItem(`TinderAutopilot/toggleState/${selector}`);
-      if (savedState === 'true') {
-        const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
-        const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
-        if (toggleElement && innerElement) {
-          toggleElement.style.cssText = onToggle;
-          innerElement.style.cssText = onToggleInner;
-          // Trigger start callback if the automation should be running
-          if (start) start();
-        }
+      if (getToggleState(selector)) {
+        setToggleControlState(selector, true);
+        if (start) start();
       }
     }
 
@@ -485,11 +431,11 @@ class Sidebar {
       e.preventDefault();
 
       const isOn = getCheckboxValue(selector);
-      toggleCheckbox(selector);
+      const nextState = toggleCheckbox(selector);
 
       // Save state to localStorage (except for excluded selectors)
       if (!excludedSelectors.includes(selector)) {
-        localStorage.setItem(`TinderAutopilot/toggleState/${selector}`, !isOn);
+        setSetting(`toggleState/${selector}`, nextState);
       }
 
       // Update dependent sliders with a small delay to ensure toggle state is updated
@@ -503,7 +449,7 @@ class Sidebar {
   };
 
   updateSliderStates = () => {
-    console.log('🔧 updateSliderStates called');
+    debugLog('updateSliderStates called');
 
     // Manual slider mapping since the data-parent approach isn't working
     const sliderMappings = [
@@ -520,7 +466,7 @@ class Sidebar {
 
       if (slider && container) {
         const isParentEnabled = getCheckboxValue(parentSelector);
-        console.log(`Slider ${sliderId} - Parent ${parentSelector} enabled: ${isParentEnabled}`);
+        debugLog(`Slider ${sliderId} - Parent ${parentSelector} enabled: ${isParentEnabled}`);
 
         slider.disabled = !isParentEnabled;
 
@@ -528,61 +474,18 @@ class Sidebar {
         if (isParentEnabled) {
           container.style.opacity = '1';
           container.style.pointerEvents = 'auto';
-          console.log(`✅ Enabled slider: ${sliderId}`);
+          debugLog(`Enabled slider: ${sliderId}`);
         } else {
           container.style.opacity = '0.5';
           container.style.pointerEvents = 'none';
-          console.log(`❌ Disabled slider: ${sliderId}`);
+          debugLog(`Disabled slider: ${sliderId}`);
         }
       } else {
-        console.log(`⚠️ Slider ${sliderId} or container not found`);
+        debugLog(`Slider ${sliderId} or container not found`);
       }
     });
   };
 }
-
-const getCheckboxValue = (selector) => {
-  const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
-  console.log(`🔍 Toggle element for ${selector}:`, toggleElement);
-
-  if (toggleElement) {
-    const style = toggleElement.style.cssText;
-    const background = toggleElement.style.background;
-    console.log(`🎨 Style: ${style}`);
-    console.log(`🎨 Background: ${background}`);
-
-    // Check multiple ways the toggle might be "on"
-    const isOnByGradient =
-      style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
-      style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-      background.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))') ||
-      background.includes('linear-gradient(135deg, #ff6b35, #ff8c42)');
-
-    const isOnByBorder =
-      style.includes('border: 2px solid rgb(255, 107, 53)') ||
-      style.includes('border: 2px solid #ff6b35');
-
-    const isOn = isOnByGradient || isOnByBorder;
-    console.log(
-      `✅ getCheckboxValue(${selector}): ${isOn} (gradient: ${isOnByGradient}, border: ${isOnByBorder})`
-    );
-    return isOn;
-  }
-
-  console.log(`❌ getCheckboxValue(${selector}): false (element not found)`);
-  return false;
-};
-
-const toggleCheckbox = (selector) => {
-  const isOn = getCheckboxValue(selector);
-  const toggleElement = document.querySelector(`${selector} .toggleSwitch > div`);
-  const innerElement = document.querySelector(`${selector} .toggleSwitch > div > div`);
-
-  if (toggleElement && innerElement) {
-    toggleElement.style.cssText = isOn ? offToggle : onToggle;
-    innerElement.style.cssText = isOn ? offToggleInner : onToggleInner;
-  }
-};
 
 export { getCheckboxValue, toggleCheckbox };
 

@@ -34,6 +34,7 @@
 
 - **Repository**: <https://github.com/isyuricunha/tinder-autopilot>
 - **Manifest Version**: MV2 ([`chrome/manifest.json`](chrome/manifest.json))
+- **MV3 Reference**: [`chrome/manifest.v3.json`](chrome/manifest.v3.json)
 - **Current Version**: 3.0.0
 
 ---
@@ -71,7 +72,7 @@ git clone https://github.com/isyuricunha/tinder-autopilot.git
 cd tinder-autopilot
 
 # Install dependencies
-pnpm install  # or yarn install
+pnpm install
 
 # Development mode (watch)
 pnpm start
@@ -131,11 +132,15 @@ pnpm build
 │  │   ├── Anonymous.js  - Privacy blur                      │
 │  │   └── Instagram.js  - IG media helper                   │
 │  ├── views/            - UI components                     │
-│  │   ├── Sidebar.js    - Main controls                     │
+│  │   ├── Sidebar.js    - Main controls wiring              │
+│  │   ├── sidebar-renderer.js - Sidebar shell rendering     │
+│  │   ├── toggle-control.js - Toggle state/render helper    │
 │  │   └── templates.js  - HTML templates                    │
 │  ├── misc/             - Helpers                           │
 │  │   ├── api.js        - API wrapper                       │
 │  │   ├── bg.js         - Background script                 │
+│  │   ├── counter-store.js - Counter persistence            │
+│  │   ├── settings-store.js - Local settings persistence    │
 │  │   ├── helper.js     - Utilities                         │
 │  │   └── Interactions.js - DOM navigation                 │
 │  └── styles/           - CSS                               │
@@ -154,7 +159,9 @@ pnpm build
 
 ## Settings Reference
 
-All settings are available in the left Autopilot sidebar and persist to `localStorage` under the `TinderAutopilot/…` namespace.
+Settings are available in the left Autopilot sidebar and mostly persist to
+`localStorage` under the `TinderAutopilot/…` namespace. The AI API key is stored
+separately in extension local storage via `chrome.storage.local`.
 
 ### Main Settings
 
@@ -322,6 +329,7 @@ Tokens are read from `localStorage` (on `tinder.com`):
 | `pnpm start` | Webpack dev watch |
 | `pnpm build` | Production bundle |
 | `pnpm lint` | ESLint check |
+| `pnpm test` | Node.js unit tests |
 | `pnpm major` | Major version release |
 | `pnpm minor` | Minor version release |
 | `pnpm patch` | Patch version release |
@@ -332,6 +340,7 @@ Tokens are read from `localStorage` (on `tinder.com`):
 tinder-autopilot/
 ├── chrome/
 │   ├── manifest.json      # Extension manifest (MV2)
+│   ├── manifest.v3.json   # MV3 reference manifest
 │   └── icons/             # Extension icons
 ├── src/
 │   ├── index.js           # Content script entry
@@ -340,6 +349,7 @@ tinder-autopilot/
 │   ├── misc/              # Helpers, API, background
 │   └── styles/            # CSS
 ├── tinder-html/           # Test HTML snapshots
+├── test/                  # Node.js unit tests
 ├── dist/                  # Build output (load in Chrome)
 ├── package.json
 └── webpack.config.js
@@ -349,7 +359,17 @@ tinder-autopilot/
 
 - **ESLint** + **Prettier** (Airbnb base)
 - **Babel** config for modern JS
+- **pnpm** is the only supported package manager
+- **Node.js test runner** for unit tests
 - Conventional Commits for versioning
+
+### Manifest V3 Status
+
+The production build still copies `chrome/manifest.json` and runs as MV2. The
+repository includes `chrome/manifest.v3.json` as a migration reference using a
+service worker background script and `host_permissions`. Before switching the
+build to MV3, verify the background message proxy under service-worker lifetime
+rules and test the unpacked extension on `chrome://extensions/`.
 
 ---
 
@@ -410,6 +430,13 @@ tinder-autopilot/
 | `TinderAutopilot/superLikeCount` | Daily Super Like count |
 | `TinderAutopilot/lastSuperLikeDate` | Last Super Like date |
 | `TinderAutopilot/MessengerDefault` | Message template |
+| `TinderAutopilot/debug` | Enables debug console logging when set to `true` |
+
+### Extension Storage Keys
+
+| Key | Purpose |
+|-----|---------|
+| `TinderAutopilot/aiApiKey` | AI profile filter API key |
 
 No data is sent to external servers beyond Tinder's API.
 

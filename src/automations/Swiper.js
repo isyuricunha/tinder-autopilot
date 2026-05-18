@@ -1,4 +1,5 @@
-import { logger, generateRandomNumber } from '../misc/helper';
+import { debugLog, logger, warnLog, generateRandomNumber } from '../misc/helper';
+import { incrementCounter } from '../misc/counter-store';
 import Interactions from '../misc/Interactions';
 import ProfileAnalyzer from './ProfileAnalyzer';
 import SuperLiker from './SuperLiker';
@@ -322,11 +323,11 @@ class Swiper {
       '.StretchedBox'
     ];
 
-    console.log('🔍 Checking for profile...');
+    debugLog('Checking for profile...');
 
     for (const selector of profileSelectors) {
       const elements = document.querySelectorAll(selector);
-      console.log(`  ${selector}: ${elements.length} elements`);
+      debugLog(`${selector}: ${elements.length} elements`);
 
       for (const element of elements) {
         if (
@@ -335,7 +336,7 @@ class Swiper {
           element.offsetWidth > 0 &&
           element.offsetHeight > 0
         ) {
-          console.log(`✅ Profile found with selector: ${selector}`);
+          debugLog(`Profile found with selector: ${selector}`);
           return true;
         }
       }
@@ -352,18 +353,18 @@ class Swiper {
 
     for (const selector of imageSelectors) {
       const images = document.querySelectorAll(selector);
-      console.log(`  Images ${selector}: ${images.length} found`);
+      debugLog(`Images ${selector}: ${images.length} found`);
       if (images.length > 0) {
         for (const img of images) {
           if (img.offsetParent !== null && img.complete && img.naturalWidth > 0) {
-            console.log(`✅ Profile image found: ${img.src.substring(0, 50)}...`);
+            debugLog(`Profile image found: ${img.src.substring(0, 50)}...`);
             return true;
           }
         }
       }
     }
 
-    console.log('❌ No profile detected');
+    debugLog('No profile detected');
     return false;
   };
 
@@ -437,7 +438,7 @@ class Swiper {
         if (node && node.offsetParent !== null) return node.closest('button') || node;
       }
     } catch (e) {
-      console.warn('XPath fallback failed', e);
+      warnLog('XPath fallback failed', e);
     }
 
     return null;
@@ -498,9 +499,7 @@ class Swiper {
             // Update deslike counter
             const deslikeCountEl = document.getElementById('deslikeCount');
             if (deslikeCountEl) {
-              const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
-              deslikeCountEl.textContent = currentCount + 1;
-              localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+              deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
             // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
@@ -538,9 +537,7 @@ class Swiper {
             // Update deslike counter
             const deslikeCountEl = document.getElementById('deslikeCount');
             if (deslikeCountEl) {
-              const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
-              deslikeCountEl.textContent = currentCount + 1;
-              localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+              deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
             // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
@@ -568,9 +565,7 @@ class Swiper {
           // Update deslike counter
           const deslikeCountEl = document.getElementById('deslikeCount');
           if (deslikeCountEl) {
-            const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
-            deslikeCountEl.textContent = currentCount + 1;
-            localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+            deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
           // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
@@ -589,9 +584,7 @@ class Swiper {
           // Update deslike counter
           const deslikeCountEl = document.getElementById('deslikeCount');
           if (deslikeCountEl) {
-            const currentCount = parseInt(deslikeCountEl.textContent, 10) || 0;
-            deslikeCountEl.textContent = currentCount + 1;
-            localStorage.setItem('TinderAutopilot/deslikeCount', String(currentCount + 1));
+            deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
           // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
@@ -639,9 +632,7 @@ class Swiper {
       // Update like counter
       const likeCountEl = document.getElementById('likeCount');
       if (likeCountEl) {
-        const currentCount = parseInt(likeCountEl.textContent, 10) || 0;
-        likeCountEl.textContent = currentCount + 1;
-        localStorage.setItem('TinderAutopilot/likeCount', String(currentCount + 1));
+        likeCountEl.textContent = incrementCounter('likeCount');
       }
 
       // CRITICAL FIX: Clean up profile entry after processing
@@ -888,9 +879,7 @@ class Swiper {
         if (button && button.offsetParent !== null) {
           const matchCountEl = document.getElementById('matchCount');
           if (matchCountEl) {
-            const currentCount = parseInt(matchCountEl.textContent, 10) || 0;
-            matchCountEl.textContent = currentCount + 1;
-            localStorage.setItem('TinderAutopilot/matchCount', String(currentCount + 1));
+            matchCountEl.textContent = incrementCounter('matchCount');
           }
           logger("Congrats! We've got a match! 🤡");
           button.click();

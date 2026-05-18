@@ -1,5 +1,6 @@
 import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
+import { getCheckboxValue } from '../views/toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
@@ -53,17 +54,7 @@ class AIProfileFilter {
   }
 
   static isEnabled() {
-    try {
-      const checkbox = document.querySelector('.tinderAutopilotAIProfileFilter .toggleSwitch > div');
-      if (!checkbox) return false;
-      const style = checkbox.style.cssText;
-      return (
-        style.includes('linear-gradient(135deg, #ff6b35, #ff8c42)') ||
-        style.includes('linear-gradient(135deg, rgb(255, 107, 53), rgb(255, 140, 66))')
-      );
-    } catch (e) {
-      return false;
-    }
+    return getCheckboxValue('.tinderAutopilotAIProfileFilter');
   }
 
   // ----------------------------------------------------------------
@@ -279,24 +270,8 @@ RESPONSE FORMAT (valid JSON only):
           return;
         }
 
-        // Use html2canvas or similar approach if available?
-        // For now we rely on having a Vision-capable model that can be given a URL,
-        // but since we can't easily capture screenshot in content script without external lib,
-        // we return null and fallback to text-only mode.
-        // Alternatively, we could try to use HTML canvas to capture the element.
-
-        // Attempt canvas capture for the element
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const rect = target.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-
-        // Draw the element to canvas
-        ctx.drawWindow(window, rect.left + window.scrollX, rect.top + window.scrollY, rect.width, rect.height, 'rgb(255,255,255)');
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        const base64 = dataUrl.split(',')[1];
-        resolve(base64);
+        logger('⚠️ Vision capture unavailable in Chrome content scripts; using text-only AI');
+        resolve(null);
       } catch (e) {
         logger(`⚠️ Screenshot capture failed: ${e.message}`);
         resolve(null);

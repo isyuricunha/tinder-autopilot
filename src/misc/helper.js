@@ -1,3 +1,5 @@
+import { isDebugEnabled } from './settings-store';
+
 const generateRandomNumber = (min = 800, max = 1500) => {
   return Math.random() * (max - min) + min;
 };
@@ -7,8 +9,20 @@ const randomDelay = async () => {
   return new Promise((resolve) => setTimeout(resolve, rand));
 };
 
-const logger = (v) => {
-  console.log(v);
+const writeConsole = (level, values) => {
+  if ((level === 'debug' || level === 'info') && !isDebugEnabled()) return;
+  const consoleMethod = console[level] || console.log;
+  consoleMethod.apply(console, values);
+};
+
+const debugLog = (...values) => writeConsole('debug', values);
+
+const warnLog = (...values) => writeConsole('warn', values);
+
+const errorLog = (...values) => writeConsole('error', values);
+
+const logger = (v, level = 'info') => {
+  writeConsole(level, [v]);
   const now = new Date();
   const txt = document.querySelector('.txt');
   if (!txt) return; // CRITICAL: Prevent memory leak - exit if no log container
@@ -74,4 +88,12 @@ const waitUntilElementExists = (selector, callback, timeout = 30000) => {
   };
 };
 
-export { logger, randomDelay, generateRandomNumber, waitUntilElementExists };
+export {
+  logger,
+  debugLog,
+  warnLog,
+  errorLog,
+  randomDelay,
+  generateRandomNumber,
+  waitUntilElementExists
+};

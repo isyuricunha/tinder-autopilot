@@ -2,7 +2,8 @@ import get from 'lodash/get';
 import keyBy from 'lodash/keyBy';
 import { sendMessageToMatch, getMessagesForMatch, getMatches } from '../misc/api';
 import { randomDelay, logger } from '../misc/helper';
-import { getCheckboxValue, toggleCheckbox } from '../views/Sidebar';
+import { getCheckboxValue, toggleCheckbox } from '../views/toggle-control';
+import { normalizeMessageForComparison, hasMessageBeenSent } from '../misc/message-normalizer';
 
 class Messenger {
   selector = '.tinderAutopilotMessage';
@@ -61,35 +62,9 @@ class Messenger {
     this.sendMessagesTo(this.allMatches.reverse());
   };
 
-  // Normalize message for duplicate detection (handles {name} variable)
-  normalizeMessageForComparison = (messageTemplate, actualName) => {
-    const messageWithName = messageTemplate.replace('{name}', actualName.toLowerCase());
-    return messageWithName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+/g, '-')
-      .replace('thanks', 'thank');
-  };
+  normalizeMessageForComparison = normalizeMessageForComparison;
 
-  // Check if message was already sent by comparing normalized versions
-  hasMessageBeenSent = (messageList, messageTemplate, matchName) => {
-    if (!messageList || messageList.length === 0) return false;
-
-    const normalizedTemplate = this.normalizeMessageForComparison(messageTemplate, matchName);
-
-    // Also check variations without name replacement
-    const templateWithoutName = messageTemplate
-      .replace('{name}', '')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-zA-Z0-9]+/g, '-');
-
-    return messageList.some(
-      (sentMsg) =>
-        sentMsg.includes(normalizedTemplate) ||
-        (templateWithoutName && sentMsg.includes(templateWithoutName))
-    );
-  };
+  hasMessageBeenSent = hasMessageBeenSent;
 
   sendMessagesTo = async (r) => {
     const matchList = keyBy(r, 'id');

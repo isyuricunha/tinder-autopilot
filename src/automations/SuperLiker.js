@@ -1,5 +1,5 @@
-import { logger, generateRandomNumber } from '../misc/helper';
-import { getCheckboxValue } from '../views/Sidebar';
+import { logger, warnLog, generateRandomNumber } from '../misc/helper';
+import { getCheckboxValue } from '../views/toggle-control';
 
 class SuperLiker {
   selector = '.tinderAutopilotSuperLike';
@@ -42,7 +42,7 @@ class SuperLiker {
       localStorage.setItem('TinderAutopilot/superLikeCount', this.todayCount.toString());
       localStorage.setItem('TinderAutopilot/lastSuperLikeDate', today);
     } catch (e) {
-      console.warn('Failed to update super like count', e);
+      warnLog('Failed to update super like count', e);
     }
   }
 
@@ -116,15 +116,7 @@ class SuperLiker {
   }
 
   isEnabled() {
-    try {
-      const checkbox = document.querySelector(`${this.selector} .toggleSwitch > div`);
-      return (
-        checkbox &&
-        checkbox.style.cssText.includes('background: linear-gradient(135deg, #ff6b35, #ff8c42)')
-      );
-    } catch (e) {
-      return false;
-    }
+    return getCheckboxValue(this.selector);
   }
 
   getSuperLikeStrategy() {
@@ -201,7 +193,7 @@ class SuperLiker {
       // Update counter in UI
       const counterElement = document.getElementById('superLikeCount');
       if (counterElement) {
-        counterElement.innerHTML = parseInt(counterElement.innerHTML, 10) + 1;
+        counterElement.textContent = parseInt(counterElement.textContent, 10) + 1;
       }
 
       logger(`⭐ Super Like used! (${this.todayCount}/${this.dailyLimit} today)`);
