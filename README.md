@@ -135,11 +135,15 @@ pnpm build
 │  │   ├── Sidebar.js    - Main controls wiring              │
 │  │   ├── sidebar-renderer.js - Sidebar shell rendering     │
 │  │   ├── toggle-control.js - Toggle state/render helper    │
-│  │   └── templates.js  - HTML templates                    │
+│  │   ├── toggle-styles.js - Toggle visual constants        │
+│  │   └── templates.js  - DOM template builders             │
 │  ├── misc/             - Helpers                           │
 │  │   ├── api.js        - API wrapper                       │
+│  │   ├── api-request-options.js - Request option builder   │
+│  │   ├── ai-response-parser.js - AI decision parsing       │
 │  │   ├── bg.js         - Background script                 │
 │  │   ├── counter-store.js - Counter persistence            │
+│  │   ├── profile-filter-utils.js - Filter predicates       │
 │  │   ├── settings-store.js - Local settings persistence    │
 │  │   ├── helper.js     - Utilities                         │
 │  │   └── Interactions.js - DOM navigation                 │
@@ -150,7 +154,7 @@ pnpm build
 
 ### Runtime Flow
 
-1. **Content Script** ([`src/index.js`](src/index.js:7)) loads your profile via [`getMyProfile()`](src/misc/api.js:60) and caches it to `localStorage` (`TinderAutopilot/ProfileData`)
+1. **Content Script** ([`src/index.js`](src/index.js:7)) loads your profile via [`getMyProfile()`](src/misc/api.js:60) and caches it through the settings store (`TinderAutopilot/ProfileData`)
 2. **Sidebar** ([`src/views/Sidebar.js`](src/views/Sidebar.js:20)) mounts and renders controls
 3. **Background Script** ([`src/misc/bg.js`](src/misc/bg.js)) proxies network calls to `api.gotinder.com` to avoid CORS
 4. **Automations** run against Tinder's DOM using resilient selectors
