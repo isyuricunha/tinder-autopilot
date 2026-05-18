@@ -11,7 +11,6 @@ class Swiper {
 
   profileFirstSeen = {};
 
-  // CRITICAL FIX: Track active timers for cleanup
   activeTimers = new Set();
 
   activeIntervals = new Set();
@@ -31,10 +30,9 @@ class Swiper {
   stop = () => {
     this.isRunning = false;
     logger('Autopilot stopped ⛔️');
-    this.clearAllTimers(); // CRITICAL FIX: Clear all timers on stop
+    this.clearAllTimers();
   };
 
-  // CRITICAL FIX: Clear all active timers to prevent memory leaks
   clearAllTimers = () => {
     this.activeTimers.forEach((timerId) => {
       clearTimeout(timerId);
@@ -73,7 +71,6 @@ class Swiper {
     this.activeIntervals.delete(intervalId);
   };
 
-  // CRITICAL FIX: Schedule profile cleanup to prevent memory leak
   scheduleProfileCleanup = (profileId) => {
     // Limit profileFirstSeen to 100 entries max
     const keys = Object.keys(this.profileFirstSeen);
@@ -501,7 +498,6 @@ class Swiper {
             if (deslikeCountEl) {
               deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
-            // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
             return true;
           } else {
@@ -539,7 +535,6 @@ class Swiper {
             if (deslikeCountEl) {
               deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
-            // CRITICAL FIX: Clean up profile entry after processing
             delete this.profileFirstSeen[profileId];
             return true;
           }
@@ -567,7 +562,6 @@ class Swiper {
           if (deslikeCountEl) {
             deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
-          // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
           return true;
         }
@@ -586,7 +580,6 @@ class Swiper {
           if (deslikeCountEl) {
             deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
-          // CRITICAL FIX: Clean up profile entry after processing
           delete this.profileFirstSeen[profileId];
           return true;
         }
@@ -596,7 +589,7 @@ class Swiper {
       }
 
       // Last resort: Report that we couldn't dislike and return false to try again
-      logger('❌ CRITICAL: Could not dislike profile! Manual intervention may be needed.');
+      logger('❌ Could not dislike profile! Manual intervention may be needed.');
       logger('🛑 Stopping autopilot to prevent unwanted likes...');
       this.isRunning = false; // Stop the autopilot
       return false;
@@ -618,7 +611,6 @@ class Swiper {
 
     // Profile passed all filters - try Super Like first (safely) then Like
     if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
-      // CRITICAL FIX: Clean up profile entry after processing
       delete this.profileFirstSeen[profileId];
       return true;
     }
@@ -635,9 +627,7 @@ class Swiper {
         likeCountEl.textContent = incrementCounter('likeCount');
       }
 
-      // CRITICAL FIX: Clean up profile entry after processing
       delete this.profileFirstSeen[profileId];
-      // CRITICAL FIX: Schedule cleanup of old entries
       this.scheduleProfileCleanup(profileId);
       return true;
     } else {

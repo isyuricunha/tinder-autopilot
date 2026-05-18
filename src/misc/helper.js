@@ -25,7 +25,7 @@ const logger = (v, level = 'info') => {
   writeConsole(level, [v]);
   const now = new Date();
   const txt = document.querySelector('.txt');
-  if (!txt) return; // CRITICAL: Prevent memory leak - exit if no log container
+  if (!txt) return;
 
   const message = document.createElement('p');
   message.className =
@@ -40,7 +40,6 @@ const logger = (v, level = 'info') => {
   message.appendChild(document.createTextNode(String(v)));
   txt.prepend(message);
 
-  // CRITICAL FIX: Limit DOM accumulation to 50 lines max
   // Remove old logs to prevent memory leak
   const paragraphs = txt.querySelectorAll('p');
   if (paragraphs.length > 50) {
