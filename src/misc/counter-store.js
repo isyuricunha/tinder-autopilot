@@ -1,4 +1,4 @@
-import { getSetting, setSetting } from './settings-store';
+const { getSetting, setSetting } = require('./settings-store');
 
 const COUNTERS = {
   likes: 'likeCount',
@@ -38,4 +38,12 @@ const renderCounters = () => {
   return counters;
 };
 
-export { COUNTERS, getCounter, setCounter, incrementCounter, resetCounters, renderCounters };
+module.exports = {
+  COUNTERS,
+  getCounter,
+  setCounter,
+  incrementCounter,
+  resetCounters,
+  readCounters,
+  renderCounters
+};

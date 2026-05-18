@@ -3,6 +3,7 @@ import { logger } from './misc/helper';
 import Sidebar from './views/Sidebar';
 import { getMyProfile } from './misc/api';
 import Instagram from './automations/Instagram';
+import { setJsonSetting } from './misc/settings-store';
 
 class TinderAssistant {
   boostRemaining = false;
@@ -21,7 +22,7 @@ class TinderAssistant {
         this.isBoosting = true;
       }
 
-      localStorage.setItem('TinderAutopilot/ProfileData', JSON.stringify(profileData));
+      setJsonSetting('ProfileData', profileData);
 
       const sidebar = new Sidebar();
       const instagram = new Instagram();

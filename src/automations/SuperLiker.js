@@ -1,4 +1,5 @@
 import { logger, warnLog, generateRandomNumber } from '../misc/helper';
+import { getSetting, setSetting } from '../misc/settings-store';
 import { getCheckboxValue } from '../views/toggle-control';
 
 class SuperLiker {
@@ -12,7 +13,7 @@ class SuperLiker {
 
   getLastSuperLikeDate() {
     try {
-      return localStorage.getItem('TinderAutopilot/lastSuperLikeDate') || '';
+      return getSetting('lastSuperLikeDate');
     } catch (e) {
       return '';
     }
@@ -24,10 +25,10 @@ class SuperLiker {
       const lastDate = this.getLastSuperLikeDate();
 
       if (lastDate === today) {
-        return parseInt(localStorage.getItem('TinderAutopilot/superLikeCount') || '0');
+        return parseInt(getSetting('superLikeCount', '0'));
       } else {
         // Reset count for new day
-        localStorage.setItem('TinderAutopilot/superLikeCount', '0');
+        setSetting('superLikeCount', '0');
         return 0;
       }
     } catch (e) {
@@ -39,8 +40,8 @@ class SuperLiker {
     try {
       const today = new Date().toDateString();
       this.todayCount++;
-      localStorage.setItem('TinderAutopilot/superLikeCount', this.todayCount.toString());
-      localStorage.setItem('TinderAutopilot/lastSuperLikeDate', today);
+      setSetting('superLikeCount', this.todayCount.toString());
+      setSetting('lastSuperLikeDate', today);
     } catch (e) {
       warnLog('Failed to update super like count', e);
     }
@@ -121,7 +122,7 @@ class SuperLiker {
 
   getSuperLikeStrategy() {
     try {
-      return localStorage.getItem('TinderAutopilot/superLikeStrategy') || 'random';
+      return getSetting('superLikeStrategy', 'random');
     } catch (e) {
       return 'random';
     }

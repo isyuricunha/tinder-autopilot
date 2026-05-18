@@ -9,7 +9,14 @@ import {
   setExtensionStorageValue,
   removeExtensionStorageValue
 } from '../misc/extension-storage';
-import { getSetting, setSetting, setJsonSetting, getToggleState } from '../misc/settings-store';
+import {
+  getRawStorageValue,
+  getSetting,
+  getToggleState,
+  removeRawStorageValue,
+  setJsonSetting,
+  setSetting
+} from '../misc/settings-store';
 import { resetCounters, renderCounters } from '../misc/counter-store';
 import { createSidebarElement, renderSidebarContent } from './sidebar-renderer';
 import {
@@ -21,7 +28,6 @@ import {
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
 class Sidebar {
-  // CRITICAL FIX: Track event listeners for cleanup
   eventListeners = [];
 
   constructor() {
@@ -36,7 +42,6 @@ class Sidebar {
     this.events();
   }
 
-  // CRITICAL FIX: Add event listener with tracking for cleanup
   addTrackedListener = (element, event, handler) => {
     if (element) {
       element.addEventListener(event, handler);
@@ -44,7 +49,6 @@ class Sidebar {
     }
   };
 
-  // CRITICAL FIX: Remove all tracked listeners
   removeAllListeners = () => {
     this.eventListeners.forEach(({ element, event, handler }) => {
       element.removeEventListener(event, handler);
@@ -178,7 +182,6 @@ class Sidebar {
     // Also add a manual trigger for testing
     window.updateSliderStates = () => this.updateSliderStates();
 
-    // CRITICAL FIX: Use tracked listeners for cleanup
     const messageField = document.getElementById('messageToSend');
     if (messageField) {
       this.addTrackedListener(messageField, 'blur', (e) => {
@@ -232,7 +235,7 @@ class Sidebar {
         const value = e.target.value.trim();
         setExtensionStorageValue(AI_API_KEY_STORAGE_KEY, value)
           .then((didSave) => {
-            if (didSave) localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+            if (didSave) removeRawStorageValue(AI_API_KEY_STORAGE_KEY);
             logger(`💾 Saved AI API Key`);
           })
           .catch((error) => {
@@ -246,7 +249,7 @@ class Sidebar {
       this.addTrackedListener(clearAiApiKeyButton, 'click', () => {
         removeExtensionStorageValue(AI_API_KEY_STORAGE_KEY)
           .then(() => {
-            localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+            removeRawStorageValue(AI_API_KEY_STORAGE_KEY);
             if (aiApiKeyField) aiApiKeyField.value = '';
             logger('🧹 Cleared AI API Key');
           })
@@ -355,7 +358,7 @@ class Sidebar {
     if (aiApiKeyField) {
       getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)
         .then((storedKey) => {
-          const legacyStoredKey = localStorage.getItem(AI_API_KEY_STORAGE_KEY);
+          const legacyStoredKey = getRawStorageValue(AI_API_KEY_STORAGE_KEY);
           const keyToUse = storedKey || legacyStoredKey;
           if (keyToUse) {
             aiApiKeyField.value = keyToUse;
@@ -363,7 +366,7 @@ class Sidebar {
           if (!storedKey && legacyStoredKey) {
             return setExtensionStorageValue(AI_API_KEY_STORAGE_KEY, legacyStoredKey).then(
               (didSave) => {
-                if (didSave) localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+                if (didSave) removeRawStorageValue(AI_API_KEY_STORAGE_KEY);
               }
             );
           }
