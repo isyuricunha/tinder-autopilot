@@ -7,7 +7,10 @@ const createMessengerSessionState = () => ({
 
 const clearMessengerMatchQueue = () => [];
 
+const normalizeMessengerMatchQueue = (matches) => (Array.isArray(matches) ? matches : []);
+
 module.exports = {
   createMessengerSessionState,
-  clearMessengerMatchQueue
+  clearMessengerMatchQueue,
+  normalizeMessengerMatchQueue
 };

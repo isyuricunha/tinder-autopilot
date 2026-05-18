@@ -4,7 +4,11 @@ import { sendMessageToMatch, getMessagesForMatch, getMatches } from '../misc/api
 import { randomDelay, logger } from '../misc/helper';
 import { getCheckboxValue, setToggleState as setToggleControlState } from '../views/toggle-control';
 import { normalizeMessageForComparison, hasMessageBeenSent } from '../misc/message-normalizer';
-import { clearMessengerMatchQueue, createMessengerSessionState } from './messenger-state';
+import {
+  clearMessengerMatchQueue,
+  createMessengerSessionState,
+  normalizeMessengerMatchQueue
+} from './messenger-state';
 
 class Messenger {
   selector = '.tinderAutopilotMessage';
@@ -22,6 +26,7 @@ class Messenger {
   loopMatches = async () => {
     const response = await getMatches(getCheckboxValue(this.newSelector), this.nextPageToken);
     this.nextPageToken = get(response, 'data.next_page_token');
+    this.allMatches = normalizeMessengerMatchQueue(this.allMatches);
     this.allMatches.push.apply(this.allMatches, get(response, 'data.matches', []));
   };
 
@@ -50,25 +55,27 @@ class Messenger {
   runMessage = async () => {
     await this.loopMatches();
     while (this.nextPageToken) {
-      logger(`Currently have ${this.allMatches.length} matches`);
+      const matches = normalizeMessengerMatchQueue(this.allMatches);
+      logger(`Currently have ${matches.length} matches`);
       await this.loopMatches();
     }
 
-    logger(`Retrieved all match history: ${this.allMatches.length}`);
+    const matches = normalizeMessengerMatchQueue(this.allMatches);
+    logger(`Retrieved all match history: ${matches.length}`);
 
     // To start with old matches we can reverse the array
     // this.allMatches = this.allMatches.reverse();
 
     logger(`Looking for matches we have not sent yet to`);
-    await this.sendMessagesTo(this.allMatches.reverse());
+    await this.sendMessagesTo(matches.slice().reverse());
   };
 
   normalizeMessageForComparison = normalizeMessageForComparison;
 
   hasMessageBeenSent = hasMessageBeenSent;
 
-  sendMessagesTo = async (r) => {
-    const matchList = keyBy(r, 'id');
+  sendMessagesTo = async (r = []) => {
+    const matchList = keyBy(normalizeMessengerMatchQueue(r), 'id');
 
     // Release the reversed allMatches array after creating the lookup to free memory
     this.allMatches = clearMessengerMatchQueue();
@@ -89,8 +96,14 @@ class Messenger {
         if (!this.isRunningMessage) break;
 
         const match = matchList[matchID];
+        const tinderMatchID = get(match, 'id', '');
         const messageTemplate = get(document.getElementById('messageToSend'), 'value', '');
         const matchName = get(match, 'person.name', '');
+
+        if (!tinderMatchID) {
+          logger(` Skipping match - missing id`);
+          continue;
+        }
 
         if (!messageTemplate.trim() || !matchName) {
           logger(` Skipping match - missing template or name`);
@@ -100,7 +113,7 @@ class Messenger {
         const messageToSend = messageTemplate.replace('{name}', matchName.toLowerCase());
 
         batchPromises.push(
-          getMessagesForMatch(match.id)
+          getMessagesForMatch(tinderMatchID)
             .then((messageList) => {
               this.checkedMessage += 1;
               logger(`Checked ${this.checkedMessage}/${matchIds.length}`);
@@ -110,7 +123,7 @@ class Messenger {
             })
             .then((shouldSend) => {
               if (shouldSend) {
-                return sendMessageToMatch(match.id, { message: messageToSend }).then((b) => {
+                return sendMessageToMatch(tinderMatchID, { message: messageToSend }).then((b) => {
                   if (get(b, 'sent_date')) {
                     logger(` Message sent to ${matchName}`);
                   } else {

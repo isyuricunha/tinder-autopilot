@@ -2,6 +2,7 @@ import get from 'lodash/get';
 import { buildRequestOptions } from './api-request-options';
 import { getRawStorageValue, getJsonSetting } from './settings-store';
 import { buildTinderApiDefaultOptions } from './tinder-api-options';
+import { buildMatchMessagesUrl, buildSendMessageUrl } from './tinder-api-urls';
 
 const getDefaultOptions = () =>
   buildTinderApiDefaultOptions({
@@ -62,8 +63,8 @@ const getMyProfile = () =>
     `https://api.gotinder.com/v2/profile?locale=en&include=account%2Cboost%2Ccontact_cards%2Cemail_settings%2Cinstagram%2Clikes%2Cnotifications%2Cplus_control%2Cproducts%2Cpurchase%2Creadreceipts%2Cswipenote%2Cspotify%2Csuper_likes%2Ctinder_u%2Ctravel%2Ctutorials%2Cuser`
   );
 
-const getMessagesForMatch = ({ id }) =>
-  fetchResource(`https://api.gotinder.com/v2/matches/${id}/messages?count=100`).then((data) => {
+const getMessagesForMatch = (match) =>
+  fetchResource(buildMatchMessagesUrl(match)).then((data) => {
     const messages = get(data, 'data.messages', []);
     // Normalize and immediately filter/release to avoid holding large data in memory
     return messages.map((r) =>
@@ -109,7 +110,7 @@ const sendMessageToMatch = (matchID, options) => {
         break;
     }
   }
-  return fetchResource(`https://api.gotinder.com/user/matches/${matchID}?locale=en`, body);
+  return fetchResource(buildSendMessageUrl(matchID), body);
 };
 
 export { fetchResource, sendMessageToMatch, getMessagesForMatch, getMatches, getMyProfile };
