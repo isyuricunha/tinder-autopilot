@@ -1,5 +1,7 @@
 import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
+import { getSetting } from '../misc/settings-store';
+import { parseAiDecision } from '../misc/ai-response-parser';
 import { getCheckboxValue } from '../views/toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
@@ -22,7 +24,7 @@ class AIProfileFilter {
   // LocalStorage helpers
   // ----------------------------------------------------------------
   loadApiUrl() {
-    return localStorage.getItem('TinderAutopilot/aiApiUrl') || '';
+    return getSetting('aiApiUrl');
   }
 
   loadApiKey() {
@@ -30,23 +32,23 @@ class AIProfileFilter {
   }
 
   loadModel() {
-    return localStorage.getItem('TinderAutopilot/aiModel') || 'gpt-4o-mini';
+    return getSetting('aiModel', 'gpt-4o-mini');
   }
 
   loadFilterRules() {
-    const stored = localStorage.getItem('TinderAutopilot/aiFilterRules');
+    const stored = getSetting('aiFilterRules');
     if (stored) return stored;
     // Default rules
     return 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.';
   }
 
   loadUseVision() {
-    const stored = localStorage.getItem('TinderAutopilot/aiUseVision');
+    const stored = getSetting('aiUseVision');
     return stored === 'true';
   }
 
   loadReasoningEffort() {
-    const stored = localStorage.getItem('TinderAutopilot/aiReasoningEffort');
+    const stored = getSetting('aiReasoningEffort');
     if (stored && ['low', 'medium', 'high'].includes(stored)) {
       return stored;
     }
@@ -222,23 +224,9 @@ RESPONSE FORMAT (valid JSON only):
   // Parse LLM response to structured decision
   // ----------------------------------------------------------------
   parseResponse(data) {
-    try {
-      const choice = data.choices?.[0]?.message?.content;
-      if (!choice) {
-        logger('⚠️ AI response missing content');
-        return { shouldSwipe: true, reason: 'Empty response' };
-      }
-
-      const parsed = JSON.parse(choice);
-      const shouldSwipe = parsed.shouldSwipe === 'yes';
-      const reason = parsed.reason || `confidence: ${parsed.confidence || '?'}`;
-
-      logger(`🤖 AI says: ${shouldSwipe ? 'Swipe YES' : 'Swipe NO'} - ${reason}`);
-      return { shouldSwipe, reason };
-    } catch (error) {
-      logger(`⚠️ Failed to parse AI response: ${error.message}`);
-      return { shouldSwipe: true, reason: 'Parse error' };
-    }
+    const result = parseAiDecision(data);
+    logger(`🤖 AI says: ${result.shouldSwipe ? 'Swipe YES' : 'Swipe NO'} - ${result.reason}`);
+    return result;
   }
 
   // ----------------------------------------------------------------
