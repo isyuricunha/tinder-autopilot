@@ -1,4 +1,11 @@
 import { errorLog, logger, warnLog } from '../misc/helper';
+import { getSetting } from '../misc/settings-store';
+import {
+  isAgeOutsideRange,
+  isDistanceOverMax,
+  isPhotoCountBelowMinimum,
+  parseFilterList
+} from '../misc/profile-filter-utils';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -14,13 +21,9 @@ class ProfileAnalyzer {
 
   loadBioBlacklist() {
     try {
-      const stored = localStorage.getItem('TinderAutopilot/bioBlacklist');
+      const stored = getSetting('bioBlacklist');
       if (stored) {
-        const words = stored
-          .toLowerCase()
-          .split(',')
-          .map((word) => word.trim())
-          .filter((word) => word.length > 0);
+        const words = parseFilterList(stored);
         logger(`📝 Loaded ${words.length} banned words: ${words.join(', ')}`);
         return words;
       }
@@ -34,13 +37,9 @@ class ProfileAnalyzer {
 
   loadGenderFilter() {
     try {
-      const stored = localStorage.getItem('TinderAutopilot/genderFilter');
+      const stored = getSetting('genderFilter');
       if (stored) {
-        return stored
-          .toLowerCase()
-          .split(',')
-          .map((word) => word.trim())
-          .filter((word) => word.length > 0);
+        return parseFilterList(stored);
       }
     } catch (e) {
       warnLog('Failed to load gender filter', e);
@@ -50,8 +49,8 @@ class ProfileAnalyzer {
 
   loadAgeRange() {
     try {
-      const minAge = localStorage.getItem('TinderAutopilot/minAge') || '18';
-      const maxAge = localStorage.getItem('TinderAutopilot/maxAge') || '99';
+      const minAge = getSetting('minAge', '18');
+      const maxAge = getSetting('maxAge', '99');
       return { min: parseInt(minAge), max: parseInt(maxAge) };
     } catch (e) {
       warnLog('Failed to load age range', e);
@@ -61,7 +60,7 @@ class ProfileAnalyzer {
 
   loadMaxDistance() {
     try {
-      const stored = localStorage.getItem('TinderAutopilot/maxDistance');
+      const stored = getSetting('maxDistance');
       return stored ? parseInt(stored) : 999; // 999 = no limit
     } catch (e) {
       warnLog('Failed to load max distance', e);
@@ -71,7 +70,7 @@ class ProfileAnalyzer {
 
   loadMinPhotoCount() {
     try {
-      const stored = localStorage.getItem('TinderAutopilot/minPhotoCount');
+      const stored = getSetting('minPhotoCount');
       return stored ? parseInt(stored) : 1; // Minimum 1 photo by default
     } catch (e) {
       warnLog('Failed to load min photo count', e);
@@ -817,19 +816,19 @@ class ProfileAnalyzer {
 
       // Age filtering
       const age = this.getAge();
-      if (age && (age < this.ageRange.min || age > this.ageRange.max)) {
+      if (isAgeOutsideRange(age, this.ageRange)) {
         return true;
       }
 
       // Distance filtering
       const distance = this.getDistance();
-      if (distance && distance.value > this.maxDistance) {
+      if (isDistanceOverMax(distance, this.maxDistance)) {
         return true;
       }
 
       // Photo count filtering
       const photoCount = this.getPhotoCount();
-      if (photoCount < this.minPhotoCount) {
+      if (isPhotoCountBelowMinimum(photoCount, this.minPhotoCount)) {
         return true;
       }
     }
@@ -940,7 +939,6 @@ class ProfileAnalyzer {
       await new Promise((_resolve) => setTimeout(_resolve, 200));
       this.closeProfile();
 
-      // CRITICAL: Wait and verify modal actually closed
       await this.waitForModalClose(2000);
 
       // Extra safety wait
