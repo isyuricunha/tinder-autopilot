@@ -30,16 +30,21 @@ const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 class Sidebar {
   eventListeners = [];
 
+  eventsBound = false;
+
+  isMounted = false;
+
+  cancelMountWait = null;
+
   constructor() {
     this.injectModernStyles();
-    this.sidebar();
 
     this.anonymous = new Anonymous();
     this.hideUnanswered = new HideUnanswered();
     this.swiper = new Swiper();
     this.messenger = new Messenger();
 
-    this.events();
+    this.mountWhenReady();
   }
 
   addTrackedListener = (element, event, handler) => {
@@ -50,6 +55,11 @@ class Sidebar {
   };
 
   removeAllListeners = () => {
+    if (this.cancelMountWait) {
+      this.cancelMountWait();
+      this.cancelMountWait = null;
+    }
+
     this.eventListeners.forEach(({ element, event, handler }) => {
       element.removeEventListener(event, handler);
     });
@@ -120,15 +130,54 @@ class Sidebar {
   insertBefore = (el, referenceNode) => {
     if (referenceNode && referenceNode.parentNode) {
       referenceNode.parentNode.insertBefore(el, referenceNode);
+      return true;
     }
+
+    return false;
+  };
+
+  mountWhenReady = () => {
+    if (this.mountSidebar()) return;
+
+    this.cancelMountWait = waitUntilElementExists('aside:first-of-type', () => {
+      this.mountSidebar();
+    });
+  };
+
+  mountSidebar = () => {
+    if (this.isMounted) return true;
+    if (!this.sidebar()) return false;
+
+    this.isMounted = true;
+
+    if (!this.eventsBound) {
+      this.events();
+      this.eventsBound = true;
+    }
+
+    return true;
   };
 
   sidebar = () => {
-    const el = createSidebarElement();
-    this.insertBefore(el, document.querySelector('aside:first-of-type'));
+    const existingInfoBanner = document.querySelector('#infoBanner');
+    if (existingInfoBanner) {
+      this.infoBanner = existingInfoBanner;
+      return renderSidebarContent(this.infoBanner);
+    }
 
-    this.infoBanner = document.querySelector('#infoBanner');
-    renderSidebarContent(this.infoBanner);
+    const referenceNode = document.querySelector('aside:first-of-type');
+    if (!referenceNode) return false;
+
+    const el = createSidebarElement();
+    const isMounted = this.insertBefore(el, referenceNode);
+
+    if (!isMounted) {
+      warnLog('Could not mount Autopilot sidebar: Tinder sidebar target is not ready');
+      return false;
+    }
+
+    this.infoBanner = el.querySelector('#infoBanner');
+    return renderSidebarContent(this.infoBanner);
   };
 
   events = () => {
@@ -299,7 +348,7 @@ class Sidebar {
     toggleMappings.forEach(({ selector, start, stop }) => {
       if (getToggleState(selector)) {
         setToggleControlState(selector, true);
-        if (start) start();
+        this.runAutomationCallback(start, 'start', selector);
       }
     });
   };
@@ -413,6 +462,25 @@ class Sidebar {
     renderCounters();
   };
 
+  getErrorMessage = (error) => (error instanceof Error ? error.message : String(error));
+
+  runAutomationCallback = (callback, action, selector) => {
+    if (!callback) return;
+
+    try {
+      const result = callback();
+      if (result && typeof result.catch === 'function') {
+        result.catch((error) => {
+          logger(`⚠️ ${action} failed for ${selector}: ${this.getErrorMessage(error)}`);
+          if (action === 'start') setToggleControlState(selector, false);
+        });
+      }
+    } catch (error) {
+      logger(`⚠️ ${action} failed for ${selector}: ${this.getErrorMessage(error)}`);
+      if (action === 'start') setToggleControlState(selector, false);
+    }
+  };
+
   bindCheckbox = (selector, start = false, stop = false) => {
     const element = document.querySelector(selector);
     if (!element) {
@@ -420,18 +488,11 @@ class Sidebar {
       return;
     }
 
-    // Restore saved state from localStorage, except for session-only controls.
     const excludedSelectors = [
       '.tinderAutopilot',
       '.tinderAutopilotMessage',
       '.tinderAutopilotMessageNewOnly'
     ];
-    if (!excludedSelectors.includes(selector)) {
-      if (getToggleState(selector)) {
-        setToggleControlState(selector, true);
-        if (start) start();
-      }
-    }
 
     element.onclick = (e) => {
       e.preventDefault();
@@ -449,8 +510,8 @@ class Sidebar {
         this.updateSliderStates();
       }, 50);
 
-      if (isOn && stop) stop();
-      if (!isOn && start) start();
+      if (isOn) this.runAutomationCallback(stop, 'stop', selector);
+      if (!isOn) this.runAutomationCallback(start, 'start', selector);
     };
   };
 

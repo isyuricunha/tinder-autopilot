@@ -18,9 +18,13 @@ const createSidebarElement = () => {
 };
 
 const clearChildren = (element) => {
+  if (!element) return false;
+
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
+
+  return true;
 };
 
 const createResetCountersButton = () =>
@@ -42,7 +46,7 @@ const createActivityLog = () =>
   });
 
 const renderSidebarContent = (container) => {
-  clearChildren(container);
+  if (!clearChildren(container)) return false;
 
   const scrollContainer = createElement(
     'div',
@@ -73,6 +77,8 @@ const renderSidebarContent = (container) => {
       ])
     ])
   );
+
+  return true;
 };
 
 export { createSidebarElement, renderSidebarContent };
