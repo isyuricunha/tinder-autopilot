@@ -1,4 +1,4 @@
-import { onToggle, offToggle, onToggleInner, offToggleInner } from './templates';
+const { onToggle, offToggle, onToggleInner, offToggleInner } = require('./toggle-styles');
 
 const getToggleElements = (selector) => {
   const root = document.querySelector(selector);
@@ -39,4 +39,9 @@ const toggleCheckbox = (selector) => {
   return nextState;
 };
 
-export { getToggleElements, setToggleState, getCheckboxValue, toggleCheckbox };
+module.exports = {
+  getToggleElements,
+  setToggleState,
+  getCheckboxValue,
+  toggleCheckbox
+};
