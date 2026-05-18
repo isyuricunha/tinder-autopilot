@@ -229,6 +229,16 @@ class Sidebar {
       });
     }
 
+    // Save reasoning effort when user changes it
+    const aiReasoningEffortField = document.getElementById('aiReasoningEffort');
+    if (aiReasoningEffortField) {
+      this.addTrackedListener(aiReasoningEffortField, 'change', (e) => {
+        const value = e.target.value;
+        localStorage.setItem('TinderAutopilot/aiReasoningEffort', value);
+        logger(`💾 Saved AI Reasoning Effort: ${value}`);
+      });
+    }
+
     // Save AI filter settings when user updates them
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
@@ -371,6 +381,18 @@ class Sidebar {
       const storedRules = localStorage.getItem('TinderAutopilot/aiFilterRules');
       if (storedRules) {
         aiFilterRulesField.value = storedRules;
+      }
+    }
+
+    // Initialize reasoning effort dropdown
+    const aiReasoningEffortField = document.getElementById('aiReasoningEffort');
+    if (aiReasoningEffortField) {
+      const storedEffort = localStorage.getItem('TinderAutopilot/aiReasoningEffort');
+      if (storedEffort) {
+        aiReasoningEffortField.value = storedEffort;
+      } else {
+        // Default to medium
+        aiReasoningEffortField.value = 'medium';
       }
     }
   };

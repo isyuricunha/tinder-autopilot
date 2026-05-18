@@ -267,7 +267,18 @@ const autopilot = `
   helpText: 'Describe your swipe preferences. The AI will use these rules.',
   defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.'
 })}
-  </div>
+        <div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
+          <div style="padding: 16px;">
+            <label style="color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;">Reasoning Effort</label>
+            <select id="aiReasoningEffort" style="width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 14px;" onchange="localStorage.setItem('TinderAutopilot/aiReasoningEffort', this.value);">
+              <option value="low">Low - Fast & Cheap</option>
+              <option value="medium">Medium - Balanced</option>
+              <option value="high">High - Deep Analysis</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">Controls how much the AI thinks before responding. Low is faster and cheaper. High provides deeper analysis but uses more tokens.</div>
+   </div>
 `;
 
 const massMessage = `

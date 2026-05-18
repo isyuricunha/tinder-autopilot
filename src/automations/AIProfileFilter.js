@@ -11,6 +11,7 @@ class AIProfileFilter {
     this.model = this.loadModel();
     this.filterRules = this.loadFilterRules();
     this.useVision = this.loadUseVision();
+    this.reasoningEffort = this.loadReasoningEffort();
   }
 
   // ----------------------------------------------------------------
@@ -38,6 +39,14 @@ class AIProfileFilter {
   loadUseVision() {
     const stored = localStorage.getItem('TinderAutopilot/aiUseVision');
     return stored === 'true';
+  }
+
+  loadReasoningEffort() {
+    const stored = localStorage.getItem('TinderAutopilot/aiReasoningEffort');
+    if (stored && ['low', 'medium', 'high'].includes(stored)) {
+      return stored;
+    }
+    return 'medium'; // default
   }
 
   static isEnabled() {
@@ -100,23 +109,8 @@ class AIProfileFilter {
   // Build OpenAI-compatible request body
   // ----------------------------------------------------------------
   buildRequestBody(bio, imageBase64, name) {
-    const systemMessage = `You are a smart Tinder profile filter. Your job is to decide whether to swipe right (yes) or left (no) on a Tinder profile, based on the user's preference rules.
-
-USER RULES:
-${this.filterRules}
-
-IMPORTANT:
-- If it's not clear from the information, respond "yes" (better to like than to miss a potential match).
-- Be conservative: if uncertain, swipe yes.
-- Respond ONLY in valid JSON.
-- The "reason" field is optional but helpful for logging.
-
-RESPONSE FORMAT (valid JSON only):
-{
-  "shouldSwipe": "yes" | "no",
-  "confidence": 1-10,
-  "reason": "short explanation"
-}`;
+    const systemMessage = this.buildSystemMessage();
+    const config = this.getEffortConfig();
 
     const content = [];
 
@@ -149,9 +143,83 @@ RESPONSE FORMAT (valid JSON only):
       model: this.model,
       messages,
       response_format: { type: 'json_object' },
-      max_tokens: 256,
-      temperature: 0.2
+      max_tokens: config.maxTokens,
+      temperature: config.temperature
     };
+  }
+
+  // ----------------------------------------------------------------
+  // Reasoning effort configuration
+  // ----------------------------------------------------------------
+  getEffortConfig() {
+    const configs = {
+      low: { maxTokens: 128, temperature: 0.3 },
+      medium: { maxTokens: 256, temperature: 0.2 },
+      high: { maxTokens: 512, temperature: 0.1 }
+    };
+    return configs[this.reasoningEffort] || configs.medium;
+  }
+
+  buildSystemMessage() {
+    const baseRules = this.filterRules;
+
+    const effortPrompts = {
+      low: `You are a fast Tinder profile filter. Decide quickly: swipe right (yes) or left (no).
+
+USER RULES:
+${baseRules}
+
+RULES:
+- If unclear, respond "yes".
+- Be conservative: uncertain = yes.
+- Respond ONLY in valid JSON.
+- Keep "reason" very short (3-5 words max).`,
+
+      medium: `You are a smart Tinder profile filter. Your job is to decide whether to swipe right (yes) or left (no) on a Tinder profile, based on the user's preference rules.
+
+USER RULES:
+${baseRules}
+
+IMPORTANT:
+- If it's not clear from the information, respond "yes" (better to like than to miss a potential match).
+- Be conservative: if uncertain, swipe yes.
+- Respond ONLY in valid JSON.
+- The "reason" field is optional but helpful for logging.
+
+RESPONSE FORMAT (valid JSON only):
+{
+  "shouldSwipe": "yes" | "no",
+  "confidence": 1-10,
+  "reason": "short explanation"
+}`,
+
+      high: `You are an expert Tinder profile analyst with deep understanding of dating profiles, red flags, and compatibility indicators. Perform a thorough analysis before deciding whether to swipe right (yes) or left (no).
+
+USER RULES:
+${baseRules}
+
+ANALYSIS GUIDELINES:
+- Examine the profile bio carefully for explicit and implicit red flags.
+- Consider the name and any cultural context if relevant.
+- Look for indicators of: authenticity, compatibility, lifestyle alignment, and potential dealbreakers.
+- Evaluate if the profile seems genuine or potentially fake/commercial.
+- Consider if there's enough information to make a confident decision.
+
+DECISION RULES:
+- If information is ambiguous or insufficient, default to "yes" (better to like than miss a potential match).
+- Be conservative with rejections — only reject when there are clear red flags.
+- When rejecting, provide a clear, specific reason.
+- When accepting, briefly note what made it a good match.
+
+RESPONSE FORMAT (valid JSON only):
+{
+  "shouldSwipe": "yes" | "no",
+  "confidence": 1-10,
+  "reason": "detailed explanation of your analysis and decision"
+}`
+    };
+
+    return effortPrompts[this.reasoningEffort] || effortPrompts.medium;
   }
 
   // ----------------------------------------------------------------
