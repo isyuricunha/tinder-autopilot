@@ -13,12 +13,13 @@ class Anonymous {
             .profileCard__slider__img,
             .StretchedBox[aria-label] {
                 filter: blur(20px);
-            }`
+            }`,
+      { id: 'anonymous' }
     );
   };
 
   stop = () => {
-    removeCss();
+    removeCss({ id: 'anonymous' });
   };
 }
 

@@ -8,12 +8,15 @@ class Instagram {
   observer;
 
   constructor() {
-    insertCss(`
+    insertCss(
+      `
     #modal-manager div[style*="instagram"] { cursor: zoom-in; }
     #modal-manager div[style*="instagram"]:hover {
         border: 3px solid #40a9ff;
     }
-    `);
+    `,
+      { id: 'instagram' }
+    );
 
     try {
       const target = document.querySelector('[role="dialog"]')?.parentElement?.parentElement;

@@ -2,8 +2,9 @@ import get from 'lodash/get';
 import keyBy from 'lodash/keyBy';
 import { sendMessageToMatch, getMessagesForMatch, getMatches } from '../misc/api';
 import { randomDelay, logger } from '../misc/helper';
-import { getCheckboxValue, toggleCheckbox } from '../views/toggle-control';
+import { getCheckboxValue, setToggleState as setToggleControlState } from '../views/toggle-control';
 import { normalizeMessageForComparison, hasMessageBeenSent } from '../misc/message-normalizer';
+import { clearMessengerMatchQueue, createMessengerSessionState } from './messenger-state';
 
 class Messenger {
   selector = '.tinderAutopilotMessage';
@@ -25,25 +26,25 @@ class Messenger {
   };
 
   start = () => {
-    this.checkedMessage = 0;
+    const state = createMessengerSessionState();
+
+    this.allMatches = state.allMatches;
+    this.checkedMessage = state.checkedMessage;
+    this.isRunningMessage = state.isRunningMessage;
+    this.nextPageToken = state.nextPageToken;
+
     logger('Starting messages');
-    this.isRunningMessage = true;
-    this.nextPageToken = true;
 
-    // Clean up any previous session data before starting
-    if (this.allMatches.length > 0) {
-        this.allMatches = [];
-    }
-
-    this.runMessage();
+    this.runMessage().catch((error) => {
+      logger(` Error running messenger: ${error.message}`);
+      this.stop();
+    });
   };
 
   stop = () => {
-    setTimeout(() => {
-      logger('Messaging stopped ⛔️');
-      this.isRunningMessage = false;
-      toggleCheckbox(this.selector);
-    }, 500);
+    logger('Messaging stopped ⛔️');
+    this.isRunningMessage = false;
+    setToggleControlState(this.selector, false);
   };
 
   runMessage = async () => {
@@ -59,7 +60,7 @@ class Messenger {
     // this.allMatches = this.allMatches.reverse();
 
     logger(`Looking for matches we have not sent yet to`);
-    this.sendMessagesTo(this.allMatches.reverse());
+    await this.sendMessagesTo(this.allMatches.reverse());
   };
 
   normalizeMessageForComparison = normalizeMessageForComparison;
@@ -70,7 +71,7 @@ class Messenger {
     const matchList = keyBy(r, 'id');
 
     // Release the reversed allMatches array after creating the lookup to free memory
-    this.allMatches = null;
+    this.allMatches = clearMessengerMatchQueue();
 
     const batchSize = 10; // Process in smaller batches to prevent memory issues
     const matchIds = Object.keys(matchList);

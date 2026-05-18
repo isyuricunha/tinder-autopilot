@@ -1,24 +1,17 @@
 import get from 'lodash/get';
 import { buildRequestOptions } from './api-request-options';
 import { getRawStorageValue, getJsonSetting } from './settings-store';
+import { buildTinderApiDefaultOptions } from './tinder-api-options';
 
-const headers = {
-  referrer: 'https://tinder.com/',
-  referrerPolicy: 'origin',
-  accept: 'application/json; charset=UTF-8',
-  'persistent-device-id': getRawStorageValue('TinderWeb/uuid'),
-  platform: 'web',
-  'X-Auth-Token': getRawStorageValue('TinderWeb/APIToken')
-};
-
-const defaultOptions = {
-  headers,
-  method: 'GET'
-};
+const getDefaultOptions = () =>
+  buildTinderApiDefaultOptions({
+    apiToken: getRawStorageValue('TinderWeb/APIToken'),
+    persistentDeviceId: getRawStorageValue('TinderWeb/uuid')
+  });
 
 const fetchResource = (url, body = false) => {
   return new Promise((resolve, reject) => {
-    const options = buildRequestOptions(defaultOptions, body);
+    const options = buildRequestOptions(getDefaultOptions(), body);
     chrome.runtime.sendMessage({ url, options }, (messageResponse) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));

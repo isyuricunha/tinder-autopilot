@@ -1,36 +1,42 @@
-const containers = []; // will store container HTMLElement references
-const styleElements = []; // will store {prepend: HTMLElement, append: HTMLElement}
-
+const STYLE_ID_PREFIX = 'TinderAutopilot-insert-css';
 const usage =
   'insert-css: You need to provide a CSS string. Usage: insertCss(cssString[, options]).';
 
-function removeCss() {
-  try {
-    document.getElementById('TinderAutopilot-insert-css').remove();
-  } catch {}
+const normalizeOptions = (options = {}) => (typeof options === 'string' ? { id: options } : options);
+
+const styleElementId = (id = 'default') => {
+  const normalizedId = String(id);
+  return normalizedId.startsWith(STYLE_ID_PREFIX)
+    ? normalizedId
+    : `${STYLE_ID_PREFIX}-${normalizedId}`;
+};
+
+function removeCss(options = {}) {
+  const { id } = normalizeOptions(options);
+  const styleElement = document.getElementById(styleElementId(id));
+  if (styleElement) styleElement.remove();
 }
 
-function insertCss(css, options) {
-  options = options || {};
+function insertCss(css, options = {}) {
+  const normalizedOptions = normalizeOptions(options);
 
   if (css === undefined) {
     throw new Error(usage);
   }
 
-  const position = options.prepend === true ? 'prepend' : 'append';
+  const position = normalizedOptions.prepend === true ? 'prepend' : 'append';
   const container =
-    options.container !== undefined ? options.container : document.querySelector('head');
-  let containerId = containers.indexOf(container);
+    normalizedOptions.container !== undefined
+      ? normalizedOptions.container
+      : document.querySelector('head');
 
-  // first time we see this container, create the necessary entries
-  if (containerId === -1) {
-    containerId = containers.push(container) - 1;
-    styleElements[containerId] = {};
+  if (!container) {
+    throw new Error('insert-css: Could not find a container for the style element.');
   }
 
-  // try to get the correponding container + position styleElement, create it otherwise
-  removeCss();
-  const styleElement = (styleElements[containerId][position] = createStyleElement());
+  const id = styleElementId(normalizedOptions.id);
+  removeCss({ id });
+  const styleElement = createStyleElement(id);
 
   if (position === 'prepend') {
     container.insertBefore(styleElement, container.childNodes[0]);
@@ -53,12 +59,11 @@ function insertCss(css, options) {
   return styleElement;
 }
 
-function createStyleElement() {
+function createStyleElement(id) {
   const styleElement = document.createElement('style');
-  styleElement.id = 'TinderAutopilot-insert-css';
+  styleElement.id = id;
   styleElement.setAttribute('type', 'text/css');
   return styleElement;
 }
 
-export { insertCss, removeCss };
-export default insertCss;
+module.exports = { insertCss, removeCss };

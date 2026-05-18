@@ -154,8 +154,8 @@ pnpm build
 
 ### Runtime Flow
 
-1. **Content Script** ([`src/index.js`](src/index.js:7)) loads your profile via [`getMyProfile()`](src/misc/api.js:60) and caches it through the settings store (`TinderAutopilot/ProfileData`)
-2. **Sidebar** ([`src/views/Sidebar.js`](src/views/Sidebar.js:20)) mounts and renders controls
+1. **Content Script** ([`src/index.js`](src/index.js:7)) mounts the sidebar immediately
+2. **Profile Cache** ([`src/index.js`](src/index.js:20)) loads your profile via [`getMyProfile()`](src/misc/api.js:60) and caches it through the settings store (`TinderAutopilot/ProfileData`) when available
 3. **Background Script** ([`src/misc/bg.js`](src/misc/bg.js)) proxies network calls to `api.gotinder.com` to avoid CORS
 4. **Automations** run against Tinder's DOM using resilient selectors
 

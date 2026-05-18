@@ -57,7 +57,8 @@ class Sidebar {
   };
 
   injectModernStyles() {
-    insertCss(`
+    insertCss(
+      `
       /* Custom Scrollbar */
       .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
@@ -111,7 +112,9 @@ class Sidebar {
         background: rgba(255, 107, 53, 0.3);
         color: #ffffff;
       }
-    `);
+    `,
+      { id: 'sidebar' }
+    );
   }
 
   insertBefore = (el, referenceNode) => {
