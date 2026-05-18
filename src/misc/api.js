@@ -1,12 +1,14 @@
 import get from 'lodash/get';
+import { buildRequestOptions } from './api-request-options';
+import { getRawStorageValue, getJsonSetting } from './settings-store';
 
 const headers = {
   referrer: 'https://tinder.com/',
   referrerPolicy: 'origin',
   accept: 'application/json; charset=UTF-8',
-  'persistent-device-id': localStorage.getItem('TinderWeb/uuid'),
+  'persistent-device-id': getRawStorageValue('TinderWeb/uuid'),
   platform: 'web',
-  'X-Auth-Token': localStorage.getItem('TinderWeb/APIToken')
+  'X-Auth-Token': getRawStorageValue('TinderWeb/APIToken')
 };
 
 const defaultOptions = {
@@ -14,26 +16,9 @@ const defaultOptions = {
   method: 'GET'
 };
 
-const buildRequestOptions = (body) => {
-  const options = {
-    ...defaultOptions,
-    headers: {
-      ...defaultOptions.headers
-    }
-  };
-
-  if (body) {
-    options.headers['content-type'] = 'application/json';
-    options.body = JSON.stringify(body);
-    options.method = 'POST';
-  }
-
-  return options;
-};
-
 const fetchResource = (url, body = false) => {
   return new Promise((resolve, reject) => {
-    const options = buildRequestOptions(body);
+    const options = buildRequestOptions(defaultOptions, body);
     chrome.runtime.sendMessage({ url, options }, (messageResponse) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
@@ -99,7 +84,7 @@ const getMessagesForMatch = ({ id }) =>
 
 const getProfileData = () => {
   try {
-    return JSON.parse(localStorage.getItem('TinderAutopilot/ProfileData'));
+    return getJsonSetting('ProfileData');
   } catch {
     return false;
   }
