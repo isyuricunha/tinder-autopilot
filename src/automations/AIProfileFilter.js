@@ -1,4 +1,7 @@
 import { logger } from '../misc/helper';
+import { getExtensionStorageValue } from '../misc/extension-storage';
+
+const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
 /**
  * AIProfileFilter - LLM-powered profile filtering for Tinder Autopilot.
@@ -22,7 +25,7 @@ class AIProfileFilter {
   }
 
   loadApiKey() {
-    return localStorage.getItem('TinderAutopilot/aiApiKey') || '';
+    return '';
   }
 
   loadModel() {
@@ -75,6 +78,8 @@ class AIProfileFilter {
    * @returns {Promise<{shouldSwipe: boolean, reason: string}>}
    */
   async analyze({ bio, name, imageBase64 }) {
+    this.apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+
     if (!this.apiUrl) {
       logger('⚠️ AI Filter URL not configured, skipping AI analysis');
       return { shouldSwipe: 'neutral', reason: 'AI not configured' };

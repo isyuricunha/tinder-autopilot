@@ -14,18 +14,38 @@ const defaultOptions = {
   method: 'GET'
 };
 
+const buildRequestOptions = (body) => {
+  const options = {
+    ...defaultOptions,
+    headers: {
+      ...defaultOptions.headers
+    }
+  };
+
+  if (body) {
+    options.headers['content-type'] = 'application/json';
+    options.body = JSON.stringify(body);
+    options.method = 'POST';
+  }
+
+  return options;
+};
+
 const fetchResource = (url, body = false) => {
   return new Promise((resolve, reject) => {
-    const options = defaultOptions;
-    if (body) {
-      options.headers['content-type'] = 'application/json';
-      options.body = JSON.stringify(body);
-      options.method = 'POST';
-    }
+    const options = buildRequestOptions(body);
     chrome.runtime.sendMessage({ url, options }, (messageResponse) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!messageResponse) {
+        reject(new Error('Empty response from background request'));
+        return;
+      }
       const [response, error] = messageResponse;
       if (response === null) {
-        reject(error);
+        reject(error instanceof Error ? error : new Error(String(error)));
       } else {
         // Use undefined on a 204 - No Content
         const body = response.body ? new Blob([response.body]) : undefined;
@@ -39,15 +59,15 @@ const fetchResource = (url, body = false) => {
     });
   })
     .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status} ${response.statusText}`);
+      }
       const textPromise = response.text();
       // Help GC by nullifying the response reference after extracting data
       return textPromise;
     })
     .then((data) => {
       return data ? JSON.parse(data) : {};
-    })
-    .catch((error) => {
-      console.log(error);
     });
 };
 

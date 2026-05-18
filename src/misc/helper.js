@@ -13,12 +13,18 @@ const logger = (v) => {
   const txt = document.querySelector('.txt');
   if (!txt) return; // CRITICAL: Prevent memory leak - exit if no log container
 
-  const message = /* html */ `<p class="settings__bottomSubtitle Px(12px)--s Px(17px)--ml Lts(0) Fw($regular) C($c-secondary) Fz($xs) Ta(s)"><span>
-  ${`0${now.getHours()}`.slice(-2)}:${`0${now.getMinutes()}`.slice(
+  const message = document.createElement('p');
+  message.className =
+    'settings__bottomSubtitle Px(12px)--s Px(17px)--ml Lts(0) Fw($regular) C($c-secondary) Fz($xs) Ta(s)';
+
+  const timestamp = document.createElement('span');
+  timestamp.textContent = `${`0${now.getHours()}`.slice(-2)}:${`0${now.getMinutes()}`.slice(
     -2
-  )}:${`0${now.getSeconds()}`.slice(-2)}.</span>
-  ${v}</span></p>`;
-  txt.innerHTML = message + txt.innerHTML;
+  )}:${`0${now.getSeconds()}`.slice(-2)}. `;
+
+  message.appendChild(timestamp);
+  message.appendChild(document.createTextNode(String(v)));
+  txt.prepend(message);
 
   // CRITICAL FIX: Limit DOM accumulation to 50 lines max
   // Remove old logs to prevent memory leak
@@ -31,12 +37,41 @@ const logger = (v) => {
   }
 };
 
-const waitUntilElementExists = (selector, callback) => {
+const waitUntilElementExists = (selector, callback, timeout = 30000) => {
   const el = document.querySelector(selector);
   if (el) {
     callback(el);
+    return () => {};
   }
-  setTimeout(() => waitUntilElementExists(selector, callback), 500);
+
+  let isDone = false;
+  let timeoutId;
+
+  const observer = new MutationObserver(() => {
+    const element = document.querySelector(selector);
+    if (!element || isDone) return;
+
+    isDone = true;
+    clearTimeout(timeoutId);
+    observer.disconnect();
+    callback(element);
+  });
+
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true
+  });
+
+  timeoutId = setTimeout(() => {
+    isDone = true;
+    observer.disconnect();
+  }, timeout);
+
+  return () => {
+    isDone = true;
+    clearTimeout(timeoutId);
+    observer.disconnect();
+  };
 };
 
 export { logger, randomDelay, generateRandomNumber, waitUntilElementExists };

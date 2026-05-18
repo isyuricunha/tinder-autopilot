@@ -13,6 +13,14 @@ const onToggleInner = `border-radius: 50%; background: #000000; border: 2px soli
 const offToggle = `display: flex; align-items: center; justify-content: center; border-radius: 20px; width: 56px; height: 32px; border: none; transition: all 0.3s ease; border: 2px solid #333333; background: #1a1a1a; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2)`;
 const offToggleInner = `border-radius: 50%; background: #000000; border: 2px solid #333333; width: 24px; height: 24px; transition: all 0.3s ease; transform: translateX(-12px); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3)`;
 
+const escapeHtml = (value = '') =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const topBanner = `
 <div style="position: relative; z-index: 2; transition: all 0.3s ease; text-align: center; background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 0 0 24px 24px; padding: 16px 8px; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.2); min-height: 60px; display: flex; align-items: center; justify-content: center;">
   <a style="display: flex; align-items: center; color: #000000; font-weight: 700; font-size: 18px; text-decoration: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); white-space: nowrap; overflow: hidden;" href="/app/profile">
@@ -24,21 +32,24 @@ const topBanner = `
 // Similarmente, ajuste outras seções do código que podem impactar a cor do texto.
 
 const titleGenerator = (title) =>
-  `<h2 style="color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;">${title}</h2>`;
+  `<h2 style="color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;">${escapeHtml(title)}</h2>`;
 
-const textboxGenerator = ({ className, placeholder, helpText, defaultValue }) => `
+const textboxGenerator = ({ className, placeholder, helpText, defaultValue, type = 'textarea' }) => `
 <div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 12px; cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: center;"></div>
             <div style="position: relative; width: 100%;">
-                <textarea style="width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; resize: vertical; min-height: 60px; max-height: 120px; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);" id="${className}" placeholder="${placeholder}">${defaultValue}</textarea>
+                ${type === 'password'
+    ? `<input type="password" autocomplete="off" style="width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);" id="${escapeHtml(className)}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(defaultValue)}">`
+    : `<textarea style="width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; resize: vertical; min-height: 60px; max-height: 120px; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);" id="${escapeHtml(className)}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(defaultValue)}</textarea>`
+  }
             </div>
         </label>
     </div>
 </div>
 ${helpText &&
-  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
+  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${escapeHtml(helpText)}</div>`
   }
 `;
 
@@ -46,12 +57,12 @@ const checkboxGenerator = (className, label, helpText = '') => `
 <div style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 16px; cursor: pointer;">
-            <a href="#" class="${className}" style="display: block; text-decoration: none; color: inherit;" title="Click to toggle">
+            <a href="#" class="${escapeHtml(className)}" style="display: block; text-decoration: none; color: inherit;" title="Click to toggle">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                    <div style="flex: 1; overflow: hidden; padding: 0; color: #ffffff; font-size: 15px; font-weight: 500; line-height: 1.3;"><span>${label}</span></div>
+                    <div style="flex: 1; overflow: hidden; padding: 0; color: #ffffff; font-size: 15px; font-weight: 500; line-height: 1.3;"><span>${escapeHtml(label)}</span></div>
                     <div style="position: relative; flex-shrink: 0;">
                         <div class="toggleSwitch" style="cursor: pointer; pointer-events: none;">
-                            <input style="position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; cursor: pointer;" name="${className}" type="checkbox">
+                            <input style="position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; cursor: pointer;" name="${escapeHtml(className)}" type="checkbox">
                             <div style="${offToggle}"><div style="${offToggleInner}"></div></div>
                         </div>
                     </div>
@@ -61,7 +72,7 @@ const checkboxGenerator = (className, label, helpText = '') => `
     </div>
 </div>
 ${helpText &&
-  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
+  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${escapeHtml(helpText)}</div>`
   }
 `;
 
@@ -76,21 +87,21 @@ const sliderGenerator = ({
   unit = '',
   parentToggle = null
 }) => `
-<div class="slider-container" data-parent="${parentToggle || ''
+<div class="slider-container" data-parent="${escapeHtml(parentToggle || '')
   }" style="background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);">
     <div style="background: #000000; border: none; transition: all 0.3s ease; position: relative;">
         <label style="display: block; padding: 16px; cursor: pointer;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <span style="color: #ffffff; font-size: 15px; font-weight: 500;">${label}</span>
-                <span style="color: #ff6b35; font-size: 14px; font-weight: 600;" id="${className}Value">${defaultValue}${unit}</span>
+                <span style="color: #ffffff; font-size: 15px; font-weight: 500;">${escapeHtml(label)}</span>
+                <span style="color: #ff6b35; font-size: 14px; font-weight: 600;" id="${escapeHtml(className)}Value">${escapeHtml(defaultValue)}${escapeHtml(unit)}</span>
             </div>
             <div style="position: relative; width: 100%;">
-                <input type="range" id="${className}" min="${min}" max="${max}" value="${defaultValue}" step="${step}" 
+                <input type="range" id="${escapeHtml(className)}" min="${escapeHtml(min)}" max="${escapeHtml(max)}" value="${escapeHtml(defaultValue)}" step="${escapeHtml(step)}" 
                        style="width: 100%; height: 6px; border-radius: 3px; background: #333333; outline: none; -webkit-appearance: none; appearance: none;"
                        oninput="document.getElementById('${className}Value').textContent = this.value + '${unit}'; localStorage.setItem('TinderAutopilot/${className}', this.value);" 
                        onchange="localStorage.setItem('TinderAutopilot/${className}', this.value);">
                 <style>
-                    #${className}::-webkit-slider-thumb {
+                    #${escapeHtml(className)}::-webkit-slider-thumb {
                         -webkit-appearance: none;
                         appearance: none;
                         width: 20px;
@@ -100,7 +111,7 @@ const sliderGenerator = ({
                         cursor: pointer;
                         box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
                     }
-                    #${className}::-moz-range-thumb {
+                    #${escapeHtml(className)}::-moz-range-thumb {
                         width: 20px;
                         height: 20px;
                         border-radius: 50%;
@@ -109,15 +120,15 @@ const sliderGenerator = ({
                         border: none;
                         box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
                     }
-                    #${className}:disabled::-webkit-slider-thumb {
+                    #${escapeHtml(className)}:disabled::-webkit-slider-thumb {
                         background: #555555;
                         cursor: not-allowed;
                     }
-                    #${className}:disabled::-moz-range-thumb {
+                    #${escapeHtml(className)}:disabled::-moz-range-thumb {
                         background: #555555;
                         cursor: not-allowed;
                     }
-                    #${className}:disabled {
+                    #${escapeHtml(className)}:disabled {
                         background: #222222;
                         cursor: not-allowed;
                     }
@@ -127,7 +138,7 @@ const sliderGenerator = ({
     </div>
 </div>
 ${helpText &&
-  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${helpText}</div>`
+  `<div style="margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;">${escapeHtml(helpText)}</div>`
   }
 `;
 
@@ -252,9 +263,14 @@ const autopilot = `
         ${textboxGenerator({
   className: 'aiApiKey',
   placeholder: 'sk-... or your API key',
-  helpText: 'Your API key. Stored in localStorage. Never shared.',
-  defaultValue: ''
+  helpText:
+    'Stored in extension local storage. Content scripts can still access extension settings.',
+  defaultValue: '',
+  type: 'password'
 })}
+        <div style="margin: 0 12px 12px 12px; display: flex; gap: 8px;">
+          <button id="clearAiApiKey" type="button" style="width: 100%; padding: 10px 16px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">Clear AI API Key</button>
+        </div>
         ${textboxGenerator({
   className: 'aiModel',
   placeholder: 'gpt-4o-mini',

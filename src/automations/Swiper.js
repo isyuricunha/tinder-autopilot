@@ -13,6 +13,8 @@ class Swiper {
   // CRITICAL FIX: Track active timers for cleanup
   activeTimers = new Set();
 
+  activeIntervals = new Set();
+
   constructor() {
     this.interactions = new Interactions();
     this.profileAnalyzer = new ProfileAnalyzer();
@@ -37,7 +39,37 @@ class Swiper {
       clearTimeout(timerId);
     });
     this.activeTimers.clear();
+    this.activeIntervals.forEach((intervalId) => {
+      clearInterval(intervalId);
+    });
+    this.activeIntervals.clear();
     logger('🧹 Cleared all active timers');
+  };
+
+  scheduleRun = (delay) => {
+    if (!this.isRunning) return null;
+
+    const timerId = setTimeout(() => {
+      this.activeTimers.delete(timerId);
+      this.run();
+    }, delay);
+    this.activeTimers.add(timerId);
+    return timerId;
+  };
+
+  scheduleInterval = (callback, delay) => {
+    if (!this.isRunning) return null;
+
+    const intervalId = setInterval(callback, delay);
+    this.activeIntervals.add(intervalId);
+    return intervalId;
+  };
+
+  clearIntervalById = (intervalId) => {
+    if (!intervalId) return;
+
+    clearInterval(intervalId);
+    this.activeIntervals.delete(intervalId);
   };
 
   // CRITICAL FIX: Schedule profile cleanup to prevent memory leak
@@ -579,7 +611,8 @@ class Swiper {
 
     // Enforce minimum wait when bio blacklist exists (always apply if blacklist has words)
     this.profileAnalyzer.bioBlacklist = this.profileAnalyzer.loadBioBlacklist();
-    const hasBlacklist = this.profileAnalyzer.bioBlacklist && this.profileAnalyzer.bioBlacklist.length > 0;
+    const hasBlacklist =
+      this.profileAnalyzer.bioBlacklist && this.profileAnalyzer.bioBlacklist.length > 0;
     const minGateMs = hasBlacklist ? 5000 : 0;
     if (minGateMs > 0) {
       const elapsed = Date.now() - (this.profileFirstSeen[profileId] || Date.now());
@@ -879,48 +912,49 @@ class Swiper {
       logger('Going to main page to start liking');
       this.interactions.goToMainPage();
 
-      const waitForMatchPage = setInterval(() => {
+      const waitForMatchPage = this.scheduleInterval(() => {
         if (this.interactions.isOnMatchesPage()) {
-          clearInterval(waitForMatchPage);
-          setTimeout(this.run, generateRandomNumber());
+          this.clearIntervalById(waitForMatchPage);
+          this.scheduleRun(generateRandomNumber());
         }
       }, 250);
+      return;
     }
 
     if (this.interactions.closeInstructions()) {
-      setTimeout(this.run, generateRandomNumber());
+      this.scheduleRun(generateRandomNumber());
       return;
     }
 
     if (this.interactions.closeModal()) {
-      setTimeout(this.run, generateRandomNumber());
+      this.scheduleRun(generateRandomNumber());
       return;
     }
 
     if (this.interactions.closeMatchFound()) {
-      setTimeout(this.run, generateRandomNumber());
+      this.scheduleRun(generateRandomNumber());
       return;
     }
 
     if (!this.canSwipe()) {
       logger('No profiles found. Waiting 4s');
-      setTimeout(this.run, generateRandomNumber(3000, 4000));
+      this.scheduleRun(generateRandomNumber(3000, 4000));
       return;
     }
 
     // Keep Swiping
     if (this.matchFound()) {
-      setTimeout(this.run, generateRandomNumber(500, 900));
+      this.scheduleRun(generateRandomNumber(500, 900));
       return;
     }
 
     // What we came here to do, swipe right!
     this.pressLike().then((success) => {
       if (success) {
-        setTimeout(this.run, generateRandomNumber(3000, 4000));
+        this.scheduleRun(generateRandomNumber(3000, 4000));
       } else {
         logger('No profiles found. Waiting 4s');
-        setTimeout(this.run, generateRandomNumber(3000, 4000));
+        this.scheduleRun(generateRandomNumber(3000, 4000));
       }
     });
   };

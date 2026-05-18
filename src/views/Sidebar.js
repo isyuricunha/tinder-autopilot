@@ -16,6 +16,13 @@ import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
 import { waitUntilElementExists, logger } from '../misc/helper';
 import { insertCss } from '../misc/insert-css';
+import {
+  getExtensionStorageValue,
+  setExtensionStorageValue,
+  removeExtensionStorageValue
+} from '../misc/extension-storage';
+
+const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
 class Sidebar {
   // CRITICAL FIX: Track event listeners for cleanup
@@ -253,8 +260,29 @@ class Sidebar {
     if (aiApiKeyField) {
       this.addTrackedListener(aiApiKeyField, 'blur', (e) => {
         const value = e.target.value.trim();
-        localStorage.setItem('TinderAutopilot/aiApiKey', value);
-        logger(`💾 Saved AI API Key`);
+        setExtensionStorageValue(AI_API_KEY_STORAGE_KEY, value)
+          .then((didSave) => {
+            if (didSave) localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+            logger(`💾 Saved AI API Key`);
+          })
+          .catch((error) => {
+            logger(`⚠️ Failed to save AI API Key: ${error.message}`);
+          });
+      });
+    }
+
+    const clearAiApiKeyButton = document.getElementById('clearAiApiKey');
+    if (clearAiApiKeyButton) {
+      this.addTrackedListener(clearAiApiKeyButton, 'click', () => {
+        removeExtensionStorageValue(AI_API_KEY_STORAGE_KEY)
+          .then(() => {
+            localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+            if (aiApiKeyField) aiApiKeyField.value = '';
+            logger('🧹 Cleared AI API Key');
+          })
+          .catch((error) => {
+            logger(`⚠️ Failed to clear AI API Key: ${error.message}`);
+          });
       });
     }
 
@@ -362,10 +390,25 @@ class Sidebar {
 
     const aiApiKeyField = document.getElementById('aiApiKey');
     if (aiApiKeyField) {
-      const storedKey = localStorage.getItem('TinderAutopilot/aiApiKey');
-      if (storedKey) {
-        aiApiKeyField.value = storedKey;
-      }
+      getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)
+        .then((storedKey) => {
+          const legacyStoredKey = localStorage.getItem(AI_API_KEY_STORAGE_KEY);
+          const keyToUse = storedKey || legacyStoredKey;
+          if (keyToUse) {
+            aiApiKeyField.value = keyToUse;
+          }
+          if (!storedKey && legacyStoredKey) {
+            return setExtensionStorageValue(AI_API_KEY_STORAGE_KEY, legacyStoredKey).then(
+              (didSave) => {
+                if (didSave) localStorage.removeItem(AI_API_KEY_STORAGE_KEY);
+              }
+            );
+          }
+          return null;
+        })
+        .catch((error) => {
+          logger(`⚠️ Failed to load AI API Key: ${error.message}`);
+        });
     }
 
     const aiModelField = document.getElementById('aiModel');
@@ -418,8 +461,12 @@ class Sidebar {
       return;
     }
 
-    // Restore saved state from localStorage (except for Auto Like, Auto Message, and New Matches Only)
-    const excludedSelectors = ['.tinderAutopilot', '.tinderAutopilotMessage', '.tinderAutopilotMessageNewOnly'];
+    // Restore saved state from localStorage, except for session-only controls.
+    const excludedSelectors = [
+      '.tinderAutopilot',
+      '.tinderAutopilotMessage',
+      '.tinderAutopilotMessageNewOnly'
+    ];
     if (!excludedSelectors.includes(selector)) {
       const savedState = localStorage.getItem(`TinderAutopilot/toggleState/${selector}`);
       if (savedState === 'true') {
