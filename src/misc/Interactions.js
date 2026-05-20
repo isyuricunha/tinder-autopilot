@@ -1,4 +1,5 @@
 import { logger } from './helper';
+import { clickDialogDismissControl } from './modal-dismiss';
 
 class Interactions {
   isOnMatchesPage = () => {
@@ -81,6 +82,12 @@ class Interactions {
     try {
       const dialog = document.querySelector('[role="dialog"]');
       if (!dialog || !dialog.parentElement) return false;
+
+      if (clickDialogDismissControl(dialog)) {
+        logger('Closing modal');
+        return true;
+      }
+
       const modal = dialog.parentElement.parentElement;
       if (modal) {
         dialog.parentElement.click();
