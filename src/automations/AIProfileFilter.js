@@ -2,6 +2,7 @@ import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
 import { parseAiDecision } from '../misc/ai-response-parser';
+import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
 import { getCheckboxValue } from '../views/toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
@@ -67,10 +68,11 @@ class AIProfileFilter {
    * @param {Object} params
    * @param {string} params.bio - The extracted bio text
    * @param {string|null} params.name - The profile name
+   * @param {Object|null} params.profile - Structured profile details extracted from the DOM
    * @param {string|null} params.imageBase64 - Optional screenshot base64
    * @returns {Promise<{shouldSwipe: boolean, reason: string}>}
    */
-  async analyze({ bio, name, imageBase64 }) {
+  async analyze({ bio, name, profile, imageBase64 }) {
     this.apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
 
     if (!this.apiUrl) {
@@ -79,7 +81,7 @@ class AIProfileFilter {
     }
 
     try {
-      const body = this.buildRequestBody(bio, imageBase64, name);
+      const body = this.buildRequestBody(bio, imageBase64, name, profile);
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
@@ -106,17 +108,15 @@ class AIProfileFilter {
   // ----------------------------------------------------------------
   // Build OpenAI-compatible request body
   // ----------------------------------------------------------------
-  buildRequestBody(bio, imageBase64, name) {
+  buildRequestBody(bio, imageBase64, name, profile) {
     const systemMessage = this.buildSystemMessage();
     const config = this.getEffortConfig();
 
     const content = [];
 
-    // Always include text prompt
-    const nameSection = name ? `NAME: ${name}\n` : '';
     content.push({
       type: 'text',
-      text: `${nameSection}BIO: ${bio || '(no bio)'}`
+      text: formatProfileContextForPrompt(profile, { bio, name })
     });
 
     // If vision is enabled and image is provided
@@ -181,6 +181,7 @@ ${baseRules}
 IMPORTANT:
 - If it's not clear from the information, respond "yes" (better to like than to miss a potential match).
 - Be conservative: if uncertain, swipe yes.
+- Use every supplied profile field, not only the bio.
 - Respond ONLY in valid JSON.
 - The "reason" field is optional but helpful for logging.
 
@@ -197,7 +198,7 @@ USER RULES:
 ${baseRules}
 
 ANALYSIS GUIDELINES:
-- Examine the profile bio carefully for explicit and implicit red flags.
+- Examine the profile bio, age, gender, basics, lifestyle, interests, and looking-for fields carefully.
 - Consider the name and any cultural context if relevant.
 - Look for indicators of: authenticity, compatibility, lifestyle alignment, and potential dealbreakers.
 - Evaluate if the profile seems genuine or potentially fake/commercial.

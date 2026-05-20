@@ -6,6 +6,7 @@ import {
   isPhotoCountBelowMinimum,
   parseFilterList
 } from '../misc/profile-filter-utils';
+import { extractProfileContext } from '../misc/profile-context-extractor';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -764,6 +765,23 @@ class ProfileAnalyzer {
     return null;
   }
 
+  getProfileContextForAI() {
+    const profileContext = extractProfileContext(document);
+    const fallbackDistance = this.getDistance();
+
+    return {
+      ...profileContext,
+      name: profileContext.name || this.getProfileName(),
+      age: profileContext.age || this.getAge(),
+      bio: profileContext.bio || this.getBioText() || '',
+      gender: profileContext.gender || this.getGenderIdentity(),
+      distance:
+        profileContext.distance ||
+        (fallbackDistance ? `${fallbackDistance.value} ${fallbackDistance.unit}` : null),
+      photoCount: profileContext.photoCount || this.getPhotoCount()
+    };
+  }
+
   isGenderFilterEnabled() {
     return getCheckboxValue('.tinderAutopilotGenderFilter');
   }
@@ -913,11 +931,14 @@ class ProfileAnalyzer {
 
       // If traditional filters passed, run AI filter if enabled
       if (!shouldSkip && isAIFilterEnabled) {
-        const bioText = this.getBioText() || '';
-        const profileName = this.getProfileName();
+        const profileContext = this.getProfileContextForAI();
         logger('🤖 AI Filter enabled, analyzing profile...');
         try {
-          const aiResult = await this.aiFilter.analyze({ bio: bioText, name: profileName });
+          const aiResult = await this.aiFilter.analyze({
+            bio: profileContext.bio,
+            name: profileContext.name,
+            profile: profileContext
+          });
 
           if (aiResult.shouldSwipe === 'neutral') {
             // IA failed — do not change the traditional filter decision
