@@ -1,4 +1,12 @@
 import { logger } from '../misc/helper';
+import {
+  applyUnansweredMessagesFilter,
+  clearUnansweredMessagesFilter,
+  findMessageScrollContainer,
+  findMessagesTab,
+  getMessageListItems,
+  scrollMessageListToTop
+} from '../misc/message-list-filter';
 
 class HideUnanswered {
   selector = '.tinderAutopilotHideMine';
@@ -8,102 +16,14 @@ class HideUnanswered {
   counter = 0;
 
   finishHiding = () => {
-    // Try multiple selectors for message items
-    const messageSelectors = [
-      '.messageListItem__message svg',
-      '[data-testid="message-item"] svg',
-      '.message-item svg',
-      '.chat-message svg'
-    ];
+    const result = applyUnansweredMessagesFilter(document);
+    scrollMessageListToTop(document);
 
-    let messageItems = [];
-    for (const selector of messageSelectors) {
-      messageItems = document.querySelectorAll(selector);
-      if (messageItems.length > 0) break;
-    }
-
-    messageItems.forEach((t) => {
-      const messageItem =
-        t.closest('.messageListItem') ||
-        t.closest('[data-testid="message-item"]') ||
-        t.closest('.message-item') ||
-        t.closest('.chat-message');
-
-      if (!messageItem) return;
-
-      const checkmarkSelectors = [
-        'svg[aria-label="Message Sent"]',
-        'svg[data-testid="message-sent"]',
-        '.message-sent-icon',
-        'svg[title*="Sent"]'
-      ];
-
-      let checkmarkIcon = null;
-      for (const selector of checkmarkSelectors) {
-        checkmarkIcon = messageItem.querySelector(selector);
-        if (checkmarkIcon) break;
-      }
-
-      const replySelectors = [
-        '.messageListItem__message:last-child',
-        '[data-testid="last-message"]',
-        '.message-item:last-child',
-        '.chat-message:last-child'
-      ];
-
-      let replyMessage = null;
-      for (const selector of replySelectors) {
-        replyMessage = messageItem.querySelector(selector);
-        if (replyMessage) break;
-      }
-
-      if (!checkmarkIcon && !replyMessage) {
-        messageItem.style.display = 'none';
-      }
-    });
-
-    const listSelectors = ['.messageListItem', '[data-testid="message-item"]', '.message-item'];
-    let allItems = [];
-    for (const selector of listSelectors) {
-      allItems = document.querySelectorAll(selector);
-      if (allItems.length > 0) break;
-    }
-
-    const unansweredCount = Array.prototype.slice
-      .call(allItems)
-      .filter((item) => item.style.display !== 'none').length;
-
-    // Scroll back to top of messages
-    const scrollContainerSelectors = [
-      '.matchListTitle',
-      '[data-testid="match-list"]',
-      '.match-list',
-      '.messages-container'
-    ];
-
-    for (const selector of scrollContainerSelectors) {
-      const container = document.querySelector(selector);
-      if (container && container.parentElement) {
-        container.parentElement.scrollTop = 0;
-        break;
-      }
-    }
-
-    logger(`Total matches that need a response: ${unansweredCount}`);
+    logger(`Total matches that need a response: ${result.visible}`);
   };
 
   scrollMatchesToEnd = (cb) => {
-    // Try multiple selectors for scroll container
-    const scrollSelectors = ['.matchListTitle', '[data-testid="match-list"]', '.match-list'];
-    let scrollContainer = null;
-
-    for (const selector of scrollSelectors) {
-      const element = document.querySelector(selector);
-      if (element && element.parentElement) {
-        scrollContainer = element.parentElement;
-        break;
-      }
-    }
+    const scrollContainer = findMessageScrollContainer(document);
 
     if (!scrollContainer) {
       logger('Could not find scroll container');
@@ -113,17 +33,7 @@ class HideUnanswered {
 
     const currHeight = scrollContainer.scrollTop;
     const totalHeight = scrollContainer.scrollHeight;
-
-    // Try multiple selectors for message list
-    const listSelectors = ['div.messageList', '[data-testid="message-list"]', '.message-list'];
-    let messageList = null;
-
-    for (const selector of listSelectors) {
-      messageList = document.querySelector(selector);
-      if (messageList) break;
-    }
-
-    const newTotal = messageList ? messageList.children.length : 0;
+    const newTotal = getMessageListItems(document).length;
 
     if (this.counter < 30 && currHeight < totalHeight) {
       this.counter += 1;
@@ -142,54 +52,25 @@ class HideUnanswered {
   };
 
   start = () => {
-    // Try multiple selectors for messages tab
-    const tabSelectors = [
-      '#messages-tab',
-      '[data-testid="messages-tab"]',
-      'a[href="/app/messages"]',
-      '.messages-tab'
-    ];
+    const runFilter = () => {
+      this.totalMessages = getMessageListItems(document).length;
+      this.counter = 0;
 
-    let tabClicked = false;
-    for (const selector of tabSelectors) {
-      const tab = document.querySelector(selector);
-      if (tab) {
-        tab.click();
-        tabClicked = true;
-        break;
-      }
+      this.scrollMatchesToEnd(this.finishHiding);
+    };
+
+    const messagesTab = findMessagesTab(document);
+    if (messagesTab && messagesTab.getAttribute?.('aria-selected') !== 'true') {
+      messagesTab.click();
+      setTimeout(runFilter, 300);
+      return;
     }
 
-    if (!tabClicked) {
-      const fallbackSelectors = ['a[href="/app/recs"]', '[data-testid="recs-tab"]'];
-      for (const selector of fallbackSelectors) {
-        const element = document.querySelector(selector);
-        if (element) {
-          element.click();
-          break;
-        }
-      }
-    }
-
-    // Get initial message count
-    const listSelectors = ['div.messageList', '[data-testid="message-list"]', '.message-list'];
-    let messageList = null;
-
-    for (const selector of listSelectors) {
-      messageList = document.querySelector(selector);
-      if (messageList) break;
-    }
-
-    this.totalMessages = messageList ? messageList.children.length : 0;
-    this.counter = 0;
-
-    this.scrollMatchesToEnd(this.finishHiding);
+    runFilter();
   };
 
   stop = () => {
-    document.querySelectorAll('.messageListItem__message svg').forEach((t) => {
-      t.closest('.messageListItem').style.display = 'flex';
-    });
+    clearUnansweredMessagesFilter(document);
   };
 }
 
