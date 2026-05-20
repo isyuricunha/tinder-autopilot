@@ -2,7 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   extractProfileContext,
-  formatProfileContextForPrompt
+  formatProfileContextForPrompt,
+  parseProfileDistance
 } = require('../src/misc/profile-context-extractor');
 
 class FakeElement {
@@ -173,4 +174,20 @@ test('formatProfileContextForPrompt omits missing optional fields safely', () =>
   assert.equal(prompt.includes('Age: 30'), true);
   assert.equal(prompt.includes('Bio: fallback bio'), true);
   assert.equal(prompt.includes('Lifestyle:'), false);
+});
+
+test('parseProfileDistance reads Tinder distance labels', () => {
+  assert.deepEqual(parseProfileDistance('10 kilometers away'), {
+    value: 10,
+    unit: 'kilometers'
+  });
+  assert.deepEqual(parseProfileDistance('7 km away'), {
+    value: 7,
+    unit: 'km'
+  });
+  assert.deepEqual(parseProfileDistance('5 miles away'), {
+    value: 5,
+    unit: 'miles'
+  });
+  assert.equal(parseProfileDistance('No distance'), null);
 });

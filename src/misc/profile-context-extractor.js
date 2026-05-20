@@ -37,6 +37,16 @@ const normalizeProfileText = (value) =>
     .replace(/\s+/g, ' ')
     .trim();
 
+const parseProfileDistance = (value) => {
+  const match = normalizeProfileText(value).match(/(\d+)\s*(kilometers?|km|miles?)/i);
+  if (!match) return null;
+
+  return {
+    value: parseInt(match[1], 10),
+    unit: match[2].toLowerCase()
+  };
+};
+
 const getElements = (root, selector) => {
   try {
     return Array.from(root?.querySelectorAll?.(selector) || []);
@@ -259,5 +269,6 @@ const formatProfileContextForPrompt = (profileContext = {}, fallbacks = {}) => {
 module.exports = {
   extractProfileContext,
   formatProfileContextForPrompt,
-  normalizeProfileText
+  normalizeProfileText,
+  parseProfileDistance
 };

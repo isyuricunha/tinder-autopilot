@@ -6,7 +6,7 @@ import {
   isPhotoCountBelowMinimum,
   parseFilterList
 } from '../misc/profile-filter-utils';
-import { extractProfileContext } from '../misc/profile-context-extractor';
+import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -727,7 +727,19 @@ class ProfileAnalyzer {
     }
   }
 
-  getGenderIdentity() {
+  getProfileContext() {
+    try {
+      return extractProfileContext(document);
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  getGenderIdentity(profileContext = this.getProfileContext()) {
+    if (profileContext.gender) {
+      return profileContext.gender.toLowerCase().trim();
+    }
+
     // Look for gender/identity information in profile essentials
     const genderSelectors = [
       '[data-testid="gender"]',
@@ -745,15 +757,17 @@ class ProfileAnalyzer {
     }
 
     // Fallback: look in profile text for common gender identifiers
-    const profileText = this.getBioText();
+    const profileText = (this.getBioText() || '').toLowerCase();
     const genderKeywords = [
-      'woman',
-      'man',
       'trans woman',
       'trans man',
       'non-binary',
       'genderfluid',
-      'agender'
+      'agender',
+      'woman',
+      'man',
+      'mulher',
+      'homem'
     ];
 
     for (const keyword of genderKeywords) {
@@ -766,19 +780,19 @@ class ProfileAnalyzer {
   }
 
   getProfileContextForAI() {
-    const profileContext = extractProfileContext(document);
-    const fallbackDistance = this.getDistance();
+    const profileContext = this.getProfileContext();
+    const fallbackDistance = this.getDistance(profileContext);
 
     return {
       ...profileContext,
       name: profileContext.name || this.getProfileName(),
-      age: profileContext.age || this.getAge(),
+      age: profileContext.age || this.getAge(profileContext),
       bio: profileContext.bio || this.getBioText() || '',
-      gender: profileContext.gender || this.getGenderIdentity(),
+      gender: profileContext.gender || this.getGenderIdentity(profileContext),
       distance:
         profileContext.distance ||
         (fallbackDistance ? `${fallbackDistance.value} ${fallbackDistance.unit}` : null),
-      photoCount: profileContext.photoCount || this.getPhotoCount()
+      photoCount: profileContext.photoCount || this.getPhotoCount(profileContext)
     };
   }
 
@@ -792,8 +806,9 @@ class ProfileAnalyzer {
 
   // Check bio for banned words (call this AFTER opening the profile modal)
   async shouldSkipProfile() {
+    const profileContext = this.getProfileContext();
     // Always check bio blacklist if it exists (independent of UI checkbox)
-    const bioText = (this.getBioText() || '').toLowerCase();
+    const bioText = (profileContext.bio || this.getBioText() || '').toLowerCase();
     if (bioText) {
       // Refresh blacklist from storage
       this.bioBlacklist = this.loadBioBlacklist();
@@ -808,7 +823,7 @@ class ProfileAnalyzer {
 
     // Check gender filtering
     if (this.isGenderFilterEnabled()) {
-      const genderIdentity = this.getGenderIdentity();
+      const genderIdentity = this.getGenderIdentity(profileContext);
       if (genderIdentity) {
         // Refresh gender filter from storage
         this.genderFilter = this.loadGenderFilter();
@@ -833,19 +848,19 @@ class ProfileAnalyzer {
       this.minPhotoCount = this.loadMinPhotoCount();
 
       // Age filtering
-      const age = this.getAge();
+      const age = this.getAge(profileContext);
       if (isAgeOutsideRange(age, this.ageRange)) {
         return true;
       }
 
       // Distance filtering
-      const distance = this.getDistance();
+      const distance = this.getDistance(profileContext);
       if (isDistanceOverMax(distance, this.maxDistance)) {
         return true;
       }
 
       // Photo count filtering
-      const photoCount = this.getPhotoCount();
+      const photoCount = this.getPhotoCount(profileContext);
       if (isPhotoCountBelowMinimum(photoCount, this.minPhotoCount)) {
         return true;
       }
@@ -992,7 +1007,9 @@ class ProfileAnalyzer {
   }
 
   // Get age from profile
-  getAge() {
+  getAge(profileContext = this.getProfileContext()) {
+    if (profileContext.age) return profileContext.age;
+
     const ageSelectors = [
       '[data-testid="age"]',
       '.profileCard__age',
@@ -1017,7 +1034,9 @@ class ProfileAnalyzer {
   }
 
   // Get photo count from profile
-  getPhotoCount() {
+  getPhotoCount(profileContext = this.getProfileContext()) {
+    if (profileContext.photoCount) return profileContext.photoCount;
+
     // Look for photo indicators
     const photoSelectors = [
       '.keen-slider__slide img',
@@ -1060,7 +1079,10 @@ class ProfileAnalyzer {
   }
 
   // Get distance from profile
-  getDistance() {
+  getDistance(profileContext = this.getProfileContext()) {
+    const profileDistance = parseProfileDistance(profileContext.distance);
+    if (profileDistance) return profileDistance;
+
     const distanceSelectors = [
       '[data-testid="distance"]',
       '.profileCard__distance',

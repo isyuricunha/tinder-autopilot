@@ -1,4 +1,5 @@
 import { logger, warnLog, generateRandomNumber } from '../misc/helper';
+import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { getSetting, setSetting } from '../misc/settings-store';
 import { getCheckboxValue } from '../views/toggle-control';
 
@@ -52,14 +53,12 @@ class SuperLiker {
   }
 
   hasSuperLike() {
-    // Try multiple selectors for Super Like button
     const selectors = [
-      "button[aria-label*='Super Like']",
-      "button[data-testid='super-like']",
-      "button[title*='Super Like']",
-      '.recsCardboard__cardsContainer button:nth-child(3)', // Middle button
-      "[data-testid='gamepad-super-like']",
-      "button[aria-label*='Star']"
+      "button[aria-label*='Super Like' i]",
+      "button[data-testid*='super-like' i]",
+      "button[title*='Super Like' i]",
+      "[data-testid*='gamepad-super-like' i]",
+      "button[aria-label*='Star' i]"
     ];
 
     for (const selector of selectors) {
@@ -86,7 +85,15 @@ class SuperLiker {
     }
   }
 
-  shouldSuperLike() {
+  getProfileContext() {
+    try {
+      return extractProfileContext(document);
+    } catch (_error) {
+      return {};
+    }
+  }
+
+  shouldSuperLike(profileContext = this.getProfileContext()) {
     if (!this.isEnabled()) return false;
     if (!this.canSuperLike()) return false;
 
@@ -104,11 +111,11 @@ class SuperLiker {
 
       case 'photos':
         // Super Like profiles with many photos
-        return this.getPhotoCount() >= 5;
+        return this.getPhotoCount(profileContext) >= 5;
 
       case 'distance':
         // Super Like nearby profiles
-        const distance = this.getDistance();
+        const distance = this.getDistance(profileContext);
         return distance && distance.value <= 10;
 
       default:
@@ -146,7 +153,9 @@ class SuperLiker {
     return false;
   }
 
-  getPhotoCount() {
+  getPhotoCount(profileContext = this.getProfileContext()) {
+    if (profileContext.photoCount) return profileContext.photoCount;
+
     const photoSelectors = ['.keen-slider__slide img', '[data-testid="photo"]', '.slider img'];
 
     let maxCount = 0;
@@ -158,7 +167,10 @@ class SuperLiker {
     return maxCount || 1;
   }
 
-  getDistance() {
+  getDistance(profileContext = this.getProfileContext()) {
+    const profileDistance = parseProfileDistance(profileContext.distance);
+    if (profileDistance) return profileDistance;
+
     const distanceSelectors = [
       '[data-testid="distance"]',
       '[class*="distance"]',
@@ -187,7 +199,9 @@ class SuperLiker {
     const superLikeButton = this.hasSuperLike();
     if (!superLikeButton) return false;
 
-    if (this.shouldSuperLike()) {
+    const profileContext = this.getProfileContext();
+
+    if (this.shouldSuperLike(profileContext)) {
       superLikeButton.click();
       this.incrementSuperLikeCount();
 
