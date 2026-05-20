@@ -3,6 +3,7 @@ import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
+import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
 import { insertCss } from '../misc/insert-css';
 import {
   getExtensionStorageValue,
@@ -284,7 +285,9 @@ class Sidebar {
     const aiApiKeyField = document.getElementById('aiApiKey');
     if (aiApiKeyField) {
       this.addTrackedListener(aiApiKeyField, 'blur', (e) => {
-        const value = e.target.value.trim();
+        const value = normalizeAiApiKeyInput(e.target.value);
+        if (!shouldSaveAiApiKeyInput(value)) return;
+
         setExtensionStorageValue(AI_API_KEY_STORAGE_KEY, value)
           .then((didSave) => {
             if (didSave) removeRawStorageValue(AI_API_KEY_STORAGE_KEY);
