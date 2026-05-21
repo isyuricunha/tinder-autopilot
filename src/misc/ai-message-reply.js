@@ -1,7 +1,9 @@
-const { DEFAULT_CONTEXT_WINDOW, formatConversationTurns } = require('./conversation-context');
-const { DEFAULT_AI_REPLY_TONE } = require('./ai-message-reply-settings');
-
-const DEFAULT_AI_REPLY_MODEL = 'gpt-4o-mini';
+const {
+  DEFAULT_CONTEXT_WINDOW,
+  formatConversationTurns,
+  getLastConversationTurns
+} = require('./conversation-context');
+const { DEFAULT_AI_REPLY_MODEL, DEFAULT_AI_REPLY_TONE } = require('./ai-message-reply-settings');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
   String(value || '')
@@ -96,10 +98,72 @@ const parseAiReplyResponse = (data, { maxLength = 500 } = {}) => {
   }
 };
 
+const createNoSendAiReply = (reason) => ({
+  shouldSend: false,
+  reply: '',
+  reason
+});
+
+const generateAiMessageReply = async ({
+  apiKey = '',
+  apiUrl = '',
+  contextWindow = DEFAULT_CONTEXT_WINDOW,
+  conversationTurns = [],
+  fetchImpl = globalThis.fetch,
+  matchName = '',
+  maxTokens = 160,
+  model = DEFAULT_AI_REPLY_MODEL,
+  temperature = 0.7,
+  tone = '',
+  userContext = ''
+} = {}) => {
+  if (!apiUrl) {
+    return createNoSendAiReply('AI API URL not configured');
+  }
+
+  if (typeof fetchImpl !== 'function') {
+    return createNoSendAiReply('Fetch unavailable');
+  }
+
+  const recentConversationTurns = getLastConversationTurns(conversationTurns, contextWindow);
+  const body = buildAiReplyRequestBody({
+    contextWindow,
+    conversationTurns: recentConversationTurns,
+    matchName,
+    maxTokens,
+    model,
+    temperature,
+    tone,
+    userContext
+  });
+
+  try {
+    const response = await fetchImpl(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      return createNoSendAiReply(`AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return parseAiReplyResponse(data);
+  } catch (error) {
+    return createNoSendAiReply(`AI reply failed: ${error.message}`);
+  }
+};
+
 module.exports = {
   buildAiReplyRequestBody,
   buildAiReplySystemMessage,
   buildAiReplyUserMessage,
+  createNoSendAiReply,
+  generateAiMessageReply,
   parseAiReplyResponse,
   sanitizeAiReply
 };
