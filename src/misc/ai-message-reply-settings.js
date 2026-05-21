@@ -1,5 +1,5 @@
 const DEFAULT_AI_REPLY_TONE =
-  'Reply in the same language as the conversation unless instructed otherwise. Short, casual, human, direct, and lightly playful only when the conversation invites it. No emojis by default. No virtual date suggestions. Avoid polished assistant-like phrasing.';
+  'Reply in the same language as the conversation unless instructed otherwise. Short, casual, human, direct, and lightly playful only when the conversation invites it. No emojis by default. No virtual date suggestions. No dash or slash. Write like a human. Avoid polished assistant-like phrasing.';
 const DEFAULT_AI_REPLY_USER_CONTEXT = '';
 const DEFAULT_AI_REPLY_CONTACT_INFO = '';
 const DEFAULT_AI_REPLY_ADDRESS_INFO = '';
