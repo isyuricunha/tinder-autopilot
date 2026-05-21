@@ -24,6 +24,6 @@
 ## AI Reply Robustness
 
 - [x] Add max token and compatibility mode settings for AI replies.
-- [ ] Support standard, reasoning, and loose JSON request modes.
-- [ ] Add guarded retry when providers stop by length or return invalid JSON.
+- [x] Support standard, reasoning, and loose JSON request modes.
+- [x] Add guarded retry when providers stop by length or return invalid JSON.
 - [ ] Recheck the latest message before sending an AI reply.

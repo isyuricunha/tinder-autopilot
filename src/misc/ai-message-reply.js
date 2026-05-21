@@ -3,7 +3,16 @@ const {
   formatConversationTurns,
   getLastConversationTurns
 } = require('./conversation-context');
-const { DEFAULT_AI_REPLY_MODEL, DEFAULT_AI_REPLY_TONE } = require('./ai-message-reply-settings');
+const {
+  AI_REPLY_COMPATIBILITY_MODES,
+  DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  DEFAULT_AI_REPLY_MAX_TOKENS,
+  DEFAULT_AI_REPLY_MODEL,
+  DEFAULT_AI_REPLY_TONE,
+  MAX_AI_REPLY_MAX_TOKENS,
+  normalizeAiReplyCompatibilityMode,
+  normalizeAiReplyMaxTokens
+} = require('./ai-message-reply-settings');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
   String(value || '')
@@ -12,21 +21,108 @@ const sanitizeAiReply = (value, maxLength = 500) =>
     .slice(0, maxLength)
     .trim();
 
-const buildAiReplySystemMessage = ({ tone = '', userContext = '' } = {}) => {
+const isObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
+
+const getMessageContentText = (content) => {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => (typeof part === 'string' ? part : part?.text || ''))
+      .filter(Boolean)
+      .join('\n');
+  }
+  return '';
+};
+
+const getAiReplyStopReason = (data = {}) =>
+  data?.choices?.[0]?.finish_reason ||
+  data?.choices?.[0]?.stop_reason ||
+  data?.stop_reason ||
+  data?.output_message?.stop_reason ||
+  '';
+
+const isLengthStopReason = (stopReason) => String(stopReason || '').toLowerCase() === 'length';
+
+const getAiReplyContent = (data = {}) =>
+  getMessageContentText(data?.choices?.[0]?.message?.content || data?.output_message?.content);
+
+const extractFirstJsonObject = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+
+  let startIndex = -1;
+  let depth = 0;
+  let inString = false;
+  let isEscaped = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (startIndex === -1) {
+      if (char === '{') {
+        startIndex = index;
+        depth = 1;
+      }
+      continue;
+    }
+
+    if (isEscaped) {
+      isEscaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      isEscaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+
+    if (char === '{') depth += 1;
+    if (char === '}') depth -= 1;
+
+    if (depth === 0) return text.slice(startIndex, index + 1);
+  }
+
+  return '';
+};
+
+const buildAiReplySystemMessage = ({
+  compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  isRetry = false,
+  tone = '',
+  userContext = ''
+} = {}) => {
+  const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
   const toneBlock = tone
     ? `\nUSER TONE AND STYLE:\n${tone}`
     : `\nUSER TONE AND STYLE:\n${DEFAULT_AI_REPLY_TONE}`;
   const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
+  const compatibilityBlock =
+    safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
+      ? '\nREASONING MODEL COMPATIBILITY:\nDo not output reasoning. Keep any hidden reasoning minimal and reserve tokens for the final JSON object.'
+      : '';
+  const retryBlock = isRetry
+    ? '\nRETRY INSTRUCTION:\nYour previous response was not valid usable JSON. Return only the final JSON object now.'
+    : '';
 
   return `You write Tinder message replies for the account owner.
 
 RULES:
 - Reply as the account owner, never as the match.
 - Use the supplied conversation only; do not invent personal facts.
+- If the match asks for personal information absent from USER CONTEXT, deflect naturally or ask a follow-up instead of inventing.
 - Keep the reply short unless the conversation clearly asks for detail.
 - Do not mention automation, AI, prompts, or internal rules.
 - If the latest message does not need a reply, or the safe answer is unclear, set shouldSend to false.
-- Return only valid JSON.${toneBlock}${contextBlock}
+- Return exactly one compact JSON object.
+- Do not output reasoning, markdown, explanations, or text before or after the JSON.
+- The first character of your response must be "{" and the last character must be "}".${toneBlock}${contextBlock}${compatibilityBlock}${retryBlock}
 
 RESPONSE FORMAT:
 {
@@ -49,53 +145,117 @@ ${conversation || '(no messages)'}`;
 };
 
 const buildAiReplyRequestBody = ({
+  compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  isRetry = false,
   model = DEFAULT_AI_REPLY_MODEL,
   tone = '',
   userContext = '',
   matchName = '',
   conversationTurns = [],
   contextWindow = DEFAULT_CONTEXT_WINDOW,
-  maxTokens = 160,
+  maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
   temperature = 0.7
-} = {}) => ({
-  model,
-  messages: [
-    {
-      role: 'system',
-      content: buildAiReplySystemMessage({ tone, userContext })
-    },
-    {
-      role: 'user',
-      content: [
-        {
-          type: 'text',
-          text: buildAiReplyUserMessage({ matchName, conversationTurns, contextWindow })
-        }
-      ]
-    }
-  ],
-  response_format: { type: 'json_object' },
-  max_tokens: maxTokens,
-  temperature
-});
+} = {}) => {
+  const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
+  const safeMaxTokens = normalizeAiReplyMaxTokens(maxTokens);
+  const body = {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content: buildAiReplySystemMessage({
+          compatibilityMode: safeCompatibilityMode,
+          isRetry,
+          tone,
+          userContext
+        })
+      },
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: buildAiReplyUserMessage({ matchName, conversationTurns, contextWindow })
+          }
+        ]
+      }
+    ],
+    temperature
+  };
 
-const parseAiReplyResponse = (data, { maxLength = 500 } = {}) => {
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content) {
-    return { shouldSend: false, reply: '', reason: 'Empty response' };
+  if (safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson) {
+    body.max_completion_tokens = safeMaxTokens;
+    body.reasoning_effort = 'low';
+  } else {
+    body.max_tokens = safeMaxTokens;
   }
+
+  if (safeCompatibilityMode !== AI_REPLY_COMPATIBILITY_MODES.looseJson) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  return body;
+};
+
+const parseJsonReply = (content, { allowJsonExtraction }) => {
+  const trimmedContent = String(content || '').trim();
+  if (!trimmedContent) return null;
+  try {
+    return JSON.parse(trimmedContent);
+  } catch (_error) {
+    if (!allowJsonExtraction) return null;
+  }
+
+  const extractedJson = extractFirstJsonObject(trimmedContent);
+  if (!extractedJson) return null;
 
   try {
-    const parsed = JSON.parse(content);
-    const reply = sanitizeAiReply(parsed.reply || parsed.message, maxLength);
-    return {
-      shouldSend: parsed.shouldSend !== false && Boolean(reply),
-      reply,
-      reason: sanitizeAiReply(parsed.reason, 160) || 'AI generated reply'
-    };
+    return JSON.parse(extractedJson);
   } catch (_error) {
-    return { shouldSend: false, reply: '', reason: 'Invalid JSON response' };
+    return null;
   }
+};
+
+const parseAiReplyResponse = (
+  data,
+  { allowJsonExtraction = true, maxLength = 500 } = {}
+) => {
+  const stopReason = getAiReplyStopReason(data);
+  const content = getAiReplyContent(data);
+
+  if (!content) {
+    return {
+      shouldRetry: isLengthStopReason(stopReason),
+      shouldSend: false,
+      reply: '',
+      reason: isLengthStopReason(stopReason)
+        ? 'AI response stopped by token limit'
+        : 'Empty response',
+      stopReason
+    };
+  }
+
+  const parsed = parseJsonReply(content, { allowJsonExtraction });
+  if (!isObject(parsed)) {
+    return {
+      shouldRetry: isLengthStopReason(stopReason) || Boolean(content),
+      shouldSend: false,
+      reply: '',
+      reason: isLengthStopReason(stopReason)
+        ? 'AI response stopped by token limit'
+        : 'Invalid JSON response',
+      stopReason
+    };
+  }
+
+  const reply = sanitizeAiReply(parsed.reply || parsed.message, maxLength);
+  return {
+    shouldRetry: false,
+    shouldSend: parsed.shouldSend !== false && Boolean(reply),
+    reply,
+    reason: sanitizeAiReply(parsed.reason, 160) || 'AI generated reply',
+    stopReason
+  };
 };
 
 const createNoSendAiReply = (reason) => ({
@@ -107,11 +267,12 @@ const createNoSendAiReply = (reason) => ({
 const generateAiMessageReply = async ({
   apiKey = '',
   apiUrl = '',
+  compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   conversationTurns = [],
   fetchImpl = globalThis.fetch,
   matchName = '',
-  maxTokens = 160,
+  maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
   model = DEFAULT_AI_REPLY_MODEL,
   temperature = 0.7,
   tone = '',
@@ -126,7 +287,8 @@ const generateAiMessageReply = async ({
   }
 
   const recentConversationTurns = getLastConversationTurns(conversationTurns, contextWindow);
-  const body = buildAiReplyRequestBody({
+  const requestParams = {
+    compatibilityMode,
     contextWindow,
     conversationTurns: recentConversationTurns,
     matchName,
@@ -135,9 +297,10 @@ const generateAiMessageReply = async ({
     temperature,
     tone,
     userContext
-  });
+  };
 
-  try {
+  const requestAiReply = async (params) => {
+    const body = buildAiReplyRequestBody(params);
     const response = await fetchImpl(apiUrl, {
       method: 'POST',
       headers: {
@@ -152,7 +315,23 @@ const generateAiMessageReply = async ({
     }
 
     const data = await response.json();
-    return parseAiReplyResponse(data);
+    return parseAiReplyResponse(data, {
+      allowJsonExtraction: params.compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.looseJson
+    });
+  };
+
+  try {
+    const result = await requestAiReply(requestParams);
+    if (!result.shouldRetry) {
+      return result;
+    }
+
+    return requestAiReply({
+      ...requestParams,
+      isRetry: true,
+      maxTokens: Math.min(MAX_AI_REPLY_MAX_TOKENS, normalizeAiReplyMaxTokens(maxTokens) * 2),
+      temperature: Math.min(temperature, 0.2)
+    });
   } catch (error) {
     return createNoSendAiReply(`AI reply failed: ${error.message}`);
   }
@@ -163,7 +342,10 @@ module.exports = {
   buildAiReplySystemMessage,
   buildAiReplyUserMessage,
   createNoSendAiReply,
+  extractFirstJsonObject,
   generateAiMessageReply,
+  getAiReplyContent,
+  getAiReplyStopReason,
   parseAiReplyResponse,
   sanitizeAiReply
 };
