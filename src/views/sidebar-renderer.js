@@ -61,10 +61,10 @@ const renderSidebarContent = (container) => {
       createCounterLogs(),
       createResetCountersButton(),
       createAutopilot(),
-      createAiSettings(),
       createMassMessage(),
       createLoggerHeader(),
-      createActivityLog()
+      createActivityLog(),
+      createAiSettings()
     ]
   );
 

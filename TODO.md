@@ -56,3 +56,11 @@
 - [x] Route profile filtering, AI message replies, and model listing through provider-specific request adapters.
 - [x] Cover provider request conversion, response parsing, settings, and model listing with tests.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
+
+## Sidebar UX
+
+- [x] Confirm there was no existing sidebar collapse or accordion helper.
+- [x] Reorder the sidebar so operational messaging controls and Activity appear before the large AI settings area.
+- [x] Add persistent collapsible sidebar sections for secondary filters, AI prompt context, runtime, and testing controls.
+- [x] Improve AI reply mode labels and give large AI prompt/test fields more editing room.
+- [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.

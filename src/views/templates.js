@@ -1,4 +1,4 @@
-import { getJsonSetting, setJsonSetting, setSetting } from '../misc/settings-store';
+import { getJsonSetting, getSetting, setJsonSetting, setSetting } from '../misc/settings-store';
 import {
   AI_REPLY_COMPATIBILITY_MODES,
   AI_REPLY_REASONING_EFFORTS,
@@ -42,6 +42,11 @@ import {
   AI_PROVIDER_TYPES,
   DEFAULT_AI_PROVIDER_TYPE
 } from '../misc/ai-provider-settings';
+import {
+  normalizeSidebarSectionId,
+  readSidebarSectionOpen,
+  writeSidebarSectionOpen
+} from './sidebar-section-state';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
 const DEFAULT_MESSAGE =
@@ -49,6 +54,13 @@ const DEFAULT_MESSAGE =
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
+const SECTION_TITLE_STYLE =
+  'color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;';
+const TEXTAREA_SIZE_STYLES = {
+  default: 'min-height: 60px; max-height: 120px;',
+  large: 'min-height: 120px; max-height: 280px;',
+  output: 'min-height: 140px; max-height: 320px;'
+};
 
 const appendChildren = (element, children) => {
   children.flat().forEach((child) => {
@@ -145,9 +157,60 @@ const createTopBanner = () =>
 const createTitle = (title) =>
   createElement('h2', {
     text: title,
-    style:
-      'color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;'
+    style: SECTION_TITLE_STYLE
   });
+
+const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) => {
+  const sectionId = normalizeSidebarSectionId(id);
+  const contentId = `sidebar-section-${sectionId}`;
+  const isOpen = readSidebarSectionOpen({
+    sectionId,
+    defaultOpen,
+    readSetting: getSetting
+  });
+  const indicator = createElement('span', {
+    text: isOpen ? '-' : '+',
+    style: 'margin-left: 12px; color: #ffffff; font-size: 15px; font-weight: 700;'
+  });
+  const content = createElement(
+    'div',
+    {
+      id: contentId,
+      style: isOpen ? 'display: block;' : 'display: none;',
+      attributes: { 'data-sidebar-section-content': sectionId }
+    },
+    children
+  );
+  const header = createElement(
+    'button',
+    {
+      style: `${SECTION_TITLE_STYLE} width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; font-family: inherit; cursor: pointer; border-top: 0; border-right: 0; border-bottom: 0;`,
+      attributes: {
+        type: 'button',
+        'aria-controls': contentId,
+        'aria-expanded': String(isOpen)
+      }
+    },
+    [createElement('span', { text: title }), indicator]
+  );
+
+  header.addEventListener('click', () => {
+    const nextOpen = header.getAttribute('aria-expanded') !== 'true';
+    header.setAttribute('aria-expanded', String(nextOpen));
+    indicator.textContent = nextOpen ? '-' : '+';
+    content.style.display = nextOpen ? 'block' : 'none';
+    writeSidebarSectionOpen({
+      sectionId,
+      isOpen: nextOpen,
+      writeSetting: setSetting
+    });
+  });
+
+  return createElement('section', { attributes: { 'data-sidebar-section': sectionId } }, [
+    header,
+    content
+  ]);
+};
 
 const createTextbox = ({
   className,
@@ -155,7 +218,8 @@ const createTextbox = ({
   helpText,
   defaultValue,
   type = 'textarea',
-  attributes = {}
+  attributes = {},
+  textareaSize = 'default'
 }) => {
   const fieldStyle =
     "width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);";
@@ -175,7 +239,9 @@ const createTextbox = ({
       : createElement('textarea', {
           id: className,
           text: defaultValue,
-          style: `${fieldStyle} resize: vertical; min-height: 60px; max-height: 120px;`,
+          style: `${fieldStyle} resize: vertical; ${
+            TEXTAREA_SIZE_STYLES[textareaSize] || TEXTAREA_SIZE_STYLES.default
+          }`,
           attributes: { placeholder, ...attributes }
         });
 
@@ -501,374 +567,459 @@ const getDefaultMessage = () => {
 
 const createAutopilot = () =>
   createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createTitle('Main Settings'),
-    createCheckbox('tinderAutopilot', 'Auto like', 'Begin automatically swiping right on all profiles.'),
-    createCheckbox(
-      'tinderAutopilotHideMine',
-      'Only show unanswered messages',
-      'Useful if you just sent an auto message to a ton of people and only want to see the ones that responded.'
-    ),
-    createCheckbox('tinderAutopilotAnonymous', 'Anonymous Mode', 'Hide profile pictures so you can take screenshots.'),
-    createTitle('Bio Filtering'),
-    createCheckbox('tinderAutopilotBioFilter', 'Enable Bio Filtering', 'Skip profiles based on bio content.'),
-    createTextbox({
-      className: 'bioBlacklist',
-      placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
-      helpText: 'Profiles containing these words will be skipped automatically.',
-      defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
-    }),
-    createCheckbox('tinderAutopilotGenderFilter', 'Enable Gender Filtering', 'Skip profiles based on gender identity.'),
-    createTextbox({
-      className: 'genderFilter',
-      placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
-      helpText: 'Profiles with these gender identities will be skipped. Leave empty to disable.',
-      defaultValue: ''
-    }),
-    createTitle('Advanced Filtering'),
-    createCheckbox('tinderAutopilotAdvancedFilter', 'Enable Advanced Filtering', 'Filter profiles by age, distance, and photo count.'),
-    createSlider({
-      className: 'minAge',
-      label: 'Minimum Age',
-      helpText: 'Skip profiles below this age.',
-      min: 18,
-      max: 50,
-      defaultValue: 18,
-      unit: ' years',
-      parentToggle: 'tinderAutopilotAdvancedFilter'
-    }),
-    createSlider({
-      className: 'maxAge',
-      label: 'Maximum Age',
-      helpText: 'Skip profiles above this age.',
-      min: 18,
-      max: 99,
-      defaultValue: 35,
-      unit: ' years',
-      parentToggle: 'tinderAutopilotAdvancedFilter'
-    }),
-    createSlider({
-      className: 'maxDistance',
-      label: 'Maximum Distance',
-      helpText: 'Skip profiles farther than this distance.',
-      min: 1,
-      max: 100,
-      defaultValue: 50,
-      unit: ' km',
-      parentToggle: 'tinderAutopilotAdvancedFilter'
-    }),
-    createSlider({
-      className: 'minPhotoCount',
-      label: 'Minimum Photos',
-      helpText: 'Skip profiles with fewer photos.',
-      min: 1,
-      max: 9,
-      defaultValue: 3,
-      unit: ' photos',
-      parentToggle: 'tinderAutopilotAdvancedFilter'
-    }),
-    createTitle('Super Like Settings'),
-    createCheckbox(
-      'tinderAutopilotSuperLike',
-      'Enable Super Like Automation',
-      'Automatically use Super Likes based on strategy (5 per day limit).'
-    ),
-    createSelectCard({
-      id: 'superLikeStrategy',
-      label: 'Super Like Strategy',
-      storageKey: 'superLikeStrategy',
-      defaultValue: 'random',
-      options: [
-        { value: 'random', text: 'Random (10% chance)' },
-        { value: 'verified', text: 'Verified profiles only' },
-        { value: 'photos', text: '5+ photos only' },
-        { value: 'distance', text: 'Nearby profiles (≤10km)' }
+    createSidebarSection({
+      id: 'main-settings',
+      title: 'Main Settings',
+      defaultOpen: true,
+      children: [
+        createCheckbox('tinderAutopilot', 'Auto like', 'Begin automatically swiping right on all profiles.'),
+        createCheckbox(
+          'tinderAutopilotHideMine',
+          'Only show unanswered messages',
+          'Load the messages list, then hide conversations where the last visible reply is yours.'
+        ),
+        createCheckbox(
+          'tinderAutopilotAnonymous',
+          'Anonymous Mode',
+          'Hide profile pictures so you can take screenshots.'
+        )
       ]
     }),
-    createHelpText('Choose when to automatically use Super Likes. Limited to 5 per day.')
+    createSidebarSection({
+      id: 'bio-filtering',
+      title: 'Bio Filtering',
+      defaultOpen: false,
+      children: [
+        createCheckbox('tinderAutopilotBioFilter', 'Enable Bio Filtering', 'Skip profiles based on bio content.'),
+        createTextbox({
+          className: 'bioBlacklist',
+          placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
+          helpText: 'Profiles containing these words will be skipped automatically.',
+          defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
+        }),
+        createCheckbox(
+          'tinderAutopilotGenderFilter',
+          'Enable Gender Filtering',
+          'Skip profiles based on gender identity.'
+        ),
+        createTextbox({
+          className: 'genderFilter',
+          placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
+          helpText: 'Profiles with these gender identities will be skipped. Leave empty to disable.',
+          defaultValue: ''
+        })
+      ]
+    }),
+    createSidebarSection({
+      id: 'advanced-filtering',
+      title: 'Advanced Filtering',
+      defaultOpen: false,
+      children: [
+        createCheckbox(
+          'tinderAutopilotAdvancedFilter',
+          'Enable Advanced Filtering',
+          'Filter profiles by age, distance, and photo count.'
+        ),
+        createSlider({
+          className: 'minAge',
+          label: 'Minimum Age',
+          helpText: 'Skip profiles below this age.',
+          min: 18,
+          max: 50,
+          defaultValue: 18,
+          unit: ' years',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        }),
+        createSlider({
+          className: 'maxAge',
+          label: 'Maximum Age',
+          helpText: 'Skip profiles above this age.',
+          min: 18,
+          max: 99,
+          defaultValue: 35,
+          unit: ' years',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        }),
+        createSlider({
+          className: 'maxDistance',
+          label: 'Maximum Distance',
+          helpText: 'Skip profiles farther than this distance.',
+          min: 1,
+          max: 100,
+          defaultValue: 50,
+          unit: ' km',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        }),
+        createSlider({
+          className: 'minPhotoCount',
+          label: 'Minimum Photos',
+          helpText: 'Skip profiles with fewer photos.',
+          min: 1,
+          max: 9,
+          defaultValue: 3,
+          unit: ' photos',
+          parentToggle: 'tinderAutopilotAdvancedFilter'
+        })
+      ]
+    }),
+    createSidebarSection({
+      id: 'super-like-settings',
+      title: 'Super Like Settings',
+      defaultOpen: false,
+      children: [
+        createCheckbox(
+          'tinderAutopilotSuperLike',
+          'Enable Super Like Automation',
+          'Automatically use Super Likes based on strategy (5 per day limit).'
+        ),
+        createSelectCard({
+          id: 'superLikeStrategy',
+          label: 'Super Like Strategy',
+          storageKey: 'superLikeStrategy',
+          defaultValue: 'random',
+          options: [
+            { value: 'random', text: 'Random (10% chance)' },
+            { value: 'verified', text: 'Verified profiles only' },
+            { value: 'photos', text: '5+ photos only' },
+            { value: 'distance', text: 'Nearby profiles (<=10km)' }
+          ]
+        }),
+        createHelpText('Choose when to automatically use Super Likes. Limited to 5 per day.')
+      ]
+    })
   ]);
 
 const createAiSettings = () =>
   createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createTitle('AI Connection'),
-    createSelectCard({
-      id: AI_PROVIDER_SETTING_KEY,
-      label: 'API Type',
-      storageKey: AI_PROVIDER_SETTING_KEY,
-      defaultValue: DEFAULT_AI_PROVIDER_TYPE,
-      options: [
-        { value: AI_PROVIDER_TYPES.openAiCompatible, text: 'OpenAI-Compatible' },
-        { value: AI_PROVIDER_TYPES.mistral, text: 'Mistral AI' },
-        { value: AI_PROVIDER_TYPES.anthropic, text: 'Anthropic' },
-        { value: AI_PROVIDER_TYPES.nvidiaNim, text: 'NVIDIA NIM' }
+    createSidebarSection({
+      id: 'ai-connection',
+      title: 'AI Connection',
+      defaultOpen: true,
+      children: [
+        createSelectCard({
+          id: AI_PROVIDER_SETTING_KEY,
+          label: 'API Type',
+          storageKey: AI_PROVIDER_SETTING_KEY,
+          defaultValue: DEFAULT_AI_PROVIDER_TYPE,
+          options: [
+            { value: AI_PROVIDER_TYPES.openAiCompatible, text: 'OpenAI-Compatible' },
+            { value: AI_PROVIDER_TYPES.mistral, text: 'Mistral AI' },
+            { value: AI_PROVIDER_TYPES.anthropic, text: 'Anthropic' },
+            { value: AI_PROVIDER_TYPES.nvidiaNim, text: 'NVIDIA NIM' }
+          ]
+        }),
+        createHelpText(
+          'OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
+        ),
+        createTextbox({
+          className: 'aiApiUrl',
+          placeholder: 'https://api.openai.com/v1/chat/completions',
+          helpText: 'Shared AI endpoint used by profile filtering and message replies.',
+          defaultValue: 'https://api.openai.com/v1/chat/completions',
+          type: 'text'
+        }),
+        createTextbox({
+          className: 'aiApiKey',
+          placeholder: 'sk-... or your API key',
+          helpText:
+            'Stored in extension local storage. The field is shared by profile filtering and message replies.',
+          defaultValue: '',
+          type: 'password'
+        }),
+        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
+          createElement('button', {
+            id: 'clearAiApiKey',
+            text: 'Clear API Key',
+            style:
+              'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            attributes: { type: 'button' }
+          }),
+          createElement('button', {
+            id: 'refreshAiModels',
+            text: 'Refresh Models',
+            style:
+              'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            attributes: { type: 'button' }
+          })
+        ]),
+        createAiModelDatalist(),
+        createHelpText(
+          'Model fields accept manual values. Refresh Models fills suggestions when the provider exposes a compatible /models endpoint.'
+        )
       ]
     }),
-    createHelpText(
-      'OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
-    ),
-    createTextbox({
-      className: 'aiApiUrl',
-      placeholder: 'https://api.openai.com/v1/chat/completions',
-      helpText: 'Shared AI endpoint used by profile filtering and message replies.',
-      defaultValue: 'https://api.openai.com/v1/chat/completions',
-      type: 'text'
-    }),
-    createTextbox({
-      className: 'aiApiKey',
-      placeholder: 'sk-... or your API key',
-      helpText:
-        'Stored in extension local storage. The field is shared by profile filtering and message replies.',
-      defaultValue: '',
-      type: 'password'
-    }),
-    createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
-      createElement('button', {
-        id: 'clearAiApiKey',
-        text: 'Clear API Key',
-        style:
-          'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
-        attributes: { type: 'button' }
-      }),
-      createElement('button', {
-        id: 'refreshAiModels',
-        text: 'Refresh Models',
-        style:
-          'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
-        attributes: { type: 'button' }
-      })
-    ]),
-    createAiModelDatalist(),
-    createHelpText(
-      'Model fields accept manual values. Refresh Models will fill suggestions when the API exposes a compatible /models endpoint.'
-    ),
-    createTitle('AI Profile Filtering'),
-    createCheckbox(
-      'tinderAutopilotAIProfileFilter',
-      'Enable AI Profile Filter',
-      'Use an LLM to intelligently decide which profiles to skip.'
-    ),
-    createTextbox({
-      className: 'aiProfileModel',
-      placeholder: 'gpt-4o-mini',
-      helpText: 'Model used only for profile filtering.',
-      defaultValue: DEFAULT_AI_PROFILE_MODEL,
-      type: 'text',
-      attributes: { list: AI_MODEL_DATALIST_ID }
-    }),
-    createTextbox({
-      className: 'aiFilterRules',
-      placeholder: 'Ignore profiles: trans, man, male, couples, onlyfans, commercial...',
-      helpText: 'Describe your swipe preferences. The AI will use these rules.',
-      defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.'
-    }),
-    createSelectCard({
-      id: 'aiProfileReasoningEffort',
-      label: 'Profile Reasoning Effort',
-      storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
-      defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
-      options: [
-        { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
-        { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
-        { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
+    createSidebarSection({
+      id: 'ai-profile-filtering',
+      title: 'AI Profile Filtering',
+      defaultOpen: false,
+      children: [
+        createCheckbox(
+          'tinderAutopilotAIProfileFilter',
+          'Enable AI Profile Filter',
+          'Use an LLM to intelligently decide which profiles to skip.'
+        ),
+        createTextbox({
+          className: 'aiProfileModel',
+          placeholder: 'gpt-4o-mini',
+          helpText: 'Model used only for profile filtering.',
+          defaultValue: DEFAULT_AI_PROFILE_MODEL,
+          type: 'text',
+          attributes: { list: AI_MODEL_DATALIST_ID }
+        }),
+        createTextbox({
+          className: 'aiFilterRules',
+          placeholder: 'Ignore profiles: trans, man, male, couples, onlyfans, commercial...',
+          helpText: 'Describe your swipe preferences. The AI will use these rules.',
+          defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.',
+          textareaSize: 'large'
+        }),
+        createSelectCard({
+          id: 'aiProfileReasoningEffort',
+          label: 'Profile Reasoning Effort',
+          storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
+          defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
+          options: [
+            { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
+            { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
+            { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
+          ]
+        }),
+        createHelpText(
+          'Controls profile analysis prompt depth and token budget for the profile filter.'
+        )
       ]
     }),
-    createHelpText(
-      'Controls profile analysis prompt depth and token budget for the profile filter.'
-    ),
-    createTitle('AI Message Replies'),
-    createCheckbox(
-      'tinderAutopilotAIMessageReply',
-      'AI reply unanswered messages',
-      'Generate and send AI replies only when the latest message is from the match.'
-    ),
-    createCheckbox(
-      'tinderAutopilotAIMessageReplyContinuous',
-      'Continuous AI replies',
-      'Re-run AI replies on an interval. Contact exchange, meeting proposals, and repeated latest messages are skipped for manual takeover.'
-    ),
-    createTextbox({
-      className: AI_REPLY_SETTING_KEYS.model,
-      placeholder: 'gpt-4o-mini',
-      helpText: 'Model used only for AI message replies.',
-      defaultValue: DEFAULT_AI_REPLY_MODEL,
-      type: 'text',
-      attributes: { list: AI_MODEL_DATALIST_ID }
-    }),
-    createSelectCard({
-      id: 'aiReplyCompatibilityMode',
-      label: 'AI Reply Compatibility',
-      storageKey: AI_REPLY_SETTING_KEYS.compatibilityMode,
-      defaultValue: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
-      options: [
-        { value: AI_REPLY_COMPATIBILITY_MODES.standardJson, text: 'Standard JSON' },
-        { value: AI_REPLY_COMPATIBILITY_MODES.reasoningJson, text: 'Reasoning / Thinking' },
-        { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
+    createSidebarSection({
+      id: 'ai-message-replies',
+      title: 'AI Message Replies',
+      defaultOpen: true,
+      children: [
+        createCheckbox(
+          'tinderAutopilotAIMessageReply',
+          'Reply pending chats once',
+          'Run one pass and send AI replies only when the latest message is from the match.'
+        ),
+        createCheckbox(
+          'tinderAutopilotAIMessageReplyContinuous',
+          'Keep replying on interval',
+          'Re-run AI replies on an interval. Contact exchange, meeting proposals, and repeated latest messages are skipped for manual takeover.'
+        ),
+        createHelpText('Only one AI reply mode can run at a time. Starting one stops the other.'),
+        createTextbox({
+          className: AI_REPLY_SETTING_KEYS.model,
+          placeholder: 'gpt-4o-mini',
+          helpText: 'Model used only for AI message replies.',
+          defaultValue: DEFAULT_AI_REPLY_MODEL,
+          type: 'text',
+          attributes: { list: AI_MODEL_DATALIST_ID }
+        }),
+        createSelectCard({
+          id: 'aiReplyCompatibilityMode',
+          label: 'JSON / Reasoning Mode',
+          storageKey: AI_REPLY_SETTING_KEYS.compatibilityMode,
+          defaultValue: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+          options: [
+            { value: AI_REPLY_COMPATIBILITY_MODES.standardJson, text: 'Standard JSON' },
+            { value: AI_REPLY_COMPATIBILITY_MODES.reasoningJson, text: 'Reasoning / Thinking' },
+            { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
+          ]
+        }),
+        createSelectCard({
+          id: AI_REPLY_SETTING_KEYS.reasoningEffort,
+          label: 'Reply Reasoning Effort',
+          storageKey: AI_REPLY_SETTING_KEYS.reasoningEffort,
+          defaultValue: DEFAULT_AI_REPLY_REASONING_EFFORT,
+          options: [
+            { value: AI_REPLY_REASONING_EFFORTS.low, text: 'Low' },
+            { value: AI_REPLY_REASONING_EFFORTS.medium, text: 'Medium' },
+            { value: AI_REPLY_REASONING_EFFORTS.high, text: 'High' }
+          ]
+        }),
+        createHelpText(
+          'Reply Reasoning Effort is sent only when JSON / Reasoning Mode is Reasoning / Thinking.'
+        )
       ]
     }),
-    createSelectCard({
-      id: AI_REPLY_SETTING_KEYS.reasoningEffort,
-      label: 'Reply Reasoning Effort',
-      storageKey: AI_REPLY_SETTING_KEYS.reasoningEffort,
-      defaultValue: DEFAULT_AI_REPLY_REASONING_EFFORT,
-      options: [
-        { value: AI_REPLY_REASONING_EFFORTS.low, text: 'Low' },
-        { value: AI_REPLY_REASONING_EFFORTS.medium, text: 'Medium' },
-        { value: AI_REPLY_REASONING_EFFORTS.high, text: 'High' }
+    createSidebarSection({
+      id: 'ai-reply-prompt-context',
+      title: 'AI Reply Prompt Context',
+      defaultOpen: false,
+      children: [
+        createTextbox({
+          helpText:
+            'Conversation style only. Do not include contacts, location, owner facts, or examples here.',
+          placeholder: 'Example: short, dry humor, direct, mirrors energy, no emojis...',
+          className: 'aiReplyTone',
+          defaultValue: DEFAULT_AI_REPLY_TONE
+        }),
+        createTextbox({
+          helpText:
+            'Owner profile and stable facts the AI may use when relevant. Do not put contact/location details here.',
+          placeholder: 'Name, age, work, study, hobbies, relationship goals, personality...',
+          className: 'aiReplyUserContext',
+          defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT,
+          textareaSize: 'large'
+        }),
+        createTextbox({
+          helpText:
+            'Real reply examples. Used for style, rhythm, callbacks, and brevity only; not treated as facts.',
+          placeholder: 'Match: ...\nOwner: ...',
+          className: AI_REPLY_SETTING_KEYS.styleExamples,
+          defaultValue: DEFAULT_AI_REPLY_STYLE_EXAMPLES,
+          textareaSize: 'large'
+        }),
+        createTextbox({
+          helpText:
+            'Contact methods the AI may share only when the match asks or shares theirs first.',
+          placeholder: 'Examples: WhatsApp +55..., Telegram @user, Instagram @user...',
+          className: 'aiReplyContactInfo',
+          defaultValue: DEFAULT_AI_REPLY_CONTACT_INFO
+        }),
+        createTextbox({
+          helpText:
+            'Always sent to the AI. The prompt tells it to share this only when the match asks about location.',
+          placeholder: 'Examples: city/state, neighborhood, region, meeting area, address...',
+          className: 'aiReplyAddressInfo',
+          defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
+        }),
+        createTextbox({
+          helpText:
+            'Extra strict rules for AI replies. These cannot override contact/location disclosure or JSON rules.',
+          placeholder: 'Examples: never use emojis; never ask two questions; avoid compliment-bombing...',
+          className: AI_REPLY_SETTING_KEYS.hardRules,
+          defaultValue: DEFAULT_AI_REPLY_HARD_RULES,
+          textareaSize: 'large'
+        }),
+        createSlider({
+          className: 'aiReplyContextWindow',
+          label: 'Conversation Context',
+          helpText: 'Number of recent messages to send to the AI when generating a reply, up to 60.',
+          min: MIN_AI_REPLY_CONTEXT_WINDOW,
+          max: MAX_AI_REPLY_CONTEXT_WINDOW,
+          defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+          unit: ' messages'
+        })
       ]
     }),
-    createHelpText(
-      'Reply Reasoning Effort is sent only when AI Reply Compatibility is Reasoning / Thinking.'
-    ),
-    createTitle('AI Reply Prompt Context'),
-    createTextbox({
-      helpText:
-        'Conversation style only. Do not include contacts, location, owner facts, or examples here.',
-      placeholder: 'Example: short, dry humor, direct, mirrors energy, no emojis...',
-      className: 'aiReplyTone',
-      defaultValue: DEFAULT_AI_REPLY_TONE
+    createSidebarSection({
+      id: 'ai-reply-runtime',
+      title: 'AI Reply Runtime',
+      defaultOpen: false,
+      children: [
+        createSlider({
+          className: 'aiReplyMaxTokens',
+          label: 'Max Tokens',
+          helpText:
+            'Maximum AI reply completion budget. Common manual values: 4k, 8k, 16k, 32k, 65k tokens.',
+          min: MIN_AI_REPLY_MAX_TOKENS,
+          max: MAX_AI_REPLY_MAX_TOKENS,
+          defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
+          step: 512,
+          unit: ' tokens',
+          manualInput: true
+        }),
+        createSlider({
+          className: 'aiReplyDelaySeconds',
+          label: 'Delay After Sent Reply',
+          helpText: 'Wait time after each AI reply that is actually sent.',
+          min: MIN_AI_REPLY_DELAY_SECONDS,
+          max: MAX_AI_REPLY_DELAY_SECONDS,
+          defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
+          unit: ' sec'
+        }),
+        createSlider({
+          className: AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
+          label: 'Continuous Interval',
+          helpText: 'Minutes to wait between continuous AI reply cycles.',
+          min: MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+          max: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+          defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+          unit: ' min'
+        }),
+        createSlider({
+          className: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
+          label: 'Max Replies Per Cycle',
+          helpText: 'Maximum AI replies to send before a continuous cycle pauses.',
+          min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+          max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+          defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+          unit: ' replies'
+        }),
+        createSlider({
+          className: AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
+          label: 'Max Replies Per Match / Day',
+          helpText: 'Continuous mode stops replying to the same match after this daily limit.',
+          min: MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+          max: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+          defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+          unit: ' replies'
+        })
+      ]
     }),
-    createTextbox({
-      helpText:
-        'Owner profile and stable facts the AI may use when relevant. Do not put contact/location details here.',
-      placeholder: 'Name, age, work, study, hobbies, relationship goals, personality...',
-      className: 'aiReplyUserContext',
-      defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT
-    }),
-    createTextbox({
-      helpText:
-        'Real reply examples. Used for style, rhythm, callbacks, and brevity only; not treated as facts.',
-      placeholder: 'Match: ...\nOwner: ...',
-      className: AI_REPLY_SETTING_KEYS.styleExamples,
-      defaultValue: DEFAULT_AI_REPLY_STYLE_EXAMPLES
-    }),
-    createTextbox({
-      helpText:
-        'Contact methods the AI may share only when the match asks or shares theirs first.',
-      placeholder: 'Examples: WhatsApp +55..., Telegram @user, Instagram @user...',
-      className: 'aiReplyContactInfo',
-      defaultValue: DEFAULT_AI_REPLY_CONTACT_INFO
-    }),
-    createTextbox({
-      helpText:
-        'Always sent to the AI. The prompt tells it to share this only when the match asks about location.',
-      placeholder: 'Examples: city/state, neighborhood, region, meeting area, address...',
-      className: 'aiReplyAddressInfo',
-      defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
-    }),
-    createTextbox({
-      helpText:
-        'Extra strict rules for AI replies. These cannot override contact/location disclosure or JSON rules.',
-      placeholder: 'Examples: never use emojis; never ask two questions; avoid compliment-bombing...',
-      className: AI_REPLY_SETTING_KEYS.hardRules,
-      defaultValue: DEFAULT_AI_REPLY_HARD_RULES
-    }),
-    createSlider({
-      className: 'aiReplyContextWindow',
-      label: 'Conversation Context',
-      helpText: 'Number of recent messages to send to the AI when generating a reply, up to 60.',
-      min: MIN_AI_REPLY_CONTEXT_WINDOW,
-      max: MAX_AI_REPLY_CONTEXT_WINDOW,
-      defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
-      unit: ' messages'
-    }),
-    createTitle('AI Reply Runtime'),
-    createSlider({
-      className: 'aiReplyMaxTokens',
-      label: 'Max Tokens',
-      helpText:
-        'Maximum AI reply completion budget. Common manual values: 4k, 8k, 16k, 32k, 65k tokens.',
-      min: MIN_AI_REPLY_MAX_TOKENS,
-      max: MAX_AI_REPLY_MAX_TOKENS,
-      defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
-      step: 512,
-      unit: ' tokens',
-      manualInput: true
-    }),
-    createSlider({
-      className: 'aiReplyDelaySeconds',
-      label: 'Delay After Sent Reply',
-      helpText: 'Wait time after each AI reply that is actually sent.',
-      min: MIN_AI_REPLY_DELAY_SECONDS,
-      max: MAX_AI_REPLY_DELAY_SECONDS,
-      defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
-      unit: ' sec'
-    }),
-    createSlider({
-      className: AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
-      label: 'Continuous Interval',
-      helpText: 'Minutes to wait between continuous AI reply cycles.',
-      min: MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
-      max: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
-      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
-      unit: ' min'
-    }),
-    createSlider({
-      className: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
-      label: 'Max Replies Per Cycle',
-      helpText: 'Maximum AI replies to send before a continuous cycle pauses.',
-      min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
-      max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
-      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
-      unit: ' replies'
-    }),
-    createSlider({
-      className: AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
-      label: 'Max Replies Per Match / Day',
-      helpText: 'Continuous mode stops replying to the same match after this daily limit.',
-      min: MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
-      max: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
-      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
-      unit: ' replies'
-    }),
-    createTitle('AI Reply Testing'),
-    createTextbox({
-      helpText:
-        'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
-      placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
-      className: 'aiReplyTestConversation',
-      defaultValue: ''
-    }),
-    createTextbox({
-      helpText: 'Optional match name used only for the preview/test prompt.',
-      placeholder: 'Ana',
-      className: 'aiReplyTestMatchName',
-      defaultValue: '',
-      type: 'text'
-    }),
-    createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
-      createElement('button', {
-        id: 'previewAiReplyPrompt',
-        text: 'Preview Prompt',
-        style:
-          'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
-        attributes: { type: 'button' }
-      }),
-      createElement('button', {
-        id: 'testAiReply',
-        text: 'Test Reply',
-        style:
-          'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
-        attributes: { type: 'button' }
-      })
-    ]),
-    createTextbox({
-      helpText: 'Preview or test output. This is never sent automatically.',
-      placeholder: 'Preview/test output appears here.',
-      className: 'aiReplyTestOutput',
-      defaultValue: '',
-      attributes: { readonly: 'true' }
+    createSidebarSection({
+      id: 'ai-reply-testing',
+      title: 'AI Reply Testing',
+      defaultOpen: false,
+      children: [
+        createTextbox({
+          helpText:
+            'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
+          placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
+          className: 'aiReplyTestConversation',
+          defaultValue: '',
+          textareaSize: 'large'
+        }),
+        createTextbox({
+          helpText: 'Optional match name used only for the preview/test prompt.',
+          placeholder: 'Ana',
+          className: 'aiReplyTestMatchName',
+          defaultValue: '',
+          type: 'text'
+        }),
+        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
+          createElement('button', {
+            id: 'previewAiReplyPrompt',
+            text: 'Preview Prompt',
+            style:
+              'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            attributes: { type: 'button' }
+          }),
+          createElement('button', {
+            id: 'testAiReply',
+            text: 'Test Reply',
+            style:
+              'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            attributes: { type: 'button' }
+          })
+        ]),
+        createTextbox({
+          helpText: 'Preview or test output. This is never sent automatically.',
+          placeholder: 'Preview/test output appears here.',
+          className: 'aiReplyTestOutput',
+          defaultValue: '',
+          attributes: { readonly: 'true' },
+          textareaSize: 'output'
+        })
+      ]
     })
   ]);
 
 const createMassMessage = () =>
   createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createTitle('Messaging Settings'),
-    createCheckbox('tinderAutopilotMessage', 'Auto message'),
-    createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
-    createTextbox({
-      helpText: 'The message to send to matches.',
-      placeholder: 'Your message to send',
-      className: 'messageToSend',
-      defaultValue: getDefaultMessage()
+    createSidebarSection({
+      id: 'messaging-settings',
+      title: 'Messaging Settings',
+      defaultOpen: true,
+      children: [
+        createCheckbox('tinderAutopilotMessage', 'Auto message'),
+        createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
+        createTextbox({
+          helpText: 'The message to send to matches.',
+          placeholder: 'Your message to send',
+          className: 'messageToSend',
+          defaultValue: getDefaultMessage()
+        })
+      ]
     })
   ]);
 
