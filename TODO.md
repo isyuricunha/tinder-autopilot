@@ -37,3 +37,6 @@
 - [x] Make default AI reply language neutral and expand location-question detection.
 - [x] Always include configured AI reply address info in the prompt and tune prompt for mass-message conversations.
 - [x] Treat AI reply location details as city/neighborhood/address context and detect inverted "you are from where" questions.
+- [x] Split AI profile filtering and AI message reply model/reasoning settings with legacy fallbacks.
+- [x] Reorganize sidebar AI settings into shared connection and module-specific sections.
+- [x] Add manual model fields with optional OpenAI-compatible model refresh suggestions.

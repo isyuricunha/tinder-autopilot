@@ -11,15 +11,25 @@ import {
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
+  DEFAULT_AI_REPLY_MODEL,
+  DEFAULT_AI_REPLY_REASONING_EFFORT,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   normalizeAiReplyCompatibilityMode,
   normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
+  normalizeAiReplyReasoningEffort,
   normalizeAiReplyContextWindow
 } from '../misc/ai-message-reply-settings';
+import {
+  AI_PROFILE_SETTING_KEYS,
+  DEFAULT_AI_PROFILE_MODEL,
+  DEFAULT_AI_PROFILE_REASONING_EFFORT,
+  normalizeAiReasoningEffort
+} from '../misc/ai-profile-filter-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
+import { fetchAiModelList } from '../misc/ai-model-list';
 import { insertCss } from '../misc/insert-css';
 import {
   getExtensionStorageValue,
@@ -49,6 +59,7 @@ import {
 } from './toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
+const AI_MODEL_DATALIST_ID = 'aiModelOptions';
 
 class Sidebar {
   eventListeners = [];
@@ -327,16 +338,6 @@ class Sidebar {
       });
     }
 
-    // Save reasoning effort when user changes it
-    const aiReasoningEffortField = document.getElementById('aiReasoningEffort');
-    if (aiReasoningEffortField) {
-      this.addTrackedListener(aiReasoningEffortField, 'change', (e) => {
-        const value = e.target.value;
-        setSetting('aiReasoningEffort', value);
-        logger(`💾 Saved AI Reasoning Effort: ${value}`);
-      });
-    }
-
     // Save AI filter settings when user updates them
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
@@ -379,12 +380,50 @@ class Sidebar {
       });
     }
 
-    const aiModelField = document.getElementById('aiModel');
-    if (aiModelField) {
-      this.addTrackedListener(aiModelField, 'blur', (e) => {
+    const refreshAiModelsButton = document.getElementById('refreshAiModels');
+    if (refreshAiModelsButton) {
+      this.addTrackedListener(refreshAiModelsButton, 'click', () => {
+        this.refreshAiModelOptions(refreshAiModelsButton);
+      });
+    }
+
+    const aiProfileModelField = document.getElementById(AI_PROFILE_SETTING_KEYS.model);
+    if (aiProfileModelField) {
+      this.addTrackedListener(aiProfileModelField, 'blur', (e) => {
         const value = e.target.value.trim();
-        setSetting('aiModel', value);
-        logger(`💾 Saved AI Model: ${value}`);
+        setSetting(AI_PROFILE_SETTING_KEYS.model, value);
+        logger(`💾 Saved AI Profile Model: ${value}`);
+      });
+    }
+
+    const aiReplyModelField = document.getElementById(AI_REPLY_SETTING_KEYS.model);
+    if (aiReplyModelField) {
+      this.addTrackedListener(aiReplyModelField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting(AI_REPLY_SETTING_KEYS.model, value);
+        logger(`💾 Saved AI Reply Model: ${value}`);
+      });
+    }
+
+    const aiProfileReasoningEffortField = document.getElementById(
+      AI_PROFILE_SETTING_KEYS.reasoningEffort
+    );
+    if (aiProfileReasoningEffortField) {
+      this.addTrackedListener(aiProfileReasoningEffortField, 'change', (e) => {
+        const value = normalizeAiReasoningEffort(e.target.value);
+        setSetting(AI_PROFILE_SETTING_KEYS.reasoningEffort, value);
+        logger(`💾 Saved AI Profile Reasoning Effort: ${value}`);
+      });
+    }
+
+    const aiReplyReasoningEffortField = document.getElementById(
+      AI_REPLY_SETTING_KEYS.reasoningEffort
+    );
+    if (aiReplyReasoningEffortField) {
+      this.addTrackedListener(aiReplyReasoningEffortField, 'change', (e) => {
+        const value = normalizeAiReplyReasoningEffort(e.target.value);
+        setSetting(AI_REPLY_SETTING_KEYS.reasoningEffort, value);
+        logger(`💾 Saved AI Reply Reasoning Effort: ${value}`);
       });
     }
 
@@ -520,12 +559,22 @@ class Sidebar {
         });
     }
 
-    const aiModelField = document.getElementById('aiModel');
-    if (aiModelField) {
-      const storedModel = getSetting('aiModel');
-      if (storedModel) {
-        aiModelField.value = storedModel;
-      }
+    const aiProfileModelField = document.getElementById(AI_PROFILE_SETTING_KEYS.model);
+    if (aiProfileModelField) {
+      aiProfileModelField.value =
+        getSetting(
+          AI_PROFILE_SETTING_KEYS.model,
+          getSetting(AI_PROFILE_SETTING_KEYS.legacyModel, DEFAULT_AI_PROFILE_MODEL)
+        ) || DEFAULT_AI_PROFILE_MODEL;
+    }
+
+    const aiReplyModelField = document.getElementById(AI_REPLY_SETTING_KEYS.model);
+    if (aiReplyModelField) {
+      aiReplyModelField.value =
+        getSetting(
+          AI_REPLY_SETTING_KEYS.model,
+          getSetting(AI_REPLY_SETTING_KEYS.legacyModel, DEFAULT_AI_REPLY_MODEL)
+        ) || DEFAULT_AI_REPLY_MODEL;
     }
 
     const aiFilterRulesField = document.getElementById('aiFilterRules');
@@ -536,16 +585,28 @@ class Sidebar {
       }
     }
 
-    // Initialize reasoning effort dropdown
-    const aiReasoningEffortField = document.getElementById('aiReasoningEffort');
-    if (aiReasoningEffortField) {
-      const storedEffort = getSetting('aiReasoningEffort');
-      if (storedEffort) {
-        aiReasoningEffortField.value = storedEffort;
-      } else {
-        // Default to medium
-        aiReasoningEffortField.value = 'medium';
-      }
+    const aiProfileReasoningEffortField = document.getElementById(
+      AI_PROFILE_SETTING_KEYS.reasoningEffort
+    );
+    if (aiProfileReasoningEffortField) {
+      aiProfileReasoningEffortField.value = normalizeAiReasoningEffort(
+        getSetting(
+          AI_PROFILE_SETTING_KEYS.reasoningEffort,
+          getSetting(
+            AI_PROFILE_SETTING_KEYS.legacyReasoningEffort,
+            DEFAULT_AI_PROFILE_REASONING_EFFORT
+          )
+        )
+      );
+    }
+
+    const aiReplyReasoningEffortField = document.getElementById(
+      AI_REPLY_SETTING_KEYS.reasoningEffort
+    );
+    if (aiReplyReasoningEffortField) {
+      aiReplyReasoningEffortField.value = normalizeAiReplyReasoningEffort(
+        getSetting(AI_REPLY_SETTING_KEYS.reasoningEffort, DEFAULT_AI_REPLY_REASONING_EFFORT)
+      );
     }
 
     const aiReplyToneField = document.getElementById('aiReplyTone');
@@ -605,6 +666,48 @@ class Sidebar {
     } catch (error) {
       logger(`⚠️ ${action} failed for ${selector}: ${this.getErrorMessage(error)}`);
       if (action === 'start') setToggleControlState(selector, false);
+    }
+  };
+
+  populateAiModelOptions = (models = []) => {
+    const datalist = document.getElementById(AI_MODEL_DATALIST_ID);
+    if (!datalist) return false;
+
+    while (datalist.firstChild) {
+      datalist.removeChild(datalist.firstChild);
+    }
+
+    models.forEach((model) => {
+      const option = document.createElement('option');
+      option.value = model;
+      datalist.appendChild(option);
+    });
+
+    return true;
+  };
+
+  refreshAiModelOptions = async (triggerButton = null) => {
+    if (triggerButton) triggerButton.disabled = true;
+
+    try {
+      const apiUrlField = document.getElementById('aiApiUrl');
+      const apiUrl = (apiUrlField?.value || getSetting('aiApiUrl', '')).trim();
+      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+      const models = await fetchAiModelList({ apiKey, apiUrl });
+
+      if (!models.length) {
+        logger('⚠️ No AI models returned by the provider');
+        return [];
+      }
+
+      this.populateAiModelOptions(models);
+      logger(`✅ Loaded ${models.length} AI model options`);
+      return models;
+    } catch (error) {
+      logger(`⚠️ Failed to refresh AI models: ${this.getErrorMessage(error)}`);
+      return [];
+    } finally {
+      if (triggerButton) triggerButton.disabled = false;
     }
   };
 

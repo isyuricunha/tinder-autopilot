@@ -3,6 +3,11 @@ import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
 import { parseAiDecision } from '../misc/ai-response-parser';
 import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
+import {
+  DEFAULT_AI_PROFILE_MODEL,
+  DEFAULT_AI_PROFILE_REASONING_EFFORT,
+  readAiProfileFilterSettings
+} from '../misc/ai-profile-filter-settings';
 import { getCheckboxValue } from '../views/toggle-control';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
@@ -25,7 +30,7 @@ class AIProfileFilter {
   // LocalStorage helpers
   // ----------------------------------------------------------------
   loadApiUrl() {
-    return getSetting('aiApiUrl');
+    return readAiProfileFilterSettings(getSetting).apiUrl;
   }
 
   loadApiKey() {
@@ -33,7 +38,7 @@ class AIProfileFilter {
   }
 
   loadModel() {
-    return getSetting('aiModel', 'gpt-4o-mini');
+    return readAiProfileFilterSettings(getSetting).model || DEFAULT_AI_PROFILE_MODEL;
   }
 
   loadFilterRules() {
@@ -44,16 +49,14 @@ class AIProfileFilter {
   }
 
   loadUseVision() {
-    const stored = getSetting('aiUseVision');
-    return stored === 'true';
+    return readAiProfileFilterSettings(getSetting).useVision;
   }
 
   loadReasoningEffort() {
-    const stored = getSetting('aiReasoningEffort');
-    if (stored && ['low', 'medium', 'high'].includes(stored)) {
-      return stored;
-    }
-    return 'medium'; // default
+    return (
+      readAiProfileFilterSettings(getSetting).reasoningEffort ||
+      DEFAULT_AI_PROFILE_REASONING_EFFORT
+    );
   }
 
   static isEnabled() {

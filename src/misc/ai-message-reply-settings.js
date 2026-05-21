@@ -8,6 +8,7 @@ const DEFAULT_AI_REPLY_MODEL = 'gpt-4o-mini';
 const DEFAULT_AI_REPLY_MAX_TOKENS = 2048;
 const DEFAULT_AI_REPLY_COMPATIBILITY_MODE = 'standardJson';
 const DEFAULT_AI_REPLY_DELAY_SECONDS = 4;
+const DEFAULT_AI_REPLY_REASONING_EFFORT = 'low';
 const MIN_AI_REPLY_CONTEXT_WINDOW = 1;
 const MAX_AI_REPLY_CONTEXT_WINDOW = 30;
 const MIN_AI_REPLY_MAX_TOKENS = 128;
@@ -26,12 +27,20 @@ const AI_REPLY_SETTING_KEYS = {
   compatibilityMode: 'aiReplyCompatibilityMode',
   contextWindow: 'aiReplyContextWindow',
   maxTokens: 'aiReplyMaxTokens',
-  model: 'aiModel',
+  legacyModel: 'aiModel',
+  model: 'aiReplyModel',
   addressInfo: 'aiReplyAddressInfo',
   contactInfo: 'aiReplyContactInfo',
+  reasoningEffort: 'aiReplyReasoningEffort',
   replyDelaySeconds: 'aiReplyDelaySeconds',
   tone: 'aiReplyTone',
   userContext: 'aiReplyUserContext'
+};
+
+const AI_REPLY_REASONING_EFFORTS = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high'
 };
 
 const normalizeAiReplyContextWindow = (value, defaultValue = DEFAULT_AI_REPLY_CONTEXT_WINDOW) => {
@@ -66,14 +75,38 @@ const normalizeAiReplyCompatibilityMode = (
   return Object.values(AI_REPLY_COMPATIBILITY_MODES).includes(mode) ? mode : defaultValue;
 };
 
+const normalizeAiReplyReasoningEffort = (
+  value,
+  defaultValue = DEFAULT_AI_REPLY_REASONING_EFFORT
+) => {
+  const effort = String(value || '').trim();
+  return Object.values(AI_REPLY_REASONING_EFFORTS).includes(effort) ? effort : defaultValue;
+};
+
 const readSettingValue = (readSetting, key, defaultValue) =>
   typeof readSetting === 'function' ? readSetting(key, defaultValue) : defaultValue;
 
+const readTextSettingWithLegacy = ({
+  readSetting,
+  key,
+  legacyKey,
+  defaultValue = ''
+}) => {
+  const storedValue = String(readSettingValue(readSetting, key, '') || '').trim();
+  if (storedValue) return storedValue;
+
+  const legacyValue = String(readSettingValue(readSetting, legacyKey, '') || '').trim();
+  return legacyValue || defaultValue;
+};
+
 const readAiReplySettings = (readSetting) => {
   const apiUrl = readSettingValue(readSetting, AI_REPLY_SETTING_KEYS.apiUrl, '').trim();
-  const model =
-    readSettingValue(readSetting, AI_REPLY_SETTING_KEYS.model, DEFAULT_AI_REPLY_MODEL).trim() ||
-    DEFAULT_AI_REPLY_MODEL;
+  const model = readTextSettingWithLegacy({
+    readSetting,
+    key: AI_REPLY_SETTING_KEYS.model,
+    legacyKey: AI_REPLY_SETTING_KEYS.legacyModel,
+    defaultValue: DEFAULT_AI_REPLY_MODEL
+  });
   const tone =
     readSettingValue(readSetting, AI_REPLY_SETTING_KEYS.tone, DEFAULT_AI_REPLY_TONE).trim() ||
     DEFAULT_AI_REPLY_TONE;
@@ -109,6 +142,13 @@ const readAiReplySettings = (readSetting) => {
       DEFAULT_AI_REPLY_COMPATIBILITY_MODE
     )
   );
+  const reasoningEffort = normalizeAiReplyReasoningEffort(
+    readSettingValue(
+      readSetting,
+      AI_REPLY_SETTING_KEYS.reasoningEffort,
+      DEFAULT_AI_REPLY_REASONING_EFFORT
+    )
+  );
   const replyDelaySeconds = normalizeAiReplyDelaySeconds(
     readSettingValue(
       readSetting,
@@ -125,6 +165,7 @@ const readAiReplySettings = (readSetting) => {
     contextWindow,
     maxTokens,
     model,
+    reasoningEffort,
     replyDelaySeconds,
     tone,
     userContext
@@ -133,6 +174,7 @@ const readAiReplySettings = (readSetting) => {
 
 module.exports = {
   AI_REPLY_COMPATIBILITY_MODES,
+  AI_REPLY_REASONING_EFFORTS,
   AI_REPLY_SETTING_KEYS,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_ADDRESS_INFO,
@@ -141,6 +183,7 @@ module.exports = {
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
+  DEFAULT_AI_REPLY_REASONING_EFFORT,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_DELAY_SECONDS,
@@ -153,5 +196,6 @@ module.exports = {
   normalizeAiReplyContextWindow,
   normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
+  normalizeAiReplyReasoningEffort,
   readAiReplySettings
 };

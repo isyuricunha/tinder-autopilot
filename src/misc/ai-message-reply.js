@@ -10,10 +10,12 @@ const {
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
+  DEFAULT_AI_REPLY_REASONING_EFFORT,
   DEFAULT_AI_REPLY_TONE,
   MAX_AI_REPLY_MAX_TOKENS,
   normalizeAiReplyCompatibilityMode,
-  normalizeAiReplyMaxTokens
+  normalizeAiReplyMaxTokens,
+  normalizeAiReplyReasoningEffort
 } = require('./ai-message-reply-settings');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
@@ -229,10 +231,12 @@ const buildAiReplyRequestBody = ({
   conversationTurns = [],
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
-  temperature = 0.7
+  temperature = 0.7,
+  reasoningEffort = DEFAULT_AI_REPLY_REASONING_EFFORT
 } = {}) => {
   const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
   const safeMaxTokens = normalizeAiReplyMaxTokens(maxTokens);
+  const safeReasoningEffort = normalizeAiReplyReasoningEffort(reasoningEffort);
   const safeContactInfo = shouldIncludeContactInfo(conversationTurns) ? contactInfo : '';
   const body = {
     model,
@@ -263,7 +267,7 @@ const buildAiReplyRequestBody = ({
 
   if (safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson) {
     body.max_completion_tokens = safeMaxTokens;
-    body.reasoning_effort = 'low';
+    body.reasoning_effort = safeReasoningEffort;
   } else {
     body.max_tokens = safeMaxTokens;
   }
@@ -354,6 +358,7 @@ const generateAiMessageReply = async ({
   matchName = '',
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
   model = DEFAULT_AI_REPLY_MODEL,
+  reasoningEffort = DEFAULT_AI_REPLY_REASONING_EFFORT,
   temperature = 0.7,
   tone = '',
   userContext = ''
@@ -376,6 +381,7 @@ const generateAiMessageReply = async ({
     matchName,
     maxTokens,
     model,
+    reasoningEffort,
     temperature,
     tone,
     userContext

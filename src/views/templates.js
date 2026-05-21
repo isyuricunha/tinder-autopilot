@@ -1,6 +1,7 @@
 import { getJsonSetting, setJsonSetting, setSetting } from '../misc/settings-store';
 import {
   AI_REPLY_COMPATIBILITY_MODES,
+  AI_REPLY_REASONING_EFFORTS,
   AI_REPLY_SETTING_KEYS,
   DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
@@ -8,6 +9,8 @@ import {
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
+  DEFAULT_AI_REPLY_MODEL,
+  DEFAULT_AI_REPLY_REASONING_EFFORT,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
@@ -17,12 +20,19 @@ import {
   MIN_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW
 } from '../misc/ai-message-reply-settings';
+import {
+  AI_PROFILE_SETTING_KEYS,
+  AI_REASONING_EFFORTS,
+  DEFAULT_AI_PROFILE_MODEL,
+  DEFAULT_AI_PROFILE_REASONING_EFFORT
+} from '../misc/ai-profile-filter-settings';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
 const DEFAULT_MESSAGE =
   'Hey {name}, this is an automated message to remind you of your upcoming "Netflix and Chill" appointment in the next week. To confirm your appointment text YES DADDY. To unsubscribe, please text WRONG HOLE. Standard text and bill rates do apply. Thanks for choosing Slide N Yo DMs';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+const AI_MODEL_DATALIST_ID = 'aiModelOptions';
 
 const appendChildren = (element, children) => {
   children.flat().forEach((child) => {
@@ -123,21 +133,34 @@ const createTitle = (title) =>
       'color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;'
   });
 
-const createTextbox = ({ className, placeholder, helpText, defaultValue, type = 'textarea' }) => {
+const createTextbox = ({
+  className,
+  placeholder,
+  helpText,
+  defaultValue,
+  type = 'textarea',
+  attributes = {}
+}) => {
   const fieldStyle =
     "width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);";
+  const inputAttributes = { placeholder, ...attributes };
+  if (defaultValue !== undefined) inputAttributes.value = defaultValue;
   const field =
-    type === 'password'
+    type === 'password' || type === 'text'
       ? createElement('input', {
           id: className,
           style: fieldStyle,
-          attributes: { type: 'password', autocomplete: 'off', placeholder, value: defaultValue }
+          attributes: {
+            ...inputAttributes,
+            type: type === 'password' ? 'password' : 'text',
+            autocomplete: type === 'password' ? 'off' : attributes.autocomplete || 'off'
+          }
         })
       : createElement('textarea', {
           id: className,
           text: defaultValue,
           style: `${fieldStyle} resize: vertical; min-height: 60px; max-height: 120px;`,
-          attributes: { placeholder }
+          attributes: { placeholder, ...attributes }
         });
 
   return createFragment([
@@ -362,6 +385,8 @@ const createSelectCard = ({ id, label, options, storageKey, defaultValue }) => {
   ]);
 };
 
+const createAiModelDatalist = () => createElement('datalist', { id: AI_MODEL_DATALIST_ID });
+
 const createCounterCard = ({ id, label, pathD }) =>
   createElement(
     'div',
@@ -513,7 +538,47 @@ const createAutopilot = () =>
         { value: 'distance', text: 'Nearby profiles (≤10km)' }
       ]
     }),
-    createHelpText('Choose when to automatically use Super Likes. Limited to 5 per day.'),
+    createHelpText('Choose when to automatically use Super Likes. Limited to 5 per day.')
+  ]);
+
+const createAiSettings = () =>
+  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
+    createTitle('AI Connection'),
+    createTextbox({
+      className: 'aiApiUrl',
+      placeholder: 'https://api.openai.com/v1/chat/completions',
+      helpText: 'Shared OpenAI-compatible chat completions endpoint used by AI features.',
+      defaultValue: 'https://api.openai.com/v1/chat/completions',
+      type: 'text'
+    }),
+    createTextbox({
+      className: 'aiApiKey',
+      placeholder: 'sk-... or your API key',
+      helpText:
+        'Stored in extension local storage. The field is shared by profile filtering and message replies.',
+      defaultValue: '',
+      type: 'password'
+    }),
+    createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
+      createElement('button', {
+        id: 'clearAiApiKey',
+        text: 'Clear API Key',
+        style:
+          'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+        attributes: { type: 'button' }
+      }),
+      createElement('button', {
+        id: 'refreshAiModels',
+        text: 'Refresh Models',
+        style:
+          'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+        attributes: { type: 'button' }
+      })
+    ]),
+    createAiModelDatalist(),
+    createHelpText(
+      'Model fields accept manual values. Refresh Models will fill suggestions when the API exposes a compatible /models endpoint.'
+    ),
     createTitle('AI Profile Filtering'),
     createCheckbox(
       'tinderAutopilotAIProfileFilter',
@@ -521,33 +586,12 @@ const createAutopilot = () =>
       'Use an LLM to intelligently decide which profiles to skip.'
     ),
     createTextbox({
-      className: 'aiApiUrl',
-      placeholder: 'https://api.openai.com/v1/chat/completions',
-      helpText: 'OpenAI-compatible API endpoint. Required for AI filtering.',
-      defaultValue: 'https://api.openai.com/v1/chat/completions'
-    }),
-    createTextbox({
-      className: 'aiApiKey',
-      placeholder: 'sk-... or your API key',
-      helpText:
-        'Stored in extension local storage. Content scripts can still access extension settings.',
-      defaultValue: '',
-      type: 'password'
-    }),
-    createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
-      createElement('button', {
-        id: 'clearAiApiKey',
-        text: 'Clear AI API Key',
-        style:
-          'width: 100%; padding: 10px 16px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
-        attributes: { type: 'button' }
-      })
-    ]),
-    createTextbox({
-      className: 'aiModel',
+      className: 'aiProfileModel',
       placeholder: 'gpt-4o-mini',
-      helpText: 'Model name. e.g. gpt-4o, claude-3-sonnet, llama-3-8b-8192, etc.',
-      defaultValue: 'gpt-4o-mini'
+      helpText: 'Model used only for profile filtering.',
+      defaultValue: DEFAULT_AI_PROFILE_MODEL,
+      type: 'text',
+      attributes: { list: AI_MODEL_DATALIST_ID }
     }),
     createTextbox({
       className: 'aiFilterRules',
@@ -556,38 +600,33 @@ const createAutopilot = () =>
       defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.'
     }),
     createSelectCard({
-      id: 'aiReasoningEffort',
-      label: 'Reasoning Effort',
-      storageKey: 'aiReasoningEffort',
-      defaultValue: 'medium',
+      id: 'aiProfileReasoningEffort',
+      label: 'Profile Reasoning Effort',
+      storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
+      defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
       options: [
-        { value: 'low', text: 'Low - Fast & Cheap' },
-        { value: 'medium', text: 'Medium - Balanced' },
-        { value: 'high', text: 'High - Deep Analysis' }
+        { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
+        { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
+        { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
       ]
     }),
     createHelpText(
-      'Controls how much the AI thinks before responding. Low is faster and cheaper. High provides deeper analysis but uses more tokens.'
-    )
-  ]);
-
-const createMassMessage = () =>
-  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createTitle('Messaging Settings'),
-    createCheckbox('tinderAutopilotMessage', 'Auto message'),
-    createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
-    createTextbox({
-      helpText: 'The message to send to matches.',
-      placeholder: 'Your message to send',
-      className: 'messageToSend',
-      defaultValue: getDefaultMessage()
-    }),
+      'Controls profile analysis prompt depth and token budget for the profile filter.'
+    ),
     createTitle('AI Message Replies'),
     createCheckbox(
       'tinderAutopilotAIMessageReply',
       'AI reply unanswered messages',
       'Generate and send AI replies only when the latest message is from the match.'
     ),
+    createTextbox({
+      className: AI_REPLY_SETTING_KEYS.model,
+      placeholder: 'gpt-4o-mini',
+      helpText: 'Model used only for AI message replies.',
+      defaultValue: DEFAULT_AI_REPLY_MODEL,
+      type: 'text',
+      attributes: { list: AI_MODEL_DATALIST_ID }
+    }),
     createSelectCard({
       id: 'aiReplyCompatibilityMode',
       label: 'AI Reply Compatibility',
@@ -599,8 +638,19 @@ const createMassMessage = () =>
         { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
       ]
     }),
+    createSelectCard({
+      id: AI_REPLY_SETTING_KEYS.reasoningEffort,
+      label: 'Reply Reasoning Effort',
+      storageKey: AI_REPLY_SETTING_KEYS.reasoningEffort,
+      defaultValue: DEFAULT_AI_REPLY_REASONING_EFFORT,
+      options: [
+        { value: AI_REPLY_REASONING_EFFORTS.low, text: 'Low' },
+        { value: AI_REPLY_REASONING_EFFORTS.medium, text: 'Medium' },
+        { value: AI_REPLY_REASONING_EFFORTS.high, text: 'High' }
+      ]
+    }),
     createHelpText(
-      'Use Reasoning / Thinking for models that spend completion tokens on hidden reasoning.'
+      'Reply Reasoning Effort is sent only when AI Reply Compatibility is Reasoning / Thinking.'
     ),
     createTextbox({
       helpText: 'Conversation style for AI-generated replies.',
@@ -658,6 +708,19 @@ const createMassMessage = () =>
     })
   ]);
 
+const createMassMessage = () =>
+  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
+    createTitle('Messaging Settings'),
+    createCheckbox('tinderAutopilotMessage', 'Auto message'),
+    createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
+    createTextbox({
+      helpText: 'The message to send to matches.',
+      placeholder: 'Your message to send',
+      className: 'messageToSend',
+      defaultValue: getDefaultMessage()
+    })
+  ]);
+
 const createLoggerHeader = () =>
   createElement('div', { style: 'margin-top: 16px;' }, [createTitle('Activity')]);
 
@@ -677,6 +740,7 @@ export {
   createTopBanner,
   createCounterLogs,
   createAutopilot,
+  createAiSettings,
   createMassMessage,
   createLoggerHeader,
   createInfoBanner

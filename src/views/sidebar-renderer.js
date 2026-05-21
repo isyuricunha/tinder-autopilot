@@ -1,5 +1,6 @@
 import {
   createAutopilot,
+  createAiSettings,
   createCounterLogs,
   createElement,
   createInfoBanner,
@@ -60,6 +61,7 @@ const renderSidebarContent = (container) => {
       createCounterLogs(),
       createResetCountersButton(),
       createAutopilot(),
+      createAiSettings(),
       createMassMessage(),
       createLoggerHeader(),
       createActivityLog()

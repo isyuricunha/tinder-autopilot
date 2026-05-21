@@ -11,7 +11,10 @@ const {
   shouldIncludeContactInfo,
   sanitizeAiReply
 } = require('../src/misc/ai-message-reply');
-const { AI_REPLY_COMPATIBILITY_MODES } = require('../src/misc/ai-message-reply-settings');
+const {
+  AI_REPLY_COMPATIBILITY_MODES,
+  AI_REPLY_REASONING_EFFORTS
+} = require('../src/misc/ai-message-reply-settings');
 
 test('buildAiReplySystemMessage includes tone and user context instructions', () => {
   const message = buildAiReplySystemMessage({
@@ -71,10 +74,11 @@ test('buildAiReplyRequestBody creates an OpenAI-compatible JSON response request
 test('buildAiReplyRequestBody supports reasoning and loose JSON compatibility modes', () => {
   const reasoningBody = buildAiReplyRequestBody({
     compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
-    maxTokens: 1024
+    maxTokens: 1024,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.high
   });
   assert.equal(reasoningBody.max_completion_tokens, 1024);
-  assert.equal(reasoningBody.reasoning_effort, 'low');
+  assert.equal(reasoningBody.reasoning_effort, AI_REPLY_REASONING_EFFORTS.high);
   assert.equal(reasoningBody.max_tokens, undefined);
   assert.equal(reasoningBody.response_format.type, 'json_object');
 
