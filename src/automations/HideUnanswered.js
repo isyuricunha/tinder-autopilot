@@ -7,7 +7,7 @@ import {
   getNextScrollEndState,
   getScrollMetrics,
   getMessageListItems,
-  scrollMessageListToEnd,
+  scrollMessageListTowardEnd,
   scrollMessageListToTop
 } from '../misc/message-list-filter';
 
@@ -66,9 +66,14 @@ class HideUnanswered {
 
     if (shouldKeepScrolling) {
       this.counter += 1;
-      scrollMessageListToEnd(document);
-      if (scrollContainer.scrollTop === currentScrollTop && !metrics.isAtBottom) {
-        scrollContainer.scrollTop = currentScrollTop + (scrollContainer.clientHeight || 600);
+      const scrollResult = scrollMessageListTowardEnd(document);
+      if (
+        !scrollResult.didMove &&
+        scrollContainer.scrollTop === currentScrollTop &&
+        !metrics.isAtBottom
+      ) {
+        const fallbackStep = Math.max(120, Math.floor((scrollContainer.clientHeight || 600) * 0.5));
+        scrollContainer.scrollTop = currentScrollTop + fallbackStep;
       }
       setTimeout(() => this.scrollMatchesToEnd(cb), SCROLL_DELAY_MS);
     } else {

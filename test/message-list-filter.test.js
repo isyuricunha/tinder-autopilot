@@ -7,10 +7,11 @@ const {
   clearUnansweredMessagesFilter,
   getMessageItemVisibilityTarget,
   getMessageListItems,
+  getNextIncrementalScrollTop,
   getNextScrollEndState,
   getScrollMetrics,
   isOutgoingLastMessage,
-  scrollMessageListToEnd,
+  scrollMessageListTowardEnd,
   shouldShowUnansweredMessageItem
 } = require('../src/misc/message-list-filter');
 
@@ -128,7 +129,37 @@ test('getMessageListItems deduplicates selector overlap', () => {
   assert.deepEqual(getMessageListItems(root), [item]);
 });
 
-test('scrollMessageListToEnd scrolls the real message list container to bottom', () => {
+test('getNextIncrementalScrollTop steps near the current bottom before the final bottom', () => {
+  assert.equal(
+    getNextIncrementalScrollTop({
+      clientHeight: 200,
+      maxScrollTop: 1000,
+      scrollHeight: 1200,
+      scrollTop: 0
+    }),
+    260
+  );
+  assert.equal(
+    getNextIncrementalScrollTop({
+      clientHeight: 200,
+      maxScrollTop: 1000,
+      scrollHeight: 1200,
+      scrollTop: 850
+    }),
+    920
+  );
+  assert.equal(
+    getNextIncrementalScrollTop({
+      clientHeight: 200,
+      maxScrollTop: 1000,
+      scrollHeight: 1200,
+      scrollTop: 920
+    }),
+    1000
+  );
+});
+
+test('scrollMessageListTowardEnd scrolls the real message list container incrementally', () => {
   const messageList = new FakeScrollElement({
     clientHeight: 200,
     scrollHeight: 1200,
@@ -139,12 +170,12 @@ test('scrollMessageListToEnd scrolls the real message list container to bottom',
   assert.deepEqual(getScrollMetrics(messageList), {
     clientHeight: 200,
     isAtBottom: false,
+    maxScrollTop: 1000,
     scrollHeight: 1200,
     scrollTop: 0
   });
-  assert.equal(scrollMessageListToEnd(root), true);
-  assert.equal(messageList.scrollTop, 1200);
-  assert.deepEqual(getScrollMetrics(messageList).isAtBottom, true);
+  assert.deepEqual(scrollMessageListTowardEnd(root).didMove, true);
+  assert.equal(messageList.scrollTop, 260);
 });
 
 test('getNextScrollEndState waits for a stable bottom after lazy-loaded items settle', () => {

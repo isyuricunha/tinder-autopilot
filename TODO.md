@@ -11,6 +11,7 @@
 - [x] Harden `Only show unanswered messages` against the real messages sidebar DOM.
 - [x] Make `Only show unanswered messages` scroll to a stable list end before filtering.
 - [x] Add lazy-load settle delay before filtering unanswered messages.
+- [x] Use incremental scrolling for Tinder lazy-loaded message lists.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies

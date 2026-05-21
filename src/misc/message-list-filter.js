@@ -11,6 +11,9 @@ const MESSAGE_ITEM_SELECTORS = [
 ];
 
 const MESSAGE_LIST_SELECTORS = ['.messageList', '[data-testid="message-list"]', '.message-list'];
+const DEFAULT_SCROLL_BOTTOM_GAP_PX = 80;
+const DEFAULT_SCROLL_STEP_RATIO = 0.85;
+const DEFAULT_MIN_SCROLL_STEP_PX = 260;
 
 const normalizeText = (value) =>
   String(value || '')
@@ -127,13 +130,38 @@ const getScrollMetrics = (element) => {
   const scrollTop = Number(element?.scrollTop || 0);
   const clientHeight = Number(element?.clientHeight || 0);
   const scrollHeight = Number(element?.scrollHeight || 0);
+  const maxScrollTop = Math.max(0, scrollHeight - clientHeight);
 
   return {
     clientHeight,
-    isAtBottom: scrollTop + clientHeight >= scrollHeight - 4,
+    isAtBottom: scrollTop >= maxScrollTop - 4,
+    maxScrollTop,
     scrollHeight,
     scrollTop
   };
+};
+
+const getNextIncrementalScrollTop = (
+  metrics,
+  {
+    bottomGapPx = DEFAULT_SCROLL_BOTTOM_GAP_PX,
+    minStepPx = DEFAULT_MIN_SCROLL_STEP_PX,
+    stepRatio = DEFAULT_SCROLL_STEP_RATIO
+  } = {}
+) => {
+  const currentMetrics = metrics || getScrollMetrics(null);
+  const maxScrollTop = Math.max(0, currentMetrics.maxScrollTop || 0);
+  const currentScrollTop = Math.min(currentMetrics.scrollTop, maxScrollTop);
+  const nearBottomScrollTop = Math.max(0, maxScrollTop - Number(bottomGapPx || 0));
+
+  if (currentScrollTop >= nearBottomScrollTop) {
+    return maxScrollTop;
+  }
+
+  const viewportStep = Math.floor(currentMetrics.clientHeight * Number(stepRatio || 1));
+  const scrollStep = Math.max(Number(minStepPx || 0), viewportStep);
+
+  return Math.min(currentScrollTop + scrollStep, nearBottomScrollTop);
 };
 
 const getNextScrollEndState = ({
@@ -173,18 +201,29 @@ const dispatchScrollEvents = (element) => {
   }
 };
 
-const scrollMessageListToEnd = (root = document) => {
+const scrollMessageListTowardEnd = (root = document) => {
   const scrollContainer = findMessageScrollContainer(root);
-  if (!scrollContainer) return false;
+  if (!scrollContainer) {
+    return {
+      didMove: false,
+      metrics: getScrollMetrics(null),
+      scrollContainer: null
+    };
+  }
 
-  const { scrollHeight } = getScrollMetrics(scrollContainer);
+  const metrics = getScrollMetrics(scrollContainer);
+  const nextScrollTop = getNextIncrementalScrollTop(metrics);
   if (typeof scrollContainer.scrollTo === 'function') {
-    scrollContainer.scrollTo({ top: scrollHeight, behavior: 'auto' });
+    scrollContainer.scrollTo({ top: nextScrollTop, behavior: 'auto' });
   } else {
-    scrollContainer.scrollTop = scrollHeight;
+    scrollContainer.scrollTop = nextScrollTop;
   }
   dispatchScrollEvents(scrollContainer);
-  return true;
+  return {
+    didMove: nextScrollTop !== metrics.scrollTop,
+    metrics,
+    scrollContainer
+  };
 };
 
 const findMessageScrollContainer = (root = document) => {
@@ -210,12 +249,13 @@ module.exports = {
   clearUnansweredMessagesFilter,
   findMessageScrollContainer,
   findMessagesTab,
+  getNextIncrementalScrollTop,
   getNextScrollEndState,
   getScrollMetrics,
   getMessageListItems,
   getMessageItemVisibilityTarget,
   isOutgoingLastMessage,
-  scrollMessageListToEnd,
+  scrollMessageListTowardEnd,
   scrollMessageListToTop,
   shouldShowUnansweredMessageItem
 };
