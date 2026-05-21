@@ -15,7 +15,7 @@
 
 - [x] Split raw conversation fetching from normalized message comparison.
 - [x] Model conversation turns with sender role, timestamp, and text.
-- [ ] Add AI reply settings for tone, user context, and conversation window size.
+- [x] Add AI reply settings for tone, user context, and conversation window size.
 - [ ] Generate AI replies with guarded JSON output and no-send fallback on invalid responses.
 - [ ] Process pending conversations one by one with stop support, delays, and rate limits.
 - [x] Add initial tests for conversation parsing, prompt building, and response parsing.

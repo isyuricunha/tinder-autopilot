@@ -1,4 +1,11 @@
 import { getJsonSetting, setJsonSetting, setSetting } from '../misc/settings-store';
+import {
+  DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_TONE,
+  DEFAULT_AI_REPLY_USER_CONTEXT,
+  MAX_AI_REPLY_CONTEXT_WINDOW,
+  MIN_AI_REPLY_CONTEXT_WINDOW
+} from '../misc/ai-message-reply-settings';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
 const DEFAULT_MESSAGE =
@@ -563,6 +570,28 @@ const createMassMessage = () =>
       placeholder: 'Your message to send',
       className: 'messageToSend',
       defaultValue: getDefaultMessage()
+    }),
+    createTitle('AI Message Replies'),
+    createTextbox({
+      helpText: 'Conversation style for AI-generated replies.',
+      placeholder: 'Short, warm, playful, direct, Brazilian Portuguese...',
+      className: 'aiReplyTone',
+      defaultValue: DEFAULT_AI_REPLY_TONE
+    }),
+    createTextbox({
+      helpText: 'Useful personal context the AI can safely use in replies.',
+      placeholder: 'Examples: city, schedule, interests, date preferences, boundaries...',
+      className: 'aiReplyUserContext',
+      defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT
+    }),
+    createSlider({
+      className: 'aiReplyContextWindow',
+      label: 'Conversation Context',
+      helpText: 'Number of recent messages to send to the AI when generating a reply.',
+      min: MIN_AI_REPLY_CONTEXT_WINDOW,
+      max: MAX_AI_REPLY_CONTEXT_WINDOW,
+      defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+      unit: ' messages'
     })
   ]);
 

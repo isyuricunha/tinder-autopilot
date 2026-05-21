@@ -1,4 +1,5 @@
 const { DEFAULT_CONTEXT_WINDOW, formatConversationTurns } = require('./conversation-context');
+const { DEFAULT_AI_REPLY_TONE } = require('./ai-message-reply-settings');
 
 const DEFAULT_AI_REPLY_MODEL = 'gpt-4o-mini';
 
@@ -12,7 +13,7 @@ const sanitizeAiReply = (value, maxLength = 500) =>
 const buildAiReplySystemMessage = ({ tone = '', userContext = '' } = {}) => {
   const toneBlock = tone
     ? `\nUSER TONE AND STYLE:\n${tone}`
-    : '\nUSER TONE AND STYLE:\nNatural, concise, warm, and conversational.';
+    : `\nUSER TONE AND STYLE:\n${DEFAULT_AI_REPLY_TONE}`;
   const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
 
   return `You write Tinder message replies for the account owner.

@@ -2,6 +2,12 @@ import Messenger from '../automations/Messenger';
 import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
+import {
+  DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_TONE,
+  DEFAULT_AI_REPLY_USER_CONTEXT,
+  normalizeAiReplyContextWindow
+} from '../misc/ai-message-reply-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
 import { insertCss } from '../misc/insert-css';
@@ -242,6 +248,24 @@ class Sidebar {
       });
     }
 
+    const aiReplyToneField = document.getElementById('aiReplyTone');
+    if (aiReplyToneField) {
+      this.addTrackedListener(aiReplyToneField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting('aiReplyTone', value);
+        logger('💾 Saved AI Reply Tone');
+      });
+    }
+
+    const aiReplyUserContextField = document.getElementById('aiReplyUserContext');
+    if (aiReplyUserContextField) {
+      this.addTrackedListener(aiReplyUserContextField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting('aiReplyUserContext', value);
+        logger('💾 Saved AI Reply Context');
+      });
+    }
+
     // Save bio blacklist when user updates it
     const bioBlacklistField = document.getElementById('bioBlacklist');
     if (bioBlacklistField) {
@@ -361,15 +385,22 @@ class Sidebar {
       { id: 'minAge', defaultValue: 18, unit: ' years' },
       { id: 'maxAge', defaultValue: 35, unit: ' years' },
       { id: 'maxDistance', defaultValue: 50, unit: ' km' },
-      { id: 'minPhotoCount', defaultValue: 3, unit: ' photos' }
+      { id: 'minPhotoCount', defaultValue: 3, unit: ' photos' },
+      {
+        id: 'aiReplyContextWindow',
+        defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+        unit: ' messages',
+        normalize: normalizeAiReplyContextWindow
+      }
     ];
 
-    sliders.forEach(({ id, defaultValue, unit }) => {
+    sliders.forEach(({ id, defaultValue, unit, normalize }) => {
       const slider = document.getElementById(id);
       const valueDisplay = document.getElementById(`${id}Value`);
 
       if (slider && valueDisplay) {
-        const storedValue = getSetting(id, defaultValue);
+        const rawStoredValue = getSetting(id, defaultValue);
+        const storedValue = normalize ? normalize(rawStoredValue) : rawStoredValue;
         slider.value = storedValue;
         valueDisplay.textContent = storedValue + unit;
       }
@@ -458,6 +489,19 @@ class Sidebar {
         // Default to medium
         aiReasoningEffortField.value = 'medium';
       }
+    }
+
+    const aiReplyToneField = document.getElementById('aiReplyTone');
+    if (aiReplyToneField) {
+      aiReplyToneField.value = getSetting('aiReplyTone', DEFAULT_AI_REPLY_TONE);
+    }
+
+    const aiReplyUserContextField = document.getElementById('aiReplyUserContext');
+    if (aiReplyUserContextField) {
+      aiReplyUserContextField.value = getSetting(
+        'aiReplyUserContext',
+        DEFAULT_AI_REPLY_USER_CONTEXT
+      );
     }
   };
 
