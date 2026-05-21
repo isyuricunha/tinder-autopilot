@@ -32,3 +32,4 @@
 - [x] Recheck the latest message before sending an AI reply.
 - [x] Make default AI reply prompt less robotic and restrict contact/address disclosure.
 - [x] Add configurable AI reply contact, address, token, context, and sent-reply delay settings.
+- [x] Make default AI reply language neutral and expand location-question detection.

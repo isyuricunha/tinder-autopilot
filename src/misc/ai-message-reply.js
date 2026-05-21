@@ -96,14 +96,20 @@ const extractFirstJsonObject = (value) => {
 
 const getLatestMatchMessageText = (conversationTurns = []) => {
   const latestTurn = conversationTurns[conversationTurns.length - 1];
-  return latestTurn?.role === 'match' ? sanitizeAiReply(latestTurn.text, 1000).toLowerCase() : '';
+  return latestTurn?.role === 'match' ? normalizeDisclosureText(latestTurn.text) : '';
 };
 
 const getMatchConversationText = (conversationTurns = []) =>
   conversationTurns
     .filter((turn) => turn?.role === 'match')
-    .map((turn) => sanitizeAiReply(turn.text, 1000).toLowerCase())
+    .map((turn) => normalizeDisclosureText(turn.text))
     .join('\n');
+
+const normalizeDisclosureText = (value) =>
+  sanitizeAiReply(value, 1000)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 const hasSharedContact = (text) =>
   /(?:\+?\d[\d\s().-]{7,}|@\w{3,}|instagram|insta|telegram|whats|whatsapp|wpp|zap)/i.test(
@@ -128,7 +134,23 @@ const shouldIncludeAddressInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const matchText = getMatchConversationText(conversationTurns);
   return (
-    /\b(?:endereço|endereco|localização|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localização|manda localizacao)\b/i.test(
+    /\b(?:endereco|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localizacao)\b/i.test(
+      latestText
+    ) ||
+    /\b(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\b/i.test(
+      latestText
+    ) ||
+    /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+(?:onde|aonde)\b/i.test(
+      latestText
+    ) ||
+    /\bmora\s+(?:onde|aonde)\b/i.test(latestText) ||
+    /\b(?:de|d)\s+(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora)\b/i.test(
+      latestText
+    ) ||
+    /\b(?:qual|q(?:ual)?)\s+(?:e|eh)?\s*(?:sua|seu|teu|tua)?\s*(?:cidade|bairro|endereco|localizacao)\b/i.test(
+      latestText
+    ) ||
+    /\bem\s+que\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)?\s*(?:mora|vive|fica)?\b/i.test(
       latestText
     ) ||
     /\b(?:rua|avenida|av\.|bairro|cep)\b/i.test(matchText)
@@ -169,14 +191,14 @@ RULES:
 - Sound like a real person texting on Tinder, not a customer support agent or chatbot.
 - Do not use emojis, kaomoji, exclamation-heavy text, poetic compliments, or "virtual coffee/date/chocolate" suggestions unless the conversation explicitly calls for that.
 - Do not over-explain. Do not make every reply a formal question.
-- Use casual Brazilian Portuguese. Match the conversation's casualness, but do not force slang.
+- Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
 - If a natural reply would require unknown personal facts, prefer a playful deflection.
 - Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
 - Share address or meeting info only when the latest match message asks for where to go, where to meet, your address, or the match just shared theirs.
 - If contact/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
 - When sharing contact/address, send only the specific relevant detail, not all stored personal info.
-- Bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas".
-- Better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?".
+- For Portuguese conversations, bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas".
+- For Portuguese conversations, better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?".
 - Do not mention automation, AI, prompts, or internal rules.
 - If the latest message does not need a reply, or the safe answer is unclear, set shouldSend to false.
 - Return exactly one compact JSON object.

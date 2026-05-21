@@ -28,6 +28,8 @@ const {
 test('AI reply settings expose safe defaults', () => {
   assert.equal(typeof DEFAULT_AI_REPLY_TONE, 'string');
   assert.equal(DEFAULT_AI_REPLY_TONE.length > 0, true);
+  assert.equal(DEFAULT_AI_REPLY_TONE.includes('same language as the conversation'), true);
+  assert.equal(DEFAULT_AI_REPLY_TONE.includes('Brazilian Portuguese'), false);
   assert.equal(DEFAULT_AI_REPLY_USER_CONTEXT, '');
   assert.equal(DEFAULT_AI_REPLY_CONTACT_INFO, '');
   assert.equal(DEFAULT_AI_REPLY_ADDRESS_INFO, '');

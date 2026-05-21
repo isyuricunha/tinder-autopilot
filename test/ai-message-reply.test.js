@@ -27,7 +27,8 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Do not use emojis'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
   assert.equal(message.includes('Share address or meeting info only when'), true);
-  assert.equal(message.includes('Bad style examples to avoid'), true);
+  assert.equal(message.includes('same language as the latest match message'), true);
+  assert.equal(message.includes('For Portuguese conversations, bad style examples to avoid'), true);
   assert.equal(message.includes('cafe virtual'), true);
   assert.equal(message.includes('Playful, direct'), true);
   assert.equal(message.includes('I live in Sao Paulo'), true);
@@ -119,6 +120,22 @@ test('contact and address disclosure detectors require relevant match context', 
   );
   assert.equal(
     shouldIncludeAddressInfo([{ role: 'match', text: 'de onde vc era?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'aonde tu mora?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'mora onde?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'em que bairro voce fica?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'de onde vem essa energia?' }]),
     false
   );
 });
