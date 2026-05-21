@@ -16,9 +16,13 @@ const canStartAiReplyMode = ({ currentMode = AI_REPLY_MODES.off, requestedMode }
   normalizeAiReplyMode(requestedMode) !== AI_REPLY_MODES.off &&
   normalizeAiReplyMode(currentMode) === AI_REPLY_MODES.off;
 
+const isAiReplyContinuousMode = (mode) =>
+  normalizeAiReplyMode(mode) === AI_REPLY_MODES.continuous;
+
 module.exports = {
   AI_REPLY_MODES,
   canStartAiReplyMode,
   getAiReplyModeFromResponderState,
+  isAiReplyContinuousMode,
   normalizeAiReplyMode
 };

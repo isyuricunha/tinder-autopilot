@@ -375,7 +375,8 @@ const createSlider = ({
   step = 1,
   unit = '',
   parentToggle = null,
-  manualInput = false
+  manualInput = false,
+  attributes = {}
 }) => {
   const valueDisplay = createElement('span', {
     id: `${className}Value`,
@@ -431,7 +432,7 @@ const createSlider = ({
         className: 'slider-container',
         style:
           'background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);',
-        attributes: { 'data-parent': parentToggle || '' }
+        attributes: { 'data-parent': parentToggle || '', ...attributes }
       },
       [
         createElement(
@@ -963,7 +964,8 @@ const createAiSettings = () =>
           min: MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
           max: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
           defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
-          unit: ' min'
+          unit: ' min',
+          attributes: { 'data-ai-reply-continuous-control': 'true' }
         }),
         createSlider({
           className: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
@@ -972,7 +974,8 @@ const createAiSettings = () =>
           min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
           max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
           defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
-          unit: ' replies'
+          unit: ' replies',
+          attributes: { 'data-ai-reply-continuous-control': 'true' }
         }),
         createSlider({
           className: AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
@@ -981,8 +984,10 @@ const createAiSettings = () =>
           min: MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
           max: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
           defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
-          unit: ' replies'
-        })
+          unit: ' replies',
+          attributes: { 'data-ai-reply-continuous-control': 'true' }
+        }),
+        createHelpText('Continuous-only controls are enabled only while Continuous mode is selected.')
       ]
     }),
     createSidebarSection({

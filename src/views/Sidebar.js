@@ -79,6 +79,7 @@ import {
   AI_REPLY_MODES,
   canStartAiReplyMode,
   getAiReplyModeFromResponderState,
+  isAiReplyContinuousMode,
   normalizeAiReplyMode
 } from './ai-reply-mode-state';
 import {
@@ -1040,6 +1041,23 @@ class Sidebar {
       button.style.cssText = isSelected
         ? 'flex: 1; padding: 10px 8px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: 1px solid #ff8c42; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;'
         : 'flex: 1; padding: 10px 8px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;';
+    });
+
+    this.updateAiReplyRuntimeControls(selectedMode);
+    return true;
+  };
+
+  updateAiReplyRuntimeControls = (mode = this.getCurrentAiReplyMode()) => {
+    const isContinuous = isAiReplyContinuousMode(mode);
+    const containers = document.querySelectorAll('[data-ai-reply-continuous-control="true"]');
+    if (!containers.length) return false;
+
+    containers.forEach((container) => {
+      container.style.opacity = isContinuous ? '1' : '0.5';
+      container.style.pointerEvents = isContinuous ? 'auto' : 'none';
+      container.querySelectorAll('input, select, textarea, button').forEach((control) => {
+        control.disabled = !isContinuous;
+      });
     });
 
     return true;

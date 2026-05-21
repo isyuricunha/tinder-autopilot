@@ -4,6 +4,7 @@ const {
   AI_REPLY_MODES,
   canStartAiReplyMode,
   getAiReplyModeFromResponderState,
+  isAiReplyContinuousMode,
   normalizeAiReplyMode
 } = require('../src/views/ai-reply-mode-state');
 
@@ -46,4 +47,10 @@ test('AI reply mode state only starts a mode from off', () => {
     }),
     false
   );
+});
+
+test('AI reply mode state identifies continuous mode', () => {
+  assert.equal(isAiReplyContinuousMode(AI_REPLY_MODES.continuous), true);
+  assert.equal(isAiReplyContinuousMode(AI_REPLY_MODES.once), false);
+  assert.equal(isAiReplyContinuousMode('unknown'), false);
 });
