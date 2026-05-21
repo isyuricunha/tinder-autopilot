@@ -39,6 +39,7 @@ import {
 import {
   AI_PROVIDER_SETTING_KEY,
   DEFAULT_AI_PROVIDER_TYPE,
+  getAiProviderLabel,
   getAiProviderDefaultApiUrl,
   isKnownAiProviderDefaultApiUrl,
   normalizeAiProviderType,
@@ -294,6 +295,12 @@ class Sidebar {
 
     // Initialize slider values from localStorage
     this.initializeSliders();
+    this.updateAiConnectionStatus({
+      message: `API type: ${getAiProviderLabel(
+        getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
+      )}. Refresh models to load suggestions.`,
+      status: 'idle'
+    });
 
     // Set initial slider states based on toggle positions
     setTimeout(() => {
@@ -423,6 +430,10 @@ class Sidebar {
           setSetting('aiApiUrl', defaultUrl);
         }
 
+        this.updateAiConnectionStatus({
+          message: `API type: ${getAiProviderLabel(providerType)}. Refresh models to update suggestions.`,
+          status: 'idle'
+        });
         logger(`💾 Saved AI API Type`);
       });
     }
@@ -812,6 +823,28 @@ class Sidebar {
     return true;
   };
 
+  updateAiConnectionStatus = ({ message, status = 'idle' } = {}) => {
+    const statusElement = document.getElementById('aiConnectionStatus');
+    if (!statusElement) return false;
+
+    const styles = {
+      error:
+        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 68, 88, 0.08); border: 1px solid rgba(255, 68, 88, 0.24); color: #ff8a97; font-size: 11px; line-height: 1.4; text-align: left;',
+      idle:
+        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 53, 0.06); border: 1px solid rgba(255, 107, 53, 0.18); color: #bcbcbc; font-size: 11px; line-height: 1.4; text-align: left;',
+      loading:
+        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 140, 66, 0.09); border: 1px solid rgba(255, 140, 66, 0.24); color: #ffb27d; font-size: 11px; line-height: 1.4; text-align: left;',
+      success:
+        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(49, 196, 141, 0.08); border: 1px solid rgba(49, 196, 141, 0.24); color: #72d8b3; font-size: 11px; line-height: 1.4; text-align: left;',
+      warning:
+        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 184, 77, 0.08); border: 1px solid rgba(255, 184, 77, 0.24); color: #ffc875; font-size: 11px; line-height: 1.4; text-align: left;'
+    };
+
+    statusElement.textContent = String(message || 'Provider ready. Refresh models to load suggestions.');
+    statusElement.style.cssText = styles[status] || styles.idle;
+    return true;
+  };
+
   refreshAiModelOptions = async (triggerButton = null) => {
     if (triggerButton) triggerButton.disabled = true;
 
@@ -822,18 +855,35 @@ class Sidebar {
       const providerType = normalizeAiProviderType(
         providerTypeField?.value || getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
       );
+      const providerLabel = getAiProviderLabel(providerType);
+      this.updateAiConnectionStatus({
+        message: `Loading model suggestions from ${providerLabel}...`,
+        status: 'loading'
+      });
       const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
       const models = await fetchAiModelList({ apiKey, apiUrl, providerType });
 
       if (!models.length) {
+        this.updateAiConnectionStatus({
+          message: `${providerLabel} returned no model suggestions. Manual model input still works.`,
+          status: 'warning'
+        });
         logger('⚠️ No AI models returned by the provider');
         return [];
       }
 
       this.populateAiModelOptions(models);
+      this.updateAiConnectionStatus({
+        message: `Loaded ${models.length} model suggestions from ${providerLabel}.`,
+        status: 'success'
+      });
       logger(`✅ Loaded ${models.length} AI model options`);
       return models;
     } catch (error) {
+      this.updateAiConnectionStatus({
+        message: `Model refresh failed: ${this.getErrorMessage(error)}`,
+        status: 'error'
+      });
       logger(`⚠️ Failed to refresh AI models: ${this.getErrorMessage(error)}`);
       return [];
     } finally {

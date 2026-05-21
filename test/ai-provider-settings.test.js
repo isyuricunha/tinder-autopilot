@@ -2,9 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
   AI_PROVIDER_DEFAULT_API_URLS,
+  AI_PROVIDER_LABELS,
   AI_PROVIDER_SETTING_KEY,
   AI_PROVIDER_TYPES,
   DEFAULT_AI_PROVIDER_TYPE,
+  getAiProviderLabel,
   getAiProviderDefaultApiUrl,
   isKnownAiProviderDefaultApiUrl,
   normalizeAiProviderType,
@@ -25,6 +27,7 @@ test('AI provider settings expose safe defaults', () => {
     AI_PROVIDER_DEFAULT_API_URLS[AI_PROVIDER_TYPES.nvidiaNim],
     'https://integrate.api.nvidia.com/v1/chat/completions'
   );
+  assert.equal(AI_PROVIDER_LABELS[AI_PROVIDER_TYPES.openAiCompatible], 'OpenAI-Compatible');
 });
 
 test('normalizeAiProviderType accepts only known providers', () => {
@@ -39,6 +42,11 @@ test('provider default URLs are readable and detectable', () => {
   );
   assert.equal(isKnownAiProviderDefaultApiUrl('https://api.mistral.ai/v1/chat/completions/'), true);
   assert.equal(isKnownAiProviderDefaultApiUrl('https://example.test/custom/chat'), false);
+});
+
+test('provider labels are readable and normalize unknown values', () => {
+  assert.equal(getAiProviderLabel(AI_PROVIDER_TYPES.anthropic), 'Anthropic');
+  assert.equal(getAiProviderLabel('unknown'), 'OpenAI-Compatible');
 });
 
 test('readAiProviderSettings reads and normalizes stored provider', () => {

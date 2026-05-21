@@ -742,6 +742,12 @@ const createAiSettings = () =>
             attributes: { type: 'button' }
           })
         ]),
+        createElement('div', {
+          id: 'aiConnectionStatus',
+          text: 'Provider ready. Refresh models to load suggestions.',
+          style:
+            'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 53, 0.06); border: 1px solid rgba(255, 107, 53, 0.18); color: #bcbcbc; font-size: 11px; line-height: 1.4; text-align: left;'
+        }),
         createAiModelDatalist(),
         createHelpText(
           'Model fields accept manual values. Refresh Models fills suggestions when the provider exposes a compatible /models endpoint.'
