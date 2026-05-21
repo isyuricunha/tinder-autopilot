@@ -1,5 +1,6 @@
 import { logger, warnLog, generateRandomNumber } from '../misc/helper';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
+import { findSuperLikeButton } from '../misc/tinder-dom-detectors';
 import { getSetting, setSetting } from '../misc/settings-store';
 import { getCheckboxValue } from '../views/toggle-control';
 
@@ -53,6 +54,9 @@ class SuperLiker {
   }
 
   hasSuperLike() {
+    const detectedSuperLike = findSuperLikeButton(document);
+    if (detectedSuperLike) return detectedSuperLike;
+
     const selectors = [
       "button[aria-label*='Super Like' i]",
       "button[data-testid*='super-like' i]",

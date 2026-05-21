@@ -1,5 +1,6 @@
 import { logger } from './helper';
 import { clickDialogDismissControl } from './modal-dismiss';
+import { findVisibleDialog } from './tinder-dom-detectors';
 
 class Interactions {
   isOnMatchesPage = () => {
@@ -80,7 +81,7 @@ class Interactions {
 
   closeModal = () => {
     try {
-      const dialog = document.querySelector('[role="dialog"]');
+      const dialog = findVisibleDialog(document);
       if (!dialog || !dialog.parentElement) return false;
 
       if (clickDialogDismissControl(dialog)) {

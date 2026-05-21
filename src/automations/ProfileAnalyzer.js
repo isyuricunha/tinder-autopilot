@@ -7,6 +7,7 @@ import {
   parseFilterList
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
+import { findOpenProfileButton, findProfileBackButton } from '../misc/tinder-dom-detectors';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -137,6 +138,15 @@ class ProfileAnalyzer {
         if (forbidden.some((w) => s.includes(w))) return false;
         return true;
       };
+
+      const openProfileButton = findOpenProfileButton(activeCard || document);
+      if (openProfileButton && isSafeButton(openProfileButton)) {
+        openProfileButton.click();
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (this.isProfileModalOpen()) {
+          return true;
+        }
+      }
 
       // The info button is usually at the bottom of the current card
       const infoButtonSelectors = [
@@ -376,6 +386,13 @@ class ProfileAnalyzer {
   // Close the profile modal by clicking close button
   closeProfile() {
     try {
+      const profileBackButton = findProfileBackButton(document);
+      if (profileBackButton?.getAttribute?.('data-testid') === 'profileBackButton') {
+        profileBackButton.click();
+        logger('🚪 Profile close command sent using profile back button');
+        return true;
+      }
+
       // Strategy 1: Try DOWN arrow key (most reliable for closing profile)
       logger('⌨️ Using DOWN arrow to close profile...');
       const downEvents = [

@@ -3,6 +3,11 @@ import { incrementCounter } from '../misc/counter-store';
 import Interactions from '../misc/Interactions';
 import ProfileAnalyzer from './ProfileAnalyzer';
 import SuperLiker from './SuperLiker';
+import {
+  findDislikeButton,
+  findLikeButton,
+  findVisibleDialog
+} from '../misc/tinder-dom-detectors';
 
 class Swiper {
   selector = '.tinderAutopilot';
@@ -89,7 +94,7 @@ class Swiper {
       !document.querySelector('.beacon__circle') &&
       !document.querySelector('[data-testid="modal"]') &&
       !document.querySelector('.modal') &&
-      !document.querySelector('[role="dialog"]');
+      !findVisibleDialog(document);
 
     if (!likeButton) {
       logger('🔍 Debug: No like button found');
@@ -366,6 +371,9 @@ class Swiper {
   };
 
   hasLike = () => {
+    const detectedLike = findLikeButton(document);
+    if (detectedLike) return detectedLike;
+
     // Prefer explicit Like selectors and exclude Boost
     const positiveSelectors = [
       "button[aria-label='Like']",
@@ -555,7 +563,7 @@ class Swiper {
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         const latestProfileId = this.getCurrentProfileId();
-        if (currentProfileId !== latestProfileId || !this.hasProfile()) {
+        if (skipStartId !== latestProfileId || !this.hasProfile()) {
           logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
           // Update deslike counter
           const deslikeCountEl = document.getElementById('deslikeCount');
@@ -573,7 +581,7 @@ class Swiper {
       if (swipeOk) {
         await new Promise((r) => setTimeout(r, 400));
         const afterSwipeId = this.getCurrentProfileId();
-        if (currentProfileId !== afterSwipeId || !this.hasProfile()) {
+        if (skipStartId !== afterSwipeId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using swipe-left drag');
           // Update deslike counter
           const deslikeCountEl = document.getElementById('deslikeCount');
@@ -584,7 +592,7 @@ class Swiper {
           return true;
         }
         logger(
-          `⚠️ Swipe-left drag did not change profile (id before=${currentProfileId}, after=${afterSwipeId})`
+          `⚠️ Swipe-left drag did not change profile (id before=${skipStartId}, after=${afterSwipeId})`
         );
       }
 
@@ -638,6 +646,12 @@ class Swiper {
 
   hasDislike = () => {
     logger('🔍 Searching for dislike button...');
+
+    const detectedDislike = findDislikeButton(document);
+    if (detectedDislike) {
+      logger('✅ Found dislike button using DOM detector');
+      return detectedDislike;
+    }
 
     // Strategy 1: Find by aria-label or title
     const labelSelectors = [
@@ -905,12 +919,12 @@ class Swiper {
       return;
     }
 
-    if (this.interactions.closeModal()) {
+    if (this.interactions.closeMatchFound()) {
       this.scheduleRun(generateRandomNumber());
       return;
     }
 
-    if (this.interactions.closeMatchFound()) {
+    if (this.interactions.closeModal()) {
       this.scheduleRun(generateRandomNumber());
       return;
     }
