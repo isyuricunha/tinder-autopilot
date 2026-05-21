@@ -63,18 +63,20 @@ const getMyProfile = () =>
     `https://api.gotinder.com/v2/profile?locale=en&include=account%2Cboost%2Ccontact_cards%2Cemail_settings%2Cinstagram%2Clikes%2Cnotifications%2Cplus_control%2Cproducts%2Cpurchase%2Creadreceipts%2Cswipenote%2Cspotify%2Csuper_likes%2Ctinder_u%2Ctravel%2Ctutorials%2Cuser`
   );
 
+const getRawMessagesForMatch = (match) =>
+  fetchResource(buildMatchMessagesUrl(match)).then((data) => get(data, 'data.messages', []));
+
 const getMessagesForMatch = (match) =>
-  fetchResource(buildMatchMessagesUrl(match)).then((data) => {
-    const messages = get(data, 'data.messages', []);
+  getRawMessagesForMatch(match).then((messages) =>
     // Normalize and immediately filter/release to avoid holding large data in memory
-    return messages.map((r) =>
+    messages.map((r) =>
       get(r, 'message', '')
         .trim()
         .toLowerCase()
         .replace(/[^a-zA-Z0-9]+/g, '-')
         .replace('thanks', 'thank')
-    );
-  });
+    )
+  );
 
 const getProfileData = () => {
   try {
@@ -113,4 +115,11 @@ const sendMessageToMatch = (matchID, options) => {
   return fetchResource(buildSendMessageUrl(matchID), body);
 };
 
-export { fetchResource, sendMessageToMatch, getMessagesForMatch, getMatches, getMyProfile };
+export {
+  fetchResource,
+  sendMessageToMatch,
+  getRawMessagesForMatch,
+  getMessagesForMatch,
+  getMatches,
+  getMyProfile
+};
