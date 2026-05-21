@@ -6,4 +6,5 @@
 - [x] Add fixture-backed DOM detectors for Tinder action buttons and modal state.
 - [x] Integrate detectors into the Auto Like flow in small steps.
 - [x] Verify each milestone with `pnpm run lint`, `pnpm run build`, and `pnpm test`.
+- [x] Make Bio Filtering respect the `Enable Bio Filtering` toggle.
 - [ ] Run live browser verification after rebuilding and reloading the extension.

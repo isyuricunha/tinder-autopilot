@@ -8,6 +8,7 @@ import {
   findLikeButton,
   findVisibleDialog
 } from '../misc/tinder-dom-detectors';
+import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
 
 class Swiper {
   selector = '.tinderAutopilot';
@@ -603,11 +604,13 @@ class Swiper {
       return false;
     }
 
-    // Enforce minimum wait when bio blacklist exists (always apply if blacklist has words)
+    // Enforce minimum wait only when Bio Filtering is actively enabled.
     this.profileAnalyzer.bioBlacklist = this.profileAnalyzer.loadBioBlacklist();
-    const hasBlacklist =
-      this.profileAnalyzer.bioBlacklist && this.profileAnalyzer.bioBlacklist.length > 0;
-    const minGateMs = hasBlacklist ? 5000 : 0;
+    const hasActiveBioFilter = hasEnabledBioBlacklist({
+      isBioFilterEnabled: this.profileAnalyzer.isBioFilterEnabled(),
+      bioBlacklist: this.profileAnalyzer.bioBlacklist
+    });
+    const minGateMs = hasActiveBioFilter ? 5000 : 0;
     if (minGateMs > 0) {
       const elapsed = Date.now() - (this.profileFirstSeen[profileId] || Date.now());
       if (elapsed < minGateMs) {

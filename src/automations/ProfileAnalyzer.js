@@ -7,6 +7,7 @@ import {
   parseFilterList
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
+import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
 import { findOpenProfileButton, findProfileBackButton } from '../misc/tinder-dom-detectors';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
@@ -82,6 +83,14 @@ class ProfileAnalyzer {
 
   isBioFilterEnabled() {
     return getCheckboxValue('.tinderAutopilotBioFilter');
+  }
+
+  hasActiveBioFilter() {
+    this.bioBlacklist = this.loadBioBlacklist();
+    return hasEnabledBioBlacklist({
+      isBioFilterEnabled: this.isBioFilterEnabled(),
+      bioBlacklist: this.bioBlacklist
+    });
   }
 
   // Open the profile modal by clicking on the card
@@ -824,16 +833,15 @@ class ProfileAnalyzer {
   // Check bio for banned words (call this AFTER opening the profile modal)
   async shouldSkipProfile() {
     const profileContext = this.getProfileContext();
-    // Always check bio blacklist if it exists (independent of UI checkbox)
-    const bioText = (profileContext.bio || this.getBioText() || '').toLowerCase();
-    if (bioText) {
-      // Refresh blacklist from storage
+    if (this.isBioFilterEnabled()) {
       this.bioBlacklist = this.loadBioBlacklist();
+      const bioText = (profileContext.bio || this.getBioText() || '').toLowerCase();
 
-      // Check if bio contains any blacklisted words
-      for (const blacklistedWord of this.bioBlacklist) {
-        if (bioText.includes(blacklistedWord)) {
-          return true;
+      if (bioText) {
+        for (const blacklistedWord of this.bioBlacklist) {
+          if (bioText.includes(blacklistedWord)) {
+            return true;
+          }
         }
       }
     }
@@ -889,20 +897,21 @@ class ProfileAnalyzer {
   // Main method to check profile with modal opening
   async checkProfileWithModal() {
     try {
-      // Check if blacklist exists and has words (always apply blacklist if it exists)
-      this.bioBlacklist = this.loadBioBlacklist();
-      const hasBlacklist = this.bioBlacklist && this.bioBlacklist.length > 0;
+      const hasActiveBioFilter = this.hasActiveBioFilter();
+      const isGenderFilterEnabled = this.isGenderFilterEnabled();
+      const isAdvancedFilterEnabled = this.isAdvancedFilterEnabled();
 
       // Check if AI filter is enabled
       const isAIFilterEnabled = AIProfileFilter.isEnabled();
+      const requireModal = shouldRequireProfileModal({
+        hasActiveBioFilter,
+        isGenderFilterEnabled,
+        isAdvancedFilterEnabled,
+        isAIFilterEnabled
+      });
 
       // If no filters enabled at all, skip the check
-      if (
-        !hasBlacklist &&
-        !this.isGenderFilterEnabled() &&
-        !this.isAdvancedFilterEnabled() &&
-        !isAIFilterEnabled
-      ) {
+      if (!requireModal) {
         return false; // Don't skip
       }
 
@@ -918,11 +927,6 @@ class ProfileAnalyzer {
       const opened = await this.openProfile();
 
       if (!opened) {
-        const requireModal =
-          hasBlacklist ||
-          this.isGenderFilterEnabled() ||
-          this.isAdvancedFilterEnabled() ||
-          isAIFilterEnabled;
         if (requireModal) {
           return true;
         }
@@ -931,20 +935,10 @@ class ProfileAnalyzer {
 
       // Wait for modal to open
       const modalOpened = await this.waitForProfileModal(
-        hasBlacklist ||
-        this.isGenderFilterEnabled() ||
-        this.isAdvancedFilterEnabled() ||
-        isAIFilterEnabled
-          ? 5000
-          : 3000
+        requireModal ? 5000 : 3000
       );
 
       if (!modalOpened) {
-        const requireModal =
-          hasBlacklist ||
-          this.isGenderFilterEnabled() ||
-          this.isAdvancedFilterEnabled() ||
-          isAIFilterEnabled;
         if (requireModal) {
           this.closeProfile();
           await this.waitForModalClose(1000);
@@ -956,7 +950,7 @@ class ProfileAnalyzer {
       }
 
       // Check if should skip
-      if (hasBlacklist) {
+      if (hasActiveBioFilter) {
         await this.waitForBioContent(5000);
       }
       let shouldSkip = await this.shouldSkipProfile();
