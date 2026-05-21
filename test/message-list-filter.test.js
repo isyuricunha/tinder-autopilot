@@ -7,6 +7,7 @@ const {
   clearUnansweredMessagesFilter,
   getMessageItemVisibilityTarget,
   getMessageListItems,
+  getNextScrollEndState,
   getScrollMetrics,
   isOutgoingLastMessage,
   scrollMessageListToEnd,
@@ -144,6 +145,62 @@ test('scrollMessageListToEnd scrolls the real message list container to bottom',
   assert.equal(scrollMessageListToEnd(root), true);
   assert.equal(messageList.scrollTop, 1200);
   assert.deepEqual(getScrollMetrics(messageList).isAtBottom, true);
+});
+
+test('getNextScrollEndState waits for a stable bottom after lazy-loaded items settle', () => {
+  const bottomMetrics = {
+    clientHeight: 200,
+    isAtBottom: true,
+    scrollHeight: 1200,
+    scrollTop: 1000
+  };
+  const previousState = {
+    scrollHeight: 1200,
+    stableEndChecks: 2,
+    totalMessages: 120
+  };
+
+  assert.deepEqual(
+    getNextScrollEndState({
+      metrics: { ...bottomMetrics, scrollHeight: 1500 },
+      previousState,
+      stableEndChecksRequired: 4,
+      totalMessages: 160
+    }),
+    {
+      hasListChanged: true,
+      hasStableEnd: false,
+      scrollHeight: 1500,
+      stableEndChecks: 0,
+      totalMessages: 160
+    }
+  );
+
+  assert.deepEqual(
+    getNextScrollEndState({
+      metrics: bottomMetrics,
+      previousState,
+      stableEndChecksRequired: 4,
+      totalMessages: 120
+    }),
+    {
+      hasListChanged: false,
+      hasStableEnd: false,
+      scrollHeight: 1200,
+      stableEndChecks: 3,
+      totalMessages: 120
+    }
+  );
+
+  assert.equal(
+    getNextScrollEndState({
+      metrics: bottomMetrics,
+      previousState: { ...previousState, stableEndChecks: 3 },
+      stableEndChecksRequired: 4,
+      totalMessages: 120
+    }).hasStableEnd,
+    true
+  );
 });
 
 test('applyUnansweredMessagesFilter hides the message row wrapper when present', () => {

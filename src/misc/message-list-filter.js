@@ -136,6 +136,33 @@ const getScrollMetrics = (element) => {
   };
 };
 
+const getNextScrollEndState = ({
+  metrics,
+  previousState = {},
+  stableEndChecksRequired,
+  totalMessages
+}) => {
+  const currentMetrics = metrics || getScrollMetrics(null);
+  const previousTotalMessages = Number(previousState.totalMessages || 0);
+  const previousScrollHeight = Number(previousState.scrollHeight || 0);
+  const previousStableEndChecks = Number(previousState.stableEndChecks || 0);
+  const normalizedTotalMessages = Number(totalMessages || 0);
+  const requiredChecks = Number(stableEndChecksRequired || 1);
+  const hasListChanged =
+    normalizedTotalMessages !== previousTotalMessages ||
+    currentMetrics.scrollHeight !== previousScrollHeight;
+  const stableEndChecks =
+    hasListChanged || !currentMetrics.isAtBottom ? 0 : previousStableEndChecks + 1;
+
+  return {
+    hasListChanged,
+    hasStableEnd: currentMetrics.isAtBottom && stableEndChecks >= requiredChecks,
+    scrollHeight: currentMetrics.scrollHeight,
+    stableEndChecks,
+    totalMessages: normalizedTotalMessages
+  };
+};
+
 const dispatchScrollEvents = (element) => {
   if (!element?.dispatchEvent) return;
   if (typeof Event === 'function') {
@@ -183,6 +210,7 @@ module.exports = {
   clearUnansweredMessagesFilter,
   findMessageScrollContainer,
   findMessagesTab,
+  getNextScrollEndState,
   getScrollMetrics,
   getMessageListItems,
   getMessageItemVisibilityTarget,

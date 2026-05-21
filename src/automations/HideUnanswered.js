@@ -4,20 +4,23 @@ import {
   clearUnansweredMessagesFilter,
   findMessageScrollContainer,
   findMessagesTab,
+  getNextScrollEndState,
   getScrollMetrics,
   getMessageListItems,
   scrollMessageListToEnd,
   scrollMessageListToTop
 } from '../misc/message-list-filter';
 
-const MAX_SCROLL_STEPS = 240;
-const SCROLL_DELAY_MS = 150;
+const MAX_SCROLL_STEPS = 360;
+const SCROLL_DELAY_MS = 1200;
 const STABLE_END_CHECKS = 4;
 
 class HideUnanswered {
   selector = '.tinderAutopilotHideMine';
 
   totalMessages = 0;
+
+  lastScrollHeight = 0;
 
   counter = 0;
 
@@ -40,27 +43,31 @@ class HideUnanswered {
     }
 
     const currentScrollTop = scrollContainer.scrollTop || 0;
-    const { isAtBottom } = getScrollMetrics(scrollContainer);
+    const metrics = getScrollMetrics(scrollContainer);
     const newTotal = getMessageListItems(document).length;
-    const hasNewMessages = newTotal > this.totalMessages;
+    const nextScrollState = getNextScrollEndState({
+      metrics,
+      previousState: {
+        scrollHeight: this.lastScrollHeight,
+        stableEndChecks: this.stableEndChecks,
+        totalMessages: this.totalMessages
+      },
+      stableEndChecksRequired: STABLE_END_CHECKS,
+      totalMessages: newTotal
+    });
 
-    if (hasNewMessages) {
+    if (nextScrollState.hasListChanged) {
       this.counter = 0;
-      this.stableEndChecks = 0;
-    } else if (isAtBottom) {
-      this.stableEndChecks += 1;
-    } else {
-      this.stableEndChecks = 0;
     }
 
     const shouldKeepScrolling =
       this.counter < MAX_SCROLL_STEPS &&
-      (!isAtBottom || this.stableEndChecks < STABLE_END_CHECKS || hasNewMessages);
+      (!nextScrollState.hasStableEnd || nextScrollState.hasListChanged);
 
     if (shouldKeepScrolling) {
       this.counter += 1;
       scrollMessageListToEnd(document);
-      if (scrollContainer.scrollTop === currentScrollTop && !isAtBottom) {
+      if (scrollContainer.scrollTop === currentScrollTop && !metrics.isAtBottom) {
         scrollContainer.scrollTop = currentScrollTop + (scrollContainer.clientHeight || 600);
       }
       setTimeout(() => this.scrollMatchesToEnd(cb), SCROLL_DELAY_MS);
@@ -69,12 +76,15 @@ class HideUnanswered {
       cb();
     }
 
-    this.totalMessages = newTotal;
+    this.totalMessages = nextScrollState.totalMessages;
+    this.lastScrollHeight = nextScrollState.scrollHeight;
+    this.stableEndChecks = nextScrollState.stableEndChecks;
   };
 
   start = () => {
     const runFilter = () => {
       this.totalMessages = getMessageListItems(document).length;
+      this.lastScrollHeight = getScrollMetrics(findMessageScrollContainer(document)).scrollHeight;
       this.counter = 0;
       this.stableEndChecks = 0;
 
