@@ -9,13 +9,27 @@ import {
   findVisibleDialog
 } from '../misc/tinder-dom-detectors';
 import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
+import {
+  clearProfileActionFailure,
+  hasProfileAdvanced,
+  incrementProfileActionFailure,
+  shouldStopAfterProfileActionFailures
+} from '../misc/swipe-action-state';
+
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 class Swiper {
   selector = '.tinderAutopilot';
 
   isRunning = false;
 
+  isProcessingSwipe = false;
+
   profileFirstSeen = {};
+
+  profileActionFailures = {};
+
+  maxProfileActionFailures = 2;
 
   activeTimers = new Set();
 
@@ -35,6 +49,7 @@ class Swiper {
 
   stop = () => {
     this.isRunning = false;
+    this.isProcessingSwipe = false;
     logger('Autopilot stopped ⛔️');
     this.clearAllTimers();
   };
@@ -254,12 +269,12 @@ class Swiper {
       for (let i = 1; i <= steps; i++) {
         dispatch('pointermove', startX + dx * i, startY + dy * i);
         dispatchTouch('touchmove', startX + dx * i, startY + dy * i);
-        await new Promise((r) => setTimeout(r, 30));
+        await sleep(30);
       }
       dispatch('pointerup', startX + dx * steps, startY + dy * steps);
       dispatchTouch('touchend', startX + dx * steps, startY + dy * steps);
 
-      await new Promise((r) => setTimeout(r, 300));
+      await sleep(300);
       return true;
     } catch (e) {
       logger(`⚠️ Swipe simulation failed: ${e.message}`);
@@ -267,14 +282,25 @@ class Swiper {
     }
   };
 
+  isVisibleElement = (element) => {
+    if (!element || element.offsetParent === null) return false;
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  };
+
   // Save current profile ID to detect changes
   getCurrentProfileId = () => {
     try {
       // Try to get a unique identifier from the current profile
-      const nameElement =
-        document.querySelector('h1[aria-label*="years"]') ||
-        document.querySelector('[itemprop="name"]') ||
-        document.querySelector('h1');
+      const nameElement = [
+        'h1[aria-label*="years"]',
+        '[itemprop="name"]',
+        'h1'
+      ].reduce(
+        (found, selector) =>
+          found || Array.from(document.querySelectorAll(selector)).find(this.isVisibleElement),
+        null
+      );
 
       if (nameElement) {
         const txt = (nameElement.textContent || '').trim();
@@ -282,9 +308,9 @@ class Swiper {
       }
 
       // Fallback: use first image src as identifier
-      const firstImage = document.querySelector(
-        '.keen-slider__slide img, [data-testid="card-stack"] img'
-      );
+      const firstImage = Array.from(
+        document.querySelectorAll('.keen-slider__slide img, [data-testid="card-stack"] img')
+      ).find(this.isVisibleElement);
       if (firstImage && firstImage.src) {
         return `img:${firstImage.src}`;
       }
@@ -301,6 +327,110 @@ class Swiper {
     } catch (e) {
       return null;
     }
+  };
+
+  waitForLikeButton = async (timeout = 3000) => {
+    const start = Date.now();
+
+    while (Date.now() - start < timeout) {
+      if (
+        !this.profileAnalyzer.isProfileModalOpen() &&
+        !findVisibleDialog(document) &&
+        this.hasProfile()
+      ) {
+        const likeButton = this.hasLike();
+        if (likeButton) return likeButton;
+      }
+
+      await sleep(150);
+    }
+
+    return null;
+  };
+
+  waitForProfileAdvance = async (beforeProfileId, timeout = 2500) => {
+    const start = Date.now();
+
+    while (Date.now() - start < timeout) {
+      if (this.matchFound()) return true;
+
+      const afterProfileId = this.getCurrentProfileId();
+      if (
+        hasProfileAdvanced({
+          beforeProfileId,
+          afterProfileId,
+          hasProfile: this.hasProfile()
+        })
+      ) {
+        return true;
+      }
+
+      await sleep(150);
+    }
+
+    return hasProfileAdvanced({
+      beforeProfileId,
+      afterProfileId: this.getCurrentProfileId(),
+      hasProfile: this.hasProfile()
+    });
+  };
+
+  incrementLikeCounter = () => {
+    const likeCountEl = document.getElementById('likeCount');
+    if (likeCountEl) {
+      likeCountEl.textContent = incrementCounter('likeCount');
+    }
+  };
+
+  clearProfileActionState = (profileId) => {
+    delete this.profileFirstSeen[profileId];
+    clearProfileActionFailure(this.profileActionFailures, profileId);
+  };
+
+  recordProfileActionFailure = (profileId, reason) => {
+    const failureCount = incrementProfileActionFailure(this.profileActionFailures, profileId);
+    logger(`⚠️ ${reason} (${failureCount}/${this.maxProfileActionFailures})`);
+
+    if (shouldStopAfterProfileActionFailures(failureCount, this.maxProfileActionFailures)) {
+      logger('🛑 Stopping autopilot because the same profile did not advance after repeated actions');
+      this.isRunning = false;
+    }
+  };
+
+  pressConfirmedLike = async (profileId) => {
+    const beforeProfileId = profileId || this.getCurrentProfileId();
+    const likeButton = await this.waitForLikeButton();
+
+    if (!likeButton) {
+      this.recordProfileActionFailure(beforeProfileId, 'Like button was not ready after closing profile');
+      return false;
+    }
+
+    likeButton.click();
+    logger('✅ ❤️ Like clicked, waiting for next profile');
+
+    if (await this.waitForProfileAdvance(beforeProfileId)) {
+      logger('✅ ❤️ Liked profile');
+      this.incrementLikeCounter();
+      this.clearProfileActionState(profileId);
+      this.scheduleProfileCleanup(profileId);
+      return true;
+    }
+
+    logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
+    logger('⌨️ Trying keyboard shortcut for like (ArrowRight) as fallback...');
+    this.pressKey('ArrowRight', 39);
+
+    if (await this.waitForProfileAdvance(beforeProfileId)) {
+      logger('✅ ❤️ Liked profile using keyboard ArrowRight');
+      this.incrementLikeCounter();
+      this.clearProfileActionState(profileId);
+      this.scheduleProfileCleanup(profileId);
+      return true;
+    }
+
+    this.recordProfileActionFailure(beforeProfileId, 'Like action did not advance profile');
+    return false;
   };
 
   hasProfile = () => {
@@ -498,7 +628,7 @@ class Swiper {
           }
 
           // FIX: Increased wait time from 600ms to 1500ms to allow DOM to update
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          await sleep(1500);
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using dislike button');
@@ -507,7 +637,7 @@ class Swiper {
             if (deslikeCountEl) {
               deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
-            delete this.profileFirstSeen[profileId];
+            this.clearProfileActionState(profileId);
             return true;
           } else {
             logger(
@@ -535,7 +665,7 @@ class Swiper {
         const currentProfileId = this.getCurrentProfileId();
         for (let i = 0; i < 3; i++) {
           this.pressKey('ArrowLeft', 37);
-          await new Promise((resolve) => setTimeout(resolve, 250));
+          await sleep(250);
           const newProfileId = this.getCurrentProfileId();
           if (currentProfileId !== newProfileId || !this.hasProfile()) {
             logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
@@ -544,7 +674,7 @@ class Swiper {
             if (deslikeCountEl) {
               deslikeCountEl.textContent = incrementCounter('deslikeCount');
             }
-            delete this.profileFirstSeen[profileId];
+            this.clearProfileActionState(profileId);
             return true;
           }
           logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
@@ -561,7 +691,7 @@ class Swiper {
 
       for (const shortcut of shortcuts) {
         this.pressKey(shortcut.key, shortcut.keyCode);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await sleep(300);
 
         const latestProfileId = this.getCurrentProfileId();
         if (skipStartId !== latestProfileId || !this.hasProfile()) {
@@ -571,7 +701,7 @@ class Swiper {
           if (deslikeCountEl) {
             deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
-          delete this.profileFirstSeen[profileId];
+          this.clearProfileActionState(profileId);
           return true;
         }
       }
@@ -580,7 +710,7 @@ class Swiper {
       logger('�️ Simulating swipe-left drag...');
       const swipeOk = await this.simulateSwipeLeft();
       if (swipeOk) {
-        await new Promise((r) => setTimeout(r, 400));
+        await sleep(400);
         const afterSwipeId = this.getCurrentProfileId();
         if (skipStartId !== afterSwipeId || !this.hasProfile()) {
           logger('⏭️ ❌ Skipped profile using swipe-left drag');
@@ -589,7 +719,7 @@ class Swiper {
           if (deslikeCountEl) {
             deslikeCountEl.textContent = incrementCounter('deslikeCount');
           }
-          delete this.profileFirstSeen[profileId];
+          this.clearProfileActionState(profileId);
           return true;
         }
         logger(
@@ -616,35 +746,21 @@ class Swiper {
       if (elapsed < minGateMs) {
         const waitMs = minGateMs - elapsed;
         logger(`⏳ Waiting ${waitMs}ms before like due to bio filter`);
-        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        await sleep(waitMs);
       }
     }
 
     // Profile passed all filters - try Super Like first (safely) then Like
     if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
-      delete this.profileFirstSeen[profileId];
-      return true;
-    }
-
-    // Profile passed all filters - click like button
-    const likeButton = this.hasLike();
-    if (likeButton) {
-      likeButton.click();
-      logger('✅ ❤️ Liked profile');
-
-      // Update like counter
-      const likeCountEl = document.getElementById('likeCount');
-      if (likeCountEl) {
-        likeCountEl.textContent = incrementCounter('likeCount');
+      if (await this.waitForProfileAdvance(profileId)) {
+        this.clearProfileActionState(profileId);
+        return true;
       }
-
-      delete this.profileFirstSeen[profileId];
-      this.scheduleProfileCleanup(profileId);
-      return true;
-    } else {
-      logger('⚠️ No like button found');
+      this.recordProfileActionFailure(profileId, 'Super Like action did not advance profile');
       return false;
     }
+
+    return this.pressConfirmedLike(profileId);
   };
 
   hasDislike = () => {
@@ -944,15 +1060,30 @@ class Swiper {
       return;
     }
 
+    if (this.isProcessingSwipe) {
+      logger('Swipe action already in progress. Waiting before next cycle');
+      this.scheduleRun(800);
+      return;
+    }
+
     // What we came here to do, swipe right!
-    this.pressLike().then((success) => {
-      if (success) {
+    this.isProcessingSwipe = true;
+    this.pressLike()
+      .then((success) => {
+        if (success) {
+          this.scheduleRun(generateRandomNumber(3000, 4000));
+        } else {
+          logger('No profiles found. Waiting 4s');
+          this.scheduleRun(generateRandomNumber(3000, 4000));
+        }
+      })
+      .catch((error) => {
+        logger(`⚠️ Swipe cycle failed: ${error.message}`);
         this.scheduleRun(generateRandomNumber(3000, 4000));
-      } else {
-        logger('No profiles found. Waiting 4s');
-        this.scheduleRun(generateRandomNumber(3000, 4000));
-      }
-    });
+      })
+      .finally(() => {
+        this.isProcessingSwipe = false;
+      });
   };
 }
 

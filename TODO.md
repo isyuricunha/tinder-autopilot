@@ -13,6 +13,7 @@
 - [x] Add lazy-load settle delay before filtering unanswered messages.
 - [x] Use incremental scrolling for Tinder lazy-loaded message lists.
 - [x] Make `Only show unanswered messages` manual-only and stop restoring it on reload.
+- [x] Confirm like actions advance the card before scheduling the next Auto Like cycle.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies
