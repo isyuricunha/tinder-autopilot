@@ -499,6 +499,39 @@ const createSelectCard = ({ id, label, options, storageKey, defaultValue }) => {
 
 const createAiModelDatalist = () => createElement('datalist', { id: AI_MODEL_DATALIST_ID });
 
+const createAiReplyModeButton = ({ mode, label }) =>
+  createElement('button', {
+    text: label,
+    style:
+      'flex: 1; padding: 10px 8px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;',
+    attributes: {
+      type: 'button',
+      'data-ai-reply-mode': mode,
+      'data-selected': 'false'
+    }
+  });
+
+const createAiReplyModeSelector = () =>
+  createFragment([
+    createCard([
+      createElement('div', { style: 'padding: 16px;' }, [
+        createElement('label', {
+          text: 'AI Reply Mode',
+          style:
+            'color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;'
+        }),
+        createElement('div', { style: 'display: flex; gap: 8px;' }, [
+          createAiReplyModeButton({ mode: 'off', label: 'Off' }),
+          createAiReplyModeButton({ mode: 'once', label: 'Reply once' }),
+          createAiReplyModeButton({ mode: 'continuous', label: 'Continuous' })
+        ])
+      ])
+    ]),
+    createHelpText(
+      'One mode can run at a time. Use Off before changing from one running mode to another.'
+    )
+  ]);
+
 const createCounterCard = ({ id, label, pathD }) =>
   createElement(
     'div',
@@ -800,17 +833,7 @@ const createAiSettings = () =>
       title: 'AI Message Replies',
       defaultOpen: true,
       children: [
-        createCheckbox(
-          'tinderAutopilotAIMessageReply',
-          'Reply pending chats once',
-          'Run one pass and send AI replies only when the latest message is from the match.'
-        ),
-        createCheckbox(
-          'tinderAutopilotAIMessageReplyContinuous',
-          'Keep replying on interval',
-          'Re-run AI replies on an interval. Contact exchange, meeting proposals, and repeated latest messages are skipped for manual takeover.'
-        ),
-        createHelpText('Only one AI reply mode can run at a time. Starting one stops the other.'),
+        createAiReplyModeSelector(),
         createTextbox({
           className: AI_REPLY_SETTING_KEYS.model,
           placeholder: 'gpt-4o-mini',

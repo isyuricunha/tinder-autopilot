@@ -76,6 +76,12 @@ import {
   shouldRestoreToggleState
 } from './sidebar-toggle-state';
 import {
+  AI_REPLY_MODES,
+  canStartAiReplyMode,
+  getAiReplyModeFromResponderState,
+  normalizeAiReplyMode
+} from './ai-reply-mode-state';
+import {
   getCheckboxValue,
   toggleCheckbox,
   setToggleState as setToggleControlState
@@ -101,6 +107,7 @@ class Sidebar {
     this.swiper = new Swiper();
     this.messenger = new Messenger();
     this.aiMessageResponder = new AiMessageResponder();
+    this.aiMessageResponder.onModeChange = this.updateAiReplyModeSelector;
 
     this.mountWhenReady();
   }
@@ -266,17 +273,7 @@ class Sidebar {
 
     this.bindCheckbox(this.messenger.selector, this.messenger.start, this.messenger.stop);
 
-    this.bindCheckbox(
-      this.aiMessageResponder.selector,
-      this.aiMessageResponder.start,
-      this.aiMessageResponder.stop
-    );
-
-    this.bindCheckbox(
-      this.aiMessageResponder.continuousSelector,
-      this.aiMessageResponder.startContinuous,
-      this.aiMessageResponder.stop
-    );
+    this.bindAiReplyModeSelector();
 
     this.bindCheckbox(
       this.hideUnanswered.selector,
@@ -292,6 +289,7 @@ class Sidebar {
 
     // Initialize saved toggle states from localStorage
     this.initializeToggles();
+    this.updateAiReplyModeSelector(AI_REPLY_MODES.off);
 
     // Initialize slider values from localStorage
     this.initializeSliders();
@@ -1023,6 +1021,69 @@ class Sidebar {
     } finally {
       if (triggerButton) triggerButton.disabled = false;
     }
+  };
+
+  getCurrentAiReplyMode = () =>
+    getAiReplyModeFromResponderState({
+      isContinuousMode: this.aiMessageResponder.isContinuousMode,
+      isRunning: this.aiMessageResponder.isRunning
+    });
+
+  updateAiReplyModeSelector = (mode = this.getCurrentAiReplyMode()) => {
+    const selectedMode = normalizeAiReplyMode(mode);
+    const buttons = document.querySelectorAll('[data-ai-reply-mode]');
+    if (!buttons.length) return false;
+
+    buttons.forEach((button) => {
+      const isSelected = button.getAttribute('data-ai-reply-mode') === selectedMode;
+      button.setAttribute('data-selected', String(isSelected));
+      button.style.cssText = isSelected
+        ? 'flex: 1; padding: 10px 8px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: 1px solid #ff8c42; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;'
+        : 'flex: 1; padding: 10px 8px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;';
+    });
+
+    return true;
+  };
+
+  setAiReplyMode = (requestedMode) => {
+    const nextMode = normalizeAiReplyMode(requestedMode);
+    const currentMode = this.getCurrentAiReplyMode();
+
+    if (nextMode === AI_REPLY_MODES.off) {
+      if (this.aiMessageResponder.isRunning) {
+        this.aiMessageResponder.stop();
+      } else {
+        this.updateAiReplyModeSelector(AI_REPLY_MODES.off);
+      }
+      return;
+    }
+
+    if (!canStartAiReplyMode({ currentMode, requestedMode: nextMode })) {
+      logger('Stop the current AI reply mode before starting another');
+      this.updateAiReplyModeSelector(currentMode);
+      return;
+    }
+
+    if (nextMode === AI_REPLY_MODES.continuous) {
+      this.aiMessageResponder.startContinuous();
+      return;
+    }
+
+    this.aiMessageResponder.start();
+  };
+
+  bindAiReplyModeSelector = () => {
+    const buttons = document.querySelectorAll('[data-ai-reply-mode]');
+    if (!buttons.length) {
+      warnLog('AI reply mode selector not found');
+      return;
+    }
+
+    buttons.forEach((button) => {
+      this.addTrackedListener(button, 'click', () => {
+        this.setAiReplyMode(button.getAttribute('data-ai-reply-mode'));
+      });
+    });
   };
 
   bindCheckbox = (selector, start = false, stop = false) => {

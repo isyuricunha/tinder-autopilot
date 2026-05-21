@@ -64,4 +64,5 @@
 - [x] Add persistent collapsible sidebar sections for secondary filters, AI prompt context, runtime, and testing controls.
 - [x] Improve AI reply mode labels and give large AI prompt/test fields more editing room.
 - [x] Add inline AI connection status for provider changes and model refresh results.
+- [x] Replace separate AI reply toggles with one Off / Reply once / Continuous mode selector.
 - [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.

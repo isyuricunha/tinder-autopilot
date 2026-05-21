@@ -40,6 +40,8 @@ class AiMessageResponder {
 
   activeSelector = this.selector;
 
+  onModeChange = null;
+
   checkedMessages = 0;
 
   sentMessages = 0;
@@ -72,6 +74,7 @@ class AiMessageResponder {
     this.cycleSentMessages = 0;
 
     setToggleControlState(continuous ? this.selector : this.continuousSelector, false);
+    this.emitModeChange(continuous ? 'continuous' : 'once');
 
     logger(continuous ? 'Starting continuous AI message replies' : 'Starting AI message replies');
 
@@ -90,6 +93,12 @@ class AiMessageResponder {
     this.isRunning = false;
     setToggleControlState(this.selector, false);
     setToggleControlState(this.continuousSelector, false);
+    this.emitModeChange('off');
+  };
+
+  emitModeChange = (mode) => {
+    if (typeof this.onModeChange !== 'function') return;
+    this.onModeChange(mode);
   };
 
   getProfileData = () => {
