@@ -1,3 +1,8 @@
+const {
+  getAiProviderDefaultApiUrl,
+  readAiProviderSettings
+} = require('./ai-provider-settings');
+
 const DEFAULT_AI_PROFILE_MODEL = 'gpt-4o-mini';
 const DEFAULT_AI_PROFILE_REASONING_EFFORT = 'medium';
 
@@ -42,6 +47,10 @@ const readTextSettingWithLegacy = ({
 };
 
 const readAiProfileFilterSettings = (readSetting) => {
+  const { providerType } = readAiProviderSettings(readSetting);
+  const apiUrl = String(
+    readSettingValue(readSetting, AI_PROFILE_SETTING_KEYS.apiUrl, '') || ''
+  ).trim();
   const reasoningEffort = readTextSettingWithLegacy({
     readSetting,
     key: AI_PROFILE_SETTING_KEYS.reasoningEffort,
@@ -50,7 +59,7 @@ const readAiProfileFilterSettings = (readSetting) => {
   });
 
   return {
-    apiUrl: String(readSettingValue(readSetting, AI_PROFILE_SETTING_KEYS.apiUrl, '') || '').trim(),
+    apiUrl: apiUrl || getAiProviderDefaultApiUrl(providerType),
     filterRules: String(readSettingValue(readSetting, AI_PROFILE_SETTING_KEYS.filterRules, '') || '').trim(),
     model: readTextSettingWithLegacy({
       readSetting,

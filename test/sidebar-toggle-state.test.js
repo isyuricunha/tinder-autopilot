@@ -12,6 +12,7 @@ test('sidebar toggle policy keeps manual automations ephemeral', () => {
     '.tinderAutopilot',
     '.tinderAutopilotMessage',
     '.tinderAutopilotAIMessageReply',
+    '.tinderAutopilotAIMessageReplyContinuous',
     '.tinderAutopilotMessageNewOnly',
     '.tinderAutopilotHideMine'
   ].forEach((selector) => {

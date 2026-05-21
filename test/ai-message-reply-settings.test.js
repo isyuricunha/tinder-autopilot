@@ -8,6 +8,9 @@ const {
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
@@ -17,11 +20,20 @@ const {
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   MAX_AI_REPLY_DELAY_SECONDS,
   MAX_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW,
+  MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   MIN_AI_REPLY_DELAY_SECONDS,
   MIN_AI_REPLY_MAX_TOKENS,
+  normalizeAiReplyContinuousIntervalMinutes,
+  normalizeAiReplyContinuousMaxPerMatchPerDay,
+  normalizeAiReplyContinuousMaxSentPerCycle,
   normalizeAiReplyCompatibilityMode,
   normalizeAiReplyContextWindow,
   normalizeAiReplyDelaySeconds,
@@ -29,6 +41,10 @@ const {
   normalizeAiReplyReasoningEffort,
   readAiReplySettings
 } = require('../src/misc/ai-message-reply-settings');
+const {
+  AI_PROVIDER_SETTING_KEY,
+  AI_PROVIDER_TYPES
+} = require('../src/misc/ai-provider-settings');
 
 test('AI reply settings expose safe defaults', () => {
   assert.equal(typeof DEFAULT_AI_REPLY_TONE, 'string');
@@ -43,6 +59,9 @@ test('AI reply settings expose safe defaults', () => {
   assert.equal(DEFAULT_AI_REPLY_CONTEXT_WINDOW, 10);
   assert.equal(DEFAULT_AI_REPLY_MAX_TOKENS, 2048);
   assert.equal(DEFAULT_AI_REPLY_DELAY_SECONDS, 4);
+  assert.equal(DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES, 10);
+  assert.equal(DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE, 5);
+  assert.equal(DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY, 3);
   assert.equal(DEFAULT_AI_REPLY_COMPATIBILITY_MODE, AI_REPLY_COMPATIBILITY_MODES.standardJson);
   assert.equal(DEFAULT_AI_REPLY_MODEL, 'gpt-4o-mini');
   assert.equal(DEFAULT_AI_REPLY_REASONING_EFFORT, AI_REPLY_REASONING_EFFORTS.low);
@@ -51,6 +70,7 @@ test('AI reply settings expose safe defaults', () => {
 test('normalizeAiReplyContextWindow clamps invalid and out-of-range values', () => {
   assert.equal(normalizeAiReplyContextWindow('abc'), DEFAULT_AI_REPLY_CONTEXT_WINDOW);
   assert.equal(normalizeAiReplyContextWindow(0), MIN_AI_REPLY_CONTEXT_WINDOW);
+  assert.equal(MAX_AI_REPLY_CONTEXT_WINDOW, 60);
   assert.equal(normalizeAiReplyContextWindow(99), MAX_AI_REPLY_CONTEXT_WINDOW);
   assert.equal(normalizeAiReplyContextWindow(7), 7);
 });
@@ -67,6 +87,50 @@ test('normalizeAiReplyDelaySeconds clamps invalid and out-of-range values', () =
   assert.equal(normalizeAiReplyDelaySeconds(-1), MIN_AI_REPLY_DELAY_SECONDS);
   assert.equal(normalizeAiReplyDelaySeconds(999), MAX_AI_REPLY_DELAY_SECONDS);
   assert.equal(normalizeAiReplyDelaySeconds(8), 8);
+});
+
+test('normalize continuous AI reply settings clamps invalid and out-of-range values', () => {
+  assert.equal(
+    normalizeAiReplyContinuousIntervalMinutes('abc'),
+    DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+  );
+  assert.equal(
+    normalizeAiReplyContinuousIntervalMinutes(0),
+    MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+  );
+  assert.equal(
+    normalizeAiReplyContinuousIntervalMinutes(999),
+    MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+  );
+  assert.equal(normalizeAiReplyContinuousIntervalMinutes(15), 15);
+
+  assert.equal(
+    normalizeAiReplyContinuousMaxSentPerCycle('abc'),
+    DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+  );
+  assert.equal(
+    normalizeAiReplyContinuousMaxSentPerCycle(0),
+    MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+  );
+  assert.equal(
+    normalizeAiReplyContinuousMaxSentPerCycle(999),
+    MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+  );
+  assert.equal(normalizeAiReplyContinuousMaxSentPerCycle(7), 7);
+
+  assert.equal(
+    normalizeAiReplyContinuousMaxPerMatchPerDay('abc'),
+    DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+  );
+  assert.equal(
+    normalizeAiReplyContinuousMaxPerMatchPerDay(0),
+    MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+  );
+  assert.equal(
+    normalizeAiReplyContinuousMaxPerMatchPerDay(999),
+    MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+  );
+  assert.equal(normalizeAiReplyContinuousMaxPerMatchPerDay(2), 2);
 });
 
 test('normalizeAiReplyCompatibilityMode accepts only known modes', () => {
@@ -87,6 +151,7 @@ test('normalizeAiReplyReasoningEffort accepts only known efforts', () => {
 
 test('readAiReplySettings reads and normalizes stored values', () => {
   const settings = {
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.anthropic,
     [AI_REPLY_SETTING_KEYS.apiUrl]: ' https://example.test/chat ',
     [AI_REPLY_SETTING_KEYS.compatibilityMode]: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
     [AI_REPLY_SETTING_KEYS.contextWindow]: '99',
@@ -95,6 +160,9 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     [AI_REPLY_SETTING_KEYS.reasoningEffort]: AI_REPLY_REASONING_EFFORTS.high,
     [AI_REPLY_SETTING_KEYS.addressInfo]: ' Rua Teste 123 ',
     [AI_REPLY_SETTING_KEYS.contactInfo]: ' WhatsApp +55 11 99999-9999 ',
+    [AI_REPLY_SETTING_KEYS.continuousIntervalMinutes]: '999',
+    [AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay]: '999',
+    [AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle]: '999',
     [AI_REPLY_SETTING_KEYS.hardRules]: ' never use emojis ',
     [AI_REPLY_SETTING_KEYS.replyDelaySeconds]: '999',
     [AI_REPLY_SETTING_KEYS.styleExamples]: ' Match: oi -> Owner: opa ',
@@ -107,10 +175,14 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     apiUrl: 'https://example.test/chat',
     compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
     contactInfo: 'WhatsApp +55 11 99999-9999',
+    continuousIntervalMinutes: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+    continuousMaxPerMatchPerDay: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+    continuousMaxSentPerCycle: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
     hardRules: 'never use emojis',
     contextWindow: MAX_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: MAX_AI_REPLY_MAX_TOKENS,
     model: 'custom-model',
+    providerType: AI_PROVIDER_TYPES.anthropic,
     reasoningEffort: AI_REPLY_REASONING_EFFORTS.high,
     replyDelaySeconds: MAX_AI_REPLY_DELAY_SECONDS,
     styleExamples: 'Match: oi -> Owner: opa',
@@ -122,13 +194,17 @@ test('readAiReplySettings reads and normalizes stored values', () => {
 test('readAiReplySettings falls back to safe defaults', () => {
   assert.deepEqual(readAiReplySettings(), {
     addressInfo: DEFAULT_AI_REPLY_ADDRESS_INFO,
-    apiUrl: '',
+    apiUrl: 'https://api.openai.com/v1/chat/completions',
     compatibilityMode: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
     contactInfo: DEFAULT_AI_REPLY_CONTACT_INFO,
+    continuousIntervalMinutes: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+    continuousMaxPerMatchPerDay: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+    continuousMaxSentPerCycle: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
     hardRules: DEFAULT_AI_REPLY_HARD_RULES,
     contextWindow: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: DEFAULT_AI_REPLY_MAX_TOKENS,
     model: DEFAULT_AI_REPLY_MODEL,
+    providerType: AI_PROVIDER_TYPES.openAiCompatible,
     reasoningEffort: DEFAULT_AI_REPLY_REASONING_EFFORT,
     replyDelaySeconds: DEFAULT_AI_REPLY_DELAY_SECONDS,
     styleExamples: DEFAULT_AI_REPLY_STYLE_EXAMPLES,

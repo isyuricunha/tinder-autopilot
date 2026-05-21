@@ -43,3 +43,16 @@
 - [x] Split AI reply prompt inputs into style, owner profile, examples, contact, location, and hard rules.
 - [x] Add synchronized manual max-token input next to the AI reply max-token slider.
 - [x] Add AI reply prompt preview and test generation without sending Tinder messages.
+- [x] Add pure settings, local-time context, manual-takeover detection, and checkpoint state helpers for continuous AI replies.
+- [x] Wire continuous AI replies into the responder and sidebar without changing one-shot AI replies.
+- [x] Add safeguards so continuous AI replies skip repeated latest messages, contact exchange, meeting proposals, and daily per-match limits.
+- [x] Split AI reply prompt/runtime/testing controls into clearer sidebar subsections.
+- [x] Increase AI reply conversation context window to 60 messages.
+- [x] Skip AI replies when the owner already shared direct contact in the conversation.
+
+## AI Provider Support
+
+- [x] Add a shared AI API type selector for OpenAI-Compatible, Mistral AI, Anthropic, and NVIDIA NIM.
+- [x] Route profile filtering, AI message replies, and model listing through provider-specific request adapters.
+- [x] Cover provider request conversion, response parsing, settings, and model listing with tests.
+- [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.

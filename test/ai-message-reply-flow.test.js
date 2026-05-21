@@ -71,6 +71,31 @@ test('buildPendingAiReplyContext only allows conversations waiting on the match'
   assert.equal(notPending.reason, 'Latest message is not from match');
 });
 
+test('buildPendingAiReplyContext skips conversations where owner already shared contact', () => {
+  const skipped = buildPendingAiReplyContext({
+    contextWindow: 10,
+    match,
+    profileData,
+    rawMessages: [
+      {
+        from: 'user-1',
+        to: 'person-1',
+        message: 'me chama no +55 11 99999-9999',
+        sent_date: '2026-01-01T10:00:00Z'
+      },
+      {
+        from: 'person-1',
+        to: 'user-1',
+        message: 'chamo sim',
+        sent_date: '2026-01-01T10:01:00Z'
+      }
+    ]
+  });
+
+  assert.equal(skipped.status, 'skipped');
+  assert.equal(skipped.reason, 'Owner already shared contact in this conversation');
+});
+
 test('getLatestConversationSignature identifies the latest pending message', () => {
   assert.equal(
     getLatestConversationSignature([

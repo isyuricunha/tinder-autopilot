@@ -8,6 +8,10 @@ const {
   normalizeAiReasoningEffort,
   readAiProfileFilterSettings
 } = require('../src/misc/ai-profile-filter-settings');
+const {
+  AI_PROVIDER_SETTING_KEY,
+  AI_PROVIDER_TYPES
+} = require('../src/misc/ai-provider-settings');
 
 test('AI profile filter settings expose safe defaults', () => {
   assert.equal(DEFAULT_AI_PROFILE_MODEL, 'gpt-4o-mini');
@@ -39,12 +43,13 @@ test('readAiProfileFilterSettings reads dedicated settings', () => {
 
 test('readAiProfileFilterSettings falls back to legacy shared settings', () => {
   const settings = {
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.anthropic,
     [AI_PROFILE_SETTING_KEYS.legacyModel]: ' legacy-model ',
     [AI_PROFILE_SETTING_KEYS.legacyReasoningEffort]: AI_REASONING_EFFORTS.low
   };
 
   assert.deepEqual(readAiProfileFilterSettings((key, fallback) => settings[key] ?? fallback), {
-    apiUrl: '',
+    apiUrl: 'https://api.anthropic.com/v1/messages',
     filterRules: '',
     model: 'legacy-model',
     reasoningEffort: AI_REASONING_EFFORTS.low,

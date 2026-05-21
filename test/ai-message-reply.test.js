@@ -15,12 +15,14 @@ const {
   AI_REPLY_COMPATIBILITY_MODES,
   AI_REPLY_REASONING_EFFORTS
 } = require('../src/misc/ai-message-reply-settings');
+const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 
 test('buildAiReplySystemMessage includes tone and user context instructions', () => {
   const message = buildAiReplySystemMessage({
     addressInfo: 'Rua Teste 123',
     contactInfo: 'WhatsApp +55 11 99999-9999',
     hardRules: 'Never ask two questions in one reply.',
+    currentLocalTime: 'Thursday, 2026-05-21, 22:07, America/Sao_Paulo',
     styleExamples: 'Match: oi -> Owner: opa',
     tone: 'Playful, direct, Brazilian Portuguese.',
     userContext: 'I live in Sao Paulo and prefer casual dates.'
@@ -30,6 +32,7 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Do not invent routine'), true);
   assert.equal(message.includes('Do not use emojis'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
+  assert.equal(message.includes('already shared a phone number'), true);
   assert.equal(message.includes('SHAREABLE ADDRESS INFO field is always supplied'), true);
   assert.equal(message.includes('SHAREABLE ADDRESS INFO'), true);
   assert.equal(message.includes('OWNER PROFILE'), true);
@@ -46,6 +49,9 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('I live in Sao Paulo'), true);
   assert.equal(message.includes('Match: oi -> Owner: opa'), true);
   assert.equal(message.includes('Never ask two questions'), true);
+  assert.equal(message.includes('CURRENT LOCAL TIME'), true);
+  assert.equal(message.includes('Thursday, 2026-05-21, 22:07'), true);
+  assert.equal(message.includes('Do not use time-based greetings unless'), true);
   assert.equal(message.includes('WhatsApp +55 11 99999-9999'), true);
   assert.equal(message.includes('Rua Teste 123'), true);
 });
@@ -197,6 +203,34 @@ test('parseAiReplyResponse extracts JSON from loose provider output and detects 
   });
 });
 
+test('parseAiReplyResponse supports Anthropic message responses', () => {
+  const parsedReply = parseAiReplyResponse({
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          shouldSend: true,
+          reply: 'opa, tudo certo por aqui',
+          reason: 'Answers greeting'
+        })
+      }
+    ],
+    stop_reason: 'end_turn'
+  });
+
+  assert.equal(parsedReply.shouldSend, true);
+  assert.equal(parsedReply.reply, 'opa, tudo certo por aqui');
+  assert.equal(parsedReply.stopReason, 'end_turn');
+
+  assert.deepEqual(parseAiReplyResponse({ stop_reason: 'max_tokens' }), {
+    shouldRetry: true,
+    shouldSend: false,
+    reply: '',
+    reason: 'AI response stopped by token limit',
+    stopReason: 'max_tokens'
+  });
+});
+
 test('createNoSendAiReply creates a guarded no-send fallback', () => {
   assert.deepEqual(createNoSendAiReply('Missing config'), {
     shouldSend: false,
@@ -240,6 +274,7 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
     fetchImpl,
     matchName: 'Ana',
     model: 'custom-model',
+    currentLocalTime: 'Thursday, 2026-05-21, 22:07, America/Sao_Paulo',
     contactInfo: 'Telegram @me',
     addressInfo: 'Only share if asked where to meet.',
     hardRules: 'Never use emojis.',
@@ -262,6 +297,7 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
   assert.equal(body.messages[0].content.includes('Only share if asked where to meet.'), true);
   assert.equal(body.messages[0].content.includes('Never use emojis.'), true);
   assert.equal(body.messages[0].content.includes('Match: oi -> Owner: opa'), true);
+  assert.equal(body.messages[0].content.includes('Thursday, 2026-05-21, 22:07'), true);
   assert.equal(prompt.includes('MATCH NAME: Ana'), true);
   assert.equal(prompt.includes('Bom dia'), true);
   assert.equal(prompt.includes('Dormiu bem?'), true);
@@ -314,6 +350,57 @@ test('generateAiMessageReply retries once when the provider stops by token lengt
   assert.equal(firstBody.max_completion_tokens, 768);
   assert.equal(retryBody.max_completion_tokens, 1536);
   assert.equal(retryBody.messages[0].content.includes('RETRY INSTRUCTION'), true);
+});
+
+test('generateAiMessageReply converts requests for Anthropic provider', async () => {
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify({
+              shouldSend: true,
+              reply: 'te conto se tu me contar primeiro haha',
+              reason: 'Deflects location'
+            })
+          }
+        ],
+        stop_reason: 'end_turn'
+      })
+    };
+  };
+
+  const result = await generateAiMessageReply({
+    apiKey: 'secret-key',
+    apiUrl: 'https://api.anthropic.com/v1/messages',
+    conversationTurns: [{ role: 'match', text: 'tu mora onde?' }],
+    fetchImpl,
+    matchName: 'Ana',
+    model: 'claude-sonnet',
+    providerType: AI_PROVIDER_TYPES.anthropic
+  });
+
+  assert.equal(result.shouldSend, true);
+  assert.equal(result.reply, 'te conto se tu me contar primeiro haha');
+  assert.equal(calls[0].url, 'https://api.anthropic.com/v1/messages');
+  assert.equal(calls[0].options.headers['x-api-key'], 'secret-key');
+  assert.equal(calls[0].options.headers.Authorization, undefined);
+
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.model, 'claude-sonnet');
+  assert.equal(body.system.includes('You write Tinder message replies'), true);
+  assert.deepEqual(body.messages, [
+    {
+      role: 'user',
+      content:
+        'MATCH NAME: Ana\nCONVERSATION, oldest to newest, last 10 messages:\nMATCH: tu mora onde?'
+    }
+  ]);
+  assert.equal(body.response_format, undefined);
 });
 
 test('generateAiMessageReply returns no-send on missing config and API failures', async () => {

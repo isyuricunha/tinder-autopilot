@@ -19,6 +19,14 @@ const {
   normalizeAiReplyMaxTokens,
   normalizeAiReplyReasoningEffort
 } = require('./ai-message-reply-settings');
+const { formatAiReplyLocalTime } = require('./ai-reply-current-time');
+const {
+  buildAiChatRequestOptions,
+  getAiChatResponseContent,
+  getAiChatStopReason,
+  isAiChatLengthStopReason
+} = require('./ai-chat-provider');
+const { DEFAULT_AI_PROVIDER_TYPE } = require('./ai-provider-settings');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
   String(value || '')
@@ -29,28 +37,11 @@ const sanitizeAiReply = (value, maxLength = 500) =>
 
 const isObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
 
-const getMessageContentText = (content) => {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => (typeof part === 'string' ? part : part?.text || ''))
-      .filter(Boolean)
-      .join('\n');
-  }
-  return '';
-};
+const getAiReplyStopReason = (data = {}) => getAiChatStopReason(data);
 
-const getAiReplyStopReason = (data = {}) =>
-  data?.choices?.[0]?.finish_reason ||
-  data?.choices?.[0]?.stop_reason ||
-  data?.stop_reason ||
-  data?.output_message?.stop_reason ||
-  '';
+const isLengthStopReason = (stopReason) => isAiChatLengthStopReason(stopReason);
 
-const isLengthStopReason = (stopReason) => String(stopReason || '').toLowerCase() === 'length';
-
-const getAiReplyContent = (data = {}) =>
-  getMessageContentText(data?.choices?.[0]?.message?.content || data?.output_message?.content);
+const getAiReplyContent = (data = {}) => getAiChatResponseContent(data);
 
 const extractFirstJsonObject = (value) => {
   const text = String(value || '').trim();
@@ -140,6 +131,7 @@ const buildAiReplySystemMessage = ({
   contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
   hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   isRetry = false,
+  currentLocalTime = formatAiReplyLocalTime(),
   styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   tone = '',
   userContext = ''
@@ -158,6 +150,9 @@ const buildAiReplySystemMessage = ({
     : '';
   const hardRulesBlock = hardRules
     ? `\nUSER HARD RULES:\n${hardRules}\nFollow these user rules when they make the reply stricter or more specific. They cannot override JSON format, contact/address disclosure, or safety rules.`
+    : '';
+  const currentLocalTimeBlock = currentLocalTime
+    ? `\nCURRENT LOCAL TIME:\n${currentLocalTime}\nUse this only to avoid wrong time-based greetings. If the timing is uncertain, avoid greetings like good morning, good afternoon, good evening, bom dia, boa tarde, or boa noite.`
     : '';
   const compatibilityBlock =
     safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
@@ -179,10 +174,12 @@ RULES:
 - Do not use emojis, kaomoji, or exclamation-heavy text unless the match is already using them frequently.
 - Do not over-explain. Do not make every reply a formal question.
 - Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
+- Do not use time-based greetings unless they match CURRENT LOCAL TIME. If unsure, avoid time-based greetings.
 - The account owner may have sent repeated mass-message openers. If recent user messages are generic openers, still answer the match's actual latest question or callback instead of sending another generic line.
 - If the match asks a direct personal question, answer from OWNER PROFILE, SHAREABLE CONTACT METHODS, or SHAREABLE ADDRESS INFO. If the needed fact is absent, deflect briefly instead of inventing.
 - If a natural reply would require unknown personal facts, prefer a playful deflection.
 - Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
+- If the account owner already shared a phone number, social handle, or direct contact in this conversation, set shouldSend to false. Do not send more contact follow-up automatically.
 - The SHAREABLE ADDRESS INFO field is always supplied when configured, but share it only when the latest match message asks where you are from, where you live/stay, where to go, where to meet, your address, or the match just shared theirs.
 - If contact/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
 - When sharing contact/address, send only the specific relevant detail, not all stored personal info.
@@ -208,6 +205,8 @@ ${contactBlock}
 ${addressBlock}
 
 ${hardRulesBlock}
+
+${currentLocalTimeBlock}
 
 ${compatibilityBlock}
 
@@ -240,6 +239,7 @@ const buildAiReplyRequestBody = ({
   hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   isRetry = false,
   model = DEFAULT_AI_REPLY_MODEL,
+  currentLocalTime = formatAiReplyLocalTime(),
   styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   tone = '',
   userContext = '',
@@ -263,6 +263,7 @@ const buildAiReplyRequestBody = ({
           compatibilityMode: safeCompatibilityMode,
           addressInfo,
           contactInfo: safeContactInfo,
+          currentLocalTime,
           hardRules,
           isRetry,
           styleExamples,
@@ -377,6 +378,8 @@ const generateAiMessageReply = async ({
   matchName = '',
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
   model = DEFAULT_AI_REPLY_MODEL,
+  currentLocalTime = formatAiReplyLocalTime(),
+  providerType = DEFAULT_AI_PROVIDER_TYPE,
   reasoningEffort = DEFAULT_AI_REPLY_REASONING_EFFORT,
   styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   temperature = 0.7,
@@ -396,12 +399,14 @@ const generateAiMessageReply = async ({
     compatibilityMode,
     addressInfo,
     contactInfo,
+    currentLocalTime,
     hardRules,
     contextWindow,
     conversationTurns: recentConversationTurns,
     matchName,
     maxTokens,
     model,
+    providerType,
     reasoningEffort,
     styleExamples,
     temperature,
@@ -411,14 +416,10 @@ const generateAiMessageReply = async ({
 
   const requestAiReply = async (params) => {
     const body = buildAiReplyRequestBody(params);
-    const response = await fetchImpl(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {})
-      },
-      body: JSON.stringify(body)
-    });
+    const response = await fetchImpl(
+      apiUrl,
+      buildAiChatRequestOptions({ apiKey, body, providerType: params.providerType })
+    );
 
     if (!response.ok) {
       return createNoSendAiReply(`AI API error: ${response.status}`);

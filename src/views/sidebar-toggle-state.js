@@ -2,6 +2,7 @@ const EPHEMERAL_TOGGLE_SELECTORS = Object.freeze([
   '.tinderAutopilot',
   '.tinderAutopilotMessage',
   '.tinderAutopilotAIMessageReply',
+  '.tinderAutopilotAIMessageReplyContinuous',
   '.tinderAutopilotMessageNewOnly',
   '.tinderAutopilotHideMine'
 ]);

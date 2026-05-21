@@ -1,3 +1,8 @@
+const {
+  getAiProviderDefaultApiUrl,
+  readAiProviderSettings
+} = require('./ai-provider-settings');
+
 const DEFAULT_AI_REPLY_TONE =
   'Reply in the same language as the conversation unless instructed otherwise. Short, casual, human, direct, and lightly playful only when the conversation invites it. No emojis by default. No virtual date suggestions. No dash or slash. Write like a human. Avoid polished assistant-like phrasing.';
 const DEFAULT_AI_REPLY_USER_CONTEXT = '';
@@ -11,12 +16,21 @@ const DEFAULT_AI_REPLY_MAX_TOKENS = 2048;
 const DEFAULT_AI_REPLY_COMPATIBILITY_MODE = 'standardJson';
 const DEFAULT_AI_REPLY_DELAY_SECONDS = 4;
 const DEFAULT_AI_REPLY_REASONING_EFFORT = 'low';
+const DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES = 10;
+const DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE = 5;
+const DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY = 3;
 const MIN_AI_REPLY_CONTEXT_WINDOW = 1;
-const MAX_AI_REPLY_CONTEXT_WINDOW = 30;
+const MAX_AI_REPLY_CONTEXT_WINDOW = 60;
 const MIN_AI_REPLY_MAX_TOKENS = 128;
 const MAX_AI_REPLY_MAX_TOKENS = 65536;
 const MIN_AI_REPLY_DELAY_SECONDS = 0;
 const MAX_AI_REPLY_DELAY_SECONDS = 60;
+const MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES = 1;
+const MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES = 180;
+const MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE = 1;
+const MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE = 50;
+const MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY = 1;
+const MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY = 20;
 
 const AI_REPLY_COMPATIBILITY_MODES = {
   standardJson: 'standardJson',
@@ -36,6 +50,9 @@ const AI_REPLY_SETTING_KEYS = {
   hardRules: 'aiReplyHardRules',
   reasoningEffort: 'aiReplyReasoningEffort',
   replyDelaySeconds: 'aiReplyDelaySeconds',
+  continuousIntervalMinutes: 'aiReplyContinuousIntervalMinutes',
+  continuousMaxSentPerCycle: 'aiReplyContinuousMaxSentPerCycle',
+  continuousMaxPerMatchPerDay: 'aiReplyContinuousMaxPerMatchPerDay',
   styleExamples: 'aiReplyStyleExamples',
   tone: 'aiReplyTone',
   userContext: 'aiReplyUserContext'
@@ -71,6 +88,45 @@ const normalizeAiReplyDelaySeconds = (
   );
 };
 
+const normalizeBoundedInteger = ({ value, defaultValue, min, max }) => {
+  const parsedValue = parseInt(value, 10);
+  const safeValue = Number.isFinite(parsedValue) ? parsedValue : defaultValue;
+  return Math.min(max, Math.max(min, safeValue));
+};
+
+const normalizeAiReplyContinuousIntervalMinutes = (
+  value,
+  defaultValue = DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+) =>
+  normalizeBoundedInteger({
+    value,
+    defaultValue,
+    min: MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+    max: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+  });
+
+const normalizeAiReplyContinuousMaxSentPerCycle = (
+  value,
+  defaultValue = DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+) =>
+  normalizeBoundedInteger({
+    value,
+    defaultValue,
+    min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+    max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+  });
+
+const normalizeAiReplyContinuousMaxPerMatchPerDay = (
+  value,
+  defaultValue = DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+) =>
+  normalizeBoundedInteger({
+    value,
+    defaultValue,
+    min: MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+    max: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+  });
+
 const normalizeAiReplyCompatibilityMode = (
   value,
   defaultValue = DEFAULT_AI_REPLY_COMPATIBILITY_MODE
@@ -105,6 +161,8 @@ const readTextSettingWithLegacy = ({
 
 const readAiReplySettings = (readSetting) => {
   const apiUrl = readSettingValue(readSetting, AI_REPLY_SETTING_KEYS.apiUrl, '').trim();
+  const { providerType } = readAiProviderSettings(readSetting);
+  const effectiveApiUrl = apiUrl || getAiProviderDefaultApiUrl(providerType);
   const model = readTextSettingWithLegacy({
     readSetting,
     key: AI_REPLY_SETTING_KEYS.model,
@@ -170,16 +228,41 @@ const readAiReplySettings = (readSetting) => {
       DEFAULT_AI_REPLY_DELAY_SECONDS
     )
   );
+  const continuousIntervalMinutes = normalizeAiReplyContinuousIntervalMinutes(
+    readSettingValue(
+      readSetting,
+      AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
+      DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES
+    )
+  );
+  const continuousMaxSentPerCycle = normalizeAiReplyContinuousMaxSentPerCycle(
+    readSettingValue(
+      readSetting,
+      AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
+      DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
+    )
+  );
+  const continuousMaxPerMatchPerDay = normalizeAiReplyContinuousMaxPerMatchPerDay(
+    readSettingValue(
+      readSetting,
+      AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
+      DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY
+    )
+  );
 
   return {
     addressInfo,
-    apiUrl,
+    apiUrl: effectiveApiUrl,
     compatibilityMode,
     contactInfo,
+    continuousIntervalMinutes,
+    continuousMaxPerMatchPerDay,
+    continuousMaxSentPerCycle,
     hardRules,
     contextWindow,
     maxTokens,
     model,
+    providerType,
     reasoningEffort,
     replyDelaySeconds,
     styleExamples,
@@ -196,6 +279,9 @@ module.exports = {
   DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
@@ -207,9 +293,18 @@ module.exports = {
   MAX_AI_REPLY_DELAY_SECONDS,
   MAX_AI_REPLY_MAX_TOKENS,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   MIN_AI_REPLY_DELAY_SECONDS,
   MIN_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW,
+  MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+  normalizeAiReplyContinuousIntervalMinutes,
+  normalizeAiReplyContinuousMaxPerMatchPerDay,
+  normalizeAiReplyContinuousMaxSentPerCycle,
   normalizeAiReplyCompatibilityMode,
   normalizeAiReplyContextWindow,
   normalizeAiReplyDelaySeconds,

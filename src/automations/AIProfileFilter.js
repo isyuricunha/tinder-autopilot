@@ -2,6 +2,8 @@ import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
 import { parseAiDecision } from '../misc/ai-response-parser';
+import { buildAiChatRequestOptions } from '../misc/ai-chat-provider';
+import { readAiProviderSettings } from '../misc/ai-provider-settings';
 import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
 import {
   DEFAULT_AI_PROFILE_MODEL,
@@ -14,13 +16,14 @@ const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
 /**
  * AIProfileFilter - LLM-powered profile filtering for Tinder Autopilot.
- * Supports any OpenAI-compatible API endpoint.
+ * Supports the configured AI provider through the shared chat adapter.
  */
 class AIProfileFilter {
   constructor() {
     this.apiUrl = this.loadApiUrl();
     this.apiKey = this.loadApiKey();
     this.model = this.loadModel();
+    this.providerType = this.loadProviderType();
     this.filterRules = this.loadFilterRules();
     this.useVision = this.loadUseVision();
     this.reasoningEffort = this.loadReasoningEffort();
@@ -35,6 +38,10 @@ class AIProfileFilter {
 
   loadApiKey() {
     return '';
+  }
+
+  loadProviderType() {
+    return readAiProviderSettings(getSetting).providerType;
   }
 
   loadModel() {
@@ -77,6 +84,12 @@ class AIProfileFilter {
    */
   async analyze({ bio, name, profile, imageBase64 }) {
     this.apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+    this.apiUrl = this.loadApiUrl();
+    this.model = this.loadModel();
+    this.providerType = this.loadProviderType();
+    this.filterRules = this.loadFilterRules();
+    this.useVision = this.loadUseVision();
+    this.reasoningEffort = this.loadReasoningEffort();
 
     if (!this.apiUrl) {
       logger('⚠️ AI Filter URL not configured, skipping AI analysis');
@@ -85,14 +98,14 @@ class AIProfileFilter {
 
     try {
       const body = this.buildRequestBody(bio, imageBase64, name, profile);
-      const response = await fetch(this.apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {})
-        },
-        body: JSON.stringify(body)
-      });
+      const response = await fetch(
+        this.apiUrl,
+        buildAiChatRequestOptions({
+          apiKey: this.apiKey,
+          body,
+          providerType: this.providerType
+        })
+      );
 
       if (!response.ok) {
         const errorText = await response.text();

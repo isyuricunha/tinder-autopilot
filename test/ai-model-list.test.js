@@ -5,6 +5,7 @@ const {
   fetchAiModelList,
   normalizeAiModelListResponse
 } = require('../src/misc/ai-model-list');
+const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 
 test('buildAiModelsApiUrl derives OpenAI-compatible model endpoints', () => {
   assert.equal(
@@ -58,6 +59,29 @@ test('fetchAiModelList calls the derived models endpoint with auth', async () =>
   assert.deepEqual(models, ['gpt-4o-mini']);
   assert.equal(calls[0].url, 'https://api.openai.com/v1/models');
   assert.equal(calls[0].options.headers.Authorization, 'Bearer secret');
+});
+
+test('fetchAiModelList supports Anthropic model list headers', async () => {
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({ data: [{ id: 'claude-sonnet-4-20250514' }] })
+    };
+  };
+
+  const models = await fetchAiModelList({
+    apiKey: 'secret',
+    apiUrl: 'https://api.anthropic.com/v1/messages',
+    fetchImpl,
+    providerType: AI_PROVIDER_TYPES.anthropic
+  });
+
+  assert.deepEqual(models, ['claude-sonnet-4-20250514']);
+  assert.equal(calls[0].url, 'https://api.anthropic.com/v1/models');
+  assert.equal(calls[0].options.headers['x-api-key'], 'secret');
+  assert.equal(calls[0].options.headers.Authorization, undefined);
 });
 
 test('fetchAiModelList rejects missing fetch, missing URL, and API errors', async () => {

@@ -18,6 +18,14 @@ test('parseAiDecision rejects no responses', () => {
   assert.deepEqual(result, { shouldSwipe: false, reason: 'confidence: 8' });
 });
 
+test('parseAiDecision accepts Anthropic text content responses', () => {
+  const result = parseAiDecision({
+    content: [{ type: 'text', text: '{"shouldSwipe":"no","reason":"banned term"}' }]
+  });
+
+  assert.deepEqual(result, { shouldSwipe: false, reason: 'banned term' });
+});
+
 test('parseAiDecision defaults to swipe on empty or invalid responses', () => {
   assert.deepEqual(parseAiDecision({}), { shouldSwipe: true, reason: 'Empty response' });
   assert.deepEqual(

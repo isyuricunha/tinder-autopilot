@@ -9,6 +9,9 @@ import {
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
@@ -18,6 +21,9 @@ import {
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   normalizeAiReplyCompatibilityMode,
+  normalizeAiReplyContinuousIntervalMinutes,
+  normalizeAiReplyContinuousMaxPerMatchPerDay,
+  normalizeAiReplyContinuousMaxSentPerCycle,
   normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
   normalizeAiReplyReasoningEffort,
@@ -30,6 +36,14 @@ import {
   DEFAULT_AI_PROFILE_REASONING_EFFORT,
   normalizeAiReasoningEffort
 } from '../misc/ai-profile-filter-settings';
+import {
+  AI_PROVIDER_SETTING_KEY,
+  DEFAULT_AI_PROVIDER_TYPE,
+  getAiProviderDefaultApiUrl,
+  isKnownAiProviderDefaultApiUrl,
+  normalizeAiProviderType,
+  readAiProviderSettings
+} from '../misc/ai-provider-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
 import { fetchAiModelList } from '../misc/ai-model-list';
@@ -258,6 +272,12 @@ class Sidebar {
     );
 
     this.bindCheckbox(
+      this.aiMessageResponder.continuousSelector,
+      this.aiMessageResponder.startContinuous,
+      this.aiMessageResponder.stop
+    );
+
+    this.bindCheckbox(
       this.hideUnanswered.selector,
       this.hideUnanswered.start,
       this.hideUnanswered.stop
@@ -387,6 +407,23 @@ class Sidebar {
         const value = e.target.value.trim();
         setSetting('aiApiUrl', value);
         logger(`💾 Saved AI API URL`);
+      });
+    }
+
+    const aiProviderTypeField = document.getElementById(AI_PROVIDER_SETTING_KEY);
+    if (aiProviderTypeField) {
+      this.addTrackedListener(aiProviderTypeField, 'change', (e) => {
+        const providerType = normalizeAiProviderType(e.target.value);
+        setSetting(AI_PROVIDER_SETTING_KEY, providerType);
+
+        const currentUrl = String(aiApiUrlField?.value || '').trim();
+        if (aiApiUrlField && (!currentUrl || isKnownAiProviderDefaultApiUrl(currentUrl))) {
+          const defaultUrl = getAiProviderDefaultApiUrl(providerType);
+          aiApiUrlField.value = defaultUrl;
+          setSetting('aiApiUrl', defaultUrl);
+        }
+
+        logger(`💾 Saved AI API Type`);
       });
     }
 
@@ -529,6 +566,24 @@ class Sidebar {
         defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
         unit: ' sec',
         normalize: normalizeAiReplyDelaySeconds
+      },
+      {
+        id: AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
+        defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+        unit: ' min',
+        normalize: normalizeAiReplyContinuousIntervalMinutes
+      },
+      {
+        id: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
+        defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+        unit: ' replies',
+        normalize: normalizeAiReplyContinuousMaxSentPerCycle
+      },
+      {
+        id: AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
+        defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+        unit: ' replies',
+        normalize: normalizeAiReplyContinuousMaxPerMatchPerDay
       }
     ];
 
@@ -572,11 +627,20 @@ class Sidebar {
     }
 
     // Initialize AI filter settings
+    const aiProviderTypeField = document.getElementById(AI_PROVIDER_SETTING_KEY);
+    if (aiProviderTypeField) {
+      aiProviderTypeField.value = normalizeAiProviderType(
+        getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
+      );
+    }
+
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
       const storedUrl = getSetting('aiApiUrl');
       if (storedUrl) {
         aiApiUrlField.value = storedUrl;
+      } else {
+        aiApiUrlField.value = getAiProviderDefaultApiUrl(aiProviderTypeField?.value);
       }
     }
 
@@ -754,8 +818,12 @@ class Sidebar {
     try {
       const apiUrlField = document.getElementById('aiApiUrl');
       const apiUrl = (apiUrlField?.value || getSetting('aiApiUrl', '')).trim();
+      const providerTypeField = document.getElementById(AI_PROVIDER_SETTING_KEY);
+      const providerType = normalizeAiProviderType(
+        providerTypeField?.value || getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
+      );
       const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
-      const models = await fetchAiModelList({ apiKey, apiUrl });
+      const models = await fetchAiModelList({ apiKey, apiUrl, providerType });
 
       if (!models.length) {
         logger('⚠️ No AI models returned by the provider');
@@ -780,6 +848,7 @@ class Sidebar {
 
   getCurrentAiReplySettings = () => {
     const storedSettings = readAiReplySettings(getSetting);
+    const storedProviderSettings = readAiProviderSettings(getSetting);
     const contextWindowValue = this.getFieldValue(
       AI_REPLY_SETTING_KEYS.contextWindow,
       storedSettings.contextWindow
@@ -806,10 +875,31 @@ class Sidebar {
         AI_REPLY_SETTING_KEYS.contactInfo,
         storedSettings.contactInfo
       ),
+      continuousIntervalMinutes: normalizeAiReplyContinuousIntervalMinutes(
+        this.getFieldValue(
+          AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
+          storedSettings.continuousIntervalMinutes
+        )
+      ),
+      continuousMaxPerMatchPerDay: normalizeAiReplyContinuousMaxPerMatchPerDay(
+        this.getFieldValue(
+          AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
+          storedSettings.continuousMaxPerMatchPerDay
+        )
+      ),
+      continuousMaxSentPerCycle: normalizeAiReplyContinuousMaxSentPerCycle(
+        this.getFieldValue(
+          AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
+          storedSettings.continuousMaxSentPerCycle
+        )
+      ),
       contextWindow: normalizeAiReplyContextWindow(contextWindowValue),
       hardRules: this.getFieldValue(AI_REPLY_SETTING_KEYS.hardRules, storedSettings.hardRules),
       maxTokens: normalizeAiReplyMaxTokens(maxTokensValue),
       model: this.getFieldValue(AI_REPLY_SETTING_KEYS.model, storedSettings.model),
+      providerType: normalizeAiProviderType(
+        this.getFieldValue(AI_PROVIDER_SETTING_KEY, storedProviderSettings.providerType)
+      ),
       reasoningEffort: normalizeAiReplyReasoningEffort(
         this.getFieldValue(AI_REPLY_SETTING_KEYS.reasoningEffort, storedSettings.reasoningEffort)
       ),

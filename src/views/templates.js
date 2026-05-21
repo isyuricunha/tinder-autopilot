@@ -7,6 +7,9 @@ import {
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
@@ -16,11 +19,17 @@ import {
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
   MAX_AI_REPLY_DELAY_SECONDS,
   MAX_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_DELAY_SECONDS,
   MIN_AI_REPLY_MAX_TOKENS,
-  MIN_AI_REPLY_CONTEXT_WINDOW
+  MIN_AI_REPLY_CONTEXT_WINDOW,
+  MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+  MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+  MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
 } from '../misc/ai-message-reply-settings';
 import {
   AI_PROFILE_SETTING_KEYS,
@@ -28,6 +37,11 @@ import {
   DEFAULT_AI_PROFILE_MODEL,
   DEFAULT_AI_PROFILE_REASONING_EFFORT
 } from '../misc/ai-profile-filter-settings';
+import {
+  AI_PROVIDER_SETTING_KEY,
+  AI_PROVIDER_TYPES,
+  DEFAULT_AI_PROVIDER_TYPE
+} from '../misc/ai-provider-settings';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
 const DEFAULT_MESSAGE =
@@ -576,10 +590,25 @@ const createAutopilot = () =>
 const createAiSettings = () =>
   createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
     createTitle('AI Connection'),
+    createSelectCard({
+      id: AI_PROVIDER_SETTING_KEY,
+      label: 'API Type',
+      storageKey: AI_PROVIDER_SETTING_KEY,
+      defaultValue: DEFAULT_AI_PROVIDER_TYPE,
+      options: [
+        { value: AI_PROVIDER_TYPES.openAiCompatible, text: 'OpenAI-Compatible' },
+        { value: AI_PROVIDER_TYPES.mistral, text: 'Mistral AI' },
+        { value: AI_PROVIDER_TYPES.anthropic, text: 'Anthropic' },
+        { value: AI_PROVIDER_TYPES.nvidiaNim, text: 'NVIDIA NIM' }
+      ]
+    }),
+    createHelpText(
+      'OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
+    ),
     createTextbox({
       className: 'aiApiUrl',
       placeholder: 'https://api.openai.com/v1/chat/completions',
-      helpText: 'Shared OpenAI-compatible chat completions endpoint used by AI features.',
+      helpText: 'Shared AI endpoint used by profile filtering and message replies.',
       defaultValue: 'https://api.openai.com/v1/chat/completions',
       type: 'text'
     }),
@@ -651,6 +680,11 @@ const createAiSettings = () =>
       'AI reply unanswered messages',
       'Generate and send AI replies only when the latest message is from the match.'
     ),
+    createCheckbox(
+      'tinderAutopilotAIMessageReplyContinuous',
+      'Continuous AI replies',
+      'Re-run AI replies on an interval. Contact exchange, meeting proposals, and repeated latest messages are skipped for manual takeover.'
+    ),
     createTextbox({
       className: AI_REPLY_SETTING_KEYS.model,
       placeholder: 'gpt-4o-mini',
@@ -684,6 +718,7 @@ const createAiSettings = () =>
     createHelpText(
       'Reply Reasoning Effort is sent only when AI Reply Compatibility is Reasoning / Thinking.'
     ),
+    createTitle('AI Reply Prompt Context'),
     createTextbox({
       helpText:
         'Conversation style only. Do not include contacts, location, owner facts, or examples here.',
@@ -729,12 +764,13 @@ const createAiSettings = () =>
     createSlider({
       className: 'aiReplyContextWindow',
       label: 'Conversation Context',
-      helpText: 'Number of recent messages to send to the AI when generating a reply.',
+      helpText: 'Number of recent messages to send to the AI when generating a reply, up to 60.',
       min: MIN_AI_REPLY_CONTEXT_WINDOW,
       max: MAX_AI_REPLY_CONTEXT_WINDOW,
       defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
       unit: ' messages'
     }),
+    createTitle('AI Reply Runtime'),
     createSlider({
       className: 'aiReplyMaxTokens',
       label: 'Max Tokens',
@@ -756,6 +792,34 @@ const createAiSettings = () =>
       defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
       unit: ' sec'
     }),
+    createSlider({
+      className: AI_REPLY_SETTING_KEYS.continuousIntervalMinutes,
+      label: 'Continuous Interval',
+      helpText: 'Minutes to wait between continuous AI reply cycles.',
+      min: MIN_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+      max: MAX_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
+      unit: ' min'
+    }),
+    createSlider({
+      className: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
+      label: 'Max Replies Per Cycle',
+      helpText: 'Maximum AI replies to send before a continuous cycle pauses.',
+      min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+      max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
+      unit: ' replies'
+    }),
+    createSlider({
+      className: AI_REPLY_SETTING_KEYS.continuousMaxPerMatchPerDay,
+      label: 'Max Replies Per Match / Day',
+      helpText: 'Continuous mode stops replying to the same match after this daily limit.',
+      min: MIN_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+      max: MAX_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+      defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_PER_MATCH_PER_DAY,
+      unit: ' replies'
+    }),
+    createTitle('AI Reply Testing'),
     createTextbox({
       helpText:
         'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',

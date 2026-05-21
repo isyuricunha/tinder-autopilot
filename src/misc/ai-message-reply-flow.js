@@ -5,6 +5,7 @@ const {
   normalizeConversationMessages
 } = require('./conversation-context');
 const { generateAiMessageReply } = require('./ai-message-reply');
+const { hasUserAlreadySharedContact } = require('./ai-reply-manual-takeover');
 
 const normalizeId = (value) => String(value || '').trim();
 
@@ -84,6 +85,13 @@ const buildPendingAiReplyContext = ({
 
   if (!isConversationPendingReply(conversationTurns)) {
     return createSkippedAiReplyMatchResult('Latest message is not from match', {
+      matchId,
+      matchName: getMatchName(match)
+    });
+  }
+
+  if (hasUserAlreadySharedContact(conversationTurns)) {
+    return createSkippedAiReplyMatchResult('Owner already shared contact in this conversation', {
       matchId,
       matchName: getMatchName(match)
     });
