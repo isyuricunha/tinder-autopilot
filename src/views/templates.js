@@ -1,9 +1,15 @@
 import { getJsonSetting, setJsonSetting, setSetting } from '../misc/settings-store';
 import {
+  AI_REPLY_COMPATIBILITY_MODES,
+  AI_REPLY_SETTING_KEYS,
+  DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_MAX_TOKENS,
+  MIN_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW
 } from '../misc/ai-message-reply-settings';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
@@ -577,6 +583,20 @@ const createMassMessage = () =>
       'AI reply unanswered messages',
       'Generate and send AI replies only when the latest message is from the match.'
     ),
+    createSelectCard({
+      id: 'aiReplyCompatibilityMode',
+      label: 'AI Reply Compatibility',
+      storageKey: AI_REPLY_SETTING_KEYS.compatibilityMode,
+      defaultValue: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+      options: [
+        { value: AI_REPLY_COMPATIBILITY_MODES.standardJson, text: 'Standard JSON' },
+        { value: AI_REPLY_COMPATIBILITY_MODES.reasoningJson, text: 'Reasoning / Thinking' },
+        { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
+      ]
+    }),
+    createHelpText(
+      'Use Reasoning / Thinking for models that spend completion tokens on hidden reasoning.'
+    ),
     createTextbox({
       helpText: 'Conversation style for AI-generated replies.',
       placeholder: 'Short, warm, playful, direct, Brazilian Portuguese...',
@@ -597,6 +617,16 @@ const createMassMessage = () =>
       max: MAX_AI_REPLY_CONTEXT_WINDOW,
       defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
       unit: ' messages'
+    }),
+    createSlider({
+      className: 'aiReplyMaxTokens',
+      label: 'Max Tokens',
+      helpText: 'Maximum AI reply completion budget. Reasoning models usually need more.',
+      min: MIN_AI_REPLY_MAX_TOKENS,
+      max: MAX_AI_REPLY_MAX_TOKENS,
+      defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
+      step: 128,
+      unit: ' tokens'
     })
   ]);
 

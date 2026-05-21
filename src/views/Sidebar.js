@@ -4,9 +4,14 @@ import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
 import {
+  AI_REPLY_SETTING_KEYS,
+  DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
+  normalizeAiReplyCompatibilityMode,
+  normalizeAiReplyMaxTokens,
   normalizeAiReplyContextWindow
 } from '../misc/ai-message-reply-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
@@ -399,6 +404,12 @@ class Sidebar {
         defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
         unit: ' messages',
         normalize: normalizeAiReplyContextWindow
+      },
+      {
+        id: 'aiReplyMaxTokens',
+        defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
+        unit: ' tokens',
+        normalize: normalizeAiReplyMaxTokens
       }
     ];
 
@@ -509,6 +520,13 @@ class Sidebar {
       aiReplyUserContextField.value = getSetting(
         'aiReplyUserContext',
         DEFAULT_AI_REPLY_USER_CONTEXT
+      );
+    }
+
+    const aiReplyCompatibilityModeField = document.getElementById('aiReplyCompatibilityMode');
+    if (aiReplyCompatibilityModeField) {
+      aiReplyCompatibilityModeField.value = normalizeAiReplyCompatibilityMode(
+        getSetting(AI_REPLY_SETTING_KEYS.compatibilityMode, DEFAULT_AI_REPLY_COMPATIBILITY_MODE)
       );
     }
   };

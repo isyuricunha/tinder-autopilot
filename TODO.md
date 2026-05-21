@@ -20,3 +20,10 @@
 - [x] Process pending conversations one by one with stop support, delays, and rate limits.
 - [x] Add initial tests for conversation parsing, prompt building, and response parsing.
 - [x] Add send gating tests when the send flow is connected.
+
+## AI Reply Robustness
+
+- [x] Add max token and compatibility mode settings for AI replies.
+- [ ] Support standard, reasoning, and loose JSON request modes.
+- [ ] Add guarded retry when providers stop by length or return invalid JSON.
+- [ ] Recheck the latest message before sending an AI reply.
