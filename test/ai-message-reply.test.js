@@ -8,7 +8,6 @@ const {
   extractFirstJsonObject,
   generateAiMessageReply,
   parseAiReplyResponse,
-  shouldIncludeAddressInfo,
   shouldIncludeContactInfo,
   sanitizeAiReply
 } = require('../src/misc/ai-message-reply');
@@ -26,11 +25,14 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Do not invent routine'), true);
   assert.equal(message.includes('Do not use emojis'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
-  assert.equal(message.includes('Share location, city, neighborhood, address'), true);
-  assert.equal(message.includes('SHAREABLE LOCATION, CITY, NEIGHBORHOOD'), true);
+  assert.equal(message.includes('SHAREABLE ADDRESS INFO field is always supplied'), true);
+  assert.equal(message.includes('SHAREABLE ADDRESS INFO'), true);
+  assert.equal(message.includes('repeated mass-message openers'), true);
+  assert.equal(message.includes('Do not suggest meeting'), true);
   assert.equal(message.includes('same language as the latest match message'), true);
   assert.equal(message.includes('For Portuguese conversations, bad style examples to avoid'), true);
   assert.equal(message.includes('cafe virtual'), true);
+  assert.equal(message.includes('bora marcar de se esquentar'), true);
   assert.equal(message.includes('Playful, direct'), true);
   assert.equal(message.includes('I live in Sao Paulo'), true);
   assert.equal(message.includes('WhatsApp +55 11 99999-9999'), true);
@@ -84,14 +86,14 @@ test('buildAiReplyRequestBody supports reasoning and loose JSON compatibility mo
   assert.equal(looseBody.response_format, undefined);
 });
 
-test('buildAiReplyRequestBody only includes contact and address info when requested', () => {
+test('buildAiReplyRequestBody always includes address info and gates contact info', () => {
   const neutralBody = buildAiReplyRequestBody({
     contactInfo: 'WhatsApp +55 11 99999-9999',
     addressInfo: 'Rua Teste 123',
     conversationTurns: [{ role: 'match', text: 'Dormiu bem?' }]
   });
   assert.equal(neutralBody.messages[0].content.includes('WhatsApp +55'), false);
-  assert.equal(neutralBody.messages[0].content.includes('Rua Teste 123'), false);
+  assert.equal(neutralBody.messages[0].content.includes('Rua Teste 123'), true);
 
   const contactBody = buildAiReplyRequestBody({
     contactInfo: 'WhatsApp +55 11 99999-9999',
@@ -99,62 +101,20 @@ test('buildAiReplyRequestBody only includes contact and address info when reques
   });
   assert.equal(contactBody.messages[0].content.includes('WhatsApp +55'), true);
 
-  const addressBody = buildAiReplyRequestBody({
-    addressInfo: 'Rua Teste 123',
-    conversationTurns: [{ role: 'match', text: 'Qual lugar tu prefere?' }]
-  });
-  assert.equal(addressBody.messages[0].content.includes('Rua Teste 123'), true);
-
-  const cityBody = buildAiReplyRequestBody({
-    addressInfo: 'Porto Alegre, RS',
+  const locationBody = buildAiReplyRequestBody({
+    addressInfo: 'Santa Catarina',
     conversationTurns: [{ role: 'match', text: 'kkkkkk você é de onde mesmo?' }]
   });
-  assert.equal(cityBody.messages[0].content.includes('Porto Alegre, RS'), true);
+  assert.equal(locationBody.messages[0].content.includes('Santa Catarina'), true);
 });
 
-test('contact and address disclosure detectors require relevant match context', () => {
+test('contact disclosure detector requires relevant match context', () => {
   assert.equal(
     shouldIncludeContactInfo([{ role: 'match', text: 'Me passa teu whats?' }]),
     true
   );
   assert.equal(
     shouldIncludeContactInfo([{ role: 'match', text: 'Bom dia, tudo bem?' }]),
-    false
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'Manda o local pra eu ir' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'de onde vc era?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'você é de onde mesmo?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'tu é da onde?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'aonde tu mora?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'mora onde?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'em que bairro voce fica?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'vc mora em qual cidade?' }]),
-    true
-  );
-  assert.equal(
-    shouldIncludeAddressInfo([{ role: 'match', text: 'de onde vem essa energia?' }]),
     false
   );
 });
@@ -285,7 +245,7 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
   const prompt = body.messages[1].content[0].text;
   assert.equal(body.model, 'custom-model');
   assert.equal(body.messages[0].content.includes('Telegram @me'), false);
-  assert.equal(body.messages[0].content.includes('Only share if asked where to meet.'), false);
+  assert.equal(body.messages[0].content.includes('Only share if asked where to meet.'), true);
   assert.equal(prompt.includes('MATCH NAME: Ana'), true);
   assert.equal(prompt.includes('Bom dia'), true);
   assert.equal(prompt.includes('Dormiu bem?'), true);

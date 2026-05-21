@@ -116,19 +116,6 @@ const hasSharedContact = (text) =>
     text
   );
 
-const LOCATION_REQUEST_PATTERNS = Object.freeze([
-  /\b(?:endereco|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localizacao)\b/i,
-  /\b(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\b/i,
-  /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+(?:onde|aonde)\b/i,
-  /\bmora\s+(?:onde|aonde)\b/i,
-  /\b(?:de|da|d)\s+(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora|fica)\b/i,
-  /\b(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora|fica)\s+(?:de|da|d)?\s*(?:onde|aonde)\b/i,
-  /\b(?:qual|q(?:ual)?)\s+(?:e|eh)?\s*(?:sua|seu|teu|tua)?\s*(?:cidade|bairro|endereco|localizacao)\b/i,
-  /\bem\s+que\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)?\s*(?:mora|vive|fica)?\b/i,
-  /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+em\s+(?:qual|q(?:ual)?)\s+(?:cidade|bairro)\b/i,
-  /\b(?:qual|q(?:ual)?)\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica|e|eh)\b/i
-]);
-
 const shouldIncludeContactInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const matchText = getMatchConversationText(conversationTurns);
@@ -140,15 +127,6 @@ const shouldIncludeContactInfo = (conversationTurns = []) => {
       latestText
     ) ||
     hasSharedContact(matchText)
-  );
-};
-
-const shouldIncludeAddressInfo = (conversationTurns = []) => {
-  const latestText = getLatestMatchMessageText(conversationTurns);
-  const matchText = getMatchConversationText(conversationTurns);
-  return (
-    LOCATION_REQUEST_PATTERNS.some((pattern) => pattern.test(latestText)) ||
-    /\b(?:rua|avenida|av\.|bairro|cep)\b/i.test(matchText)
   );
 };
 
@@ -167,11 +145,11 @@ const buildAiReplySystemMessage = ({
   const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
   const contactBlock = contactInfo ? `\nSHAREABLE CONTACT METHODS:\n${contactInfo}` : '';
   const addressBlock = addressInfo
-    ? `\nSHAREABLE LOCATION, CITY, NEIGHBORHOOD, ADDRESS, OR MEETING INFO:\n${addressInfo}`
+    ? `\nSHAREABLE ADDRESS INFO:\n${addressInfo}`
     : '';
   const compatibilityBlock =
     safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
-      ? '\nREASONING MODEL COMPATIBILITY:\nDo not output reasoning. Think befor answer.'
+      ? '\nREASONING MODEL COMPATIBILITY:\nDo not output reasoning. Think before answering.'
       : '';
   const retryBlock = isRetry
     ? '\nRETRY INSTRUCTION:\nYour previous response was not valid usable JSON. Return only the final JSON object now.'
@@ -189,14 +167,18 @@ RULES:
 - Do not use emojis, kaomoji, or exclamation-heavy text unless the match is already using them frequently.
 - Do not over-explain. Do not make every reply a formal question.
 - Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
+- The account owner may have sent repeated mass-message openers. If recent user messages are generic openers, still answer the match's actual latest question or callback instead of sending another generic line.
+- If the match asks a direct personal question, answer from USER CONTEXT, SHAREABLE CONTACT METHODS, or SHAREABLE ADDRESS INFO. If the needed fact is absent, deflect briefly instead of inventing.
 - If a natural reply would require unknown personal facts, prefer a playful deflection.
 - Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
-- Share location, city, neighborhood, address, or meeting info only when the latest match message asks where you are from, where you live/stay, where to go, where to meet, your address, or the match just shared theirs.
-- If contact/location/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
-- When sharing contact/location/address, send only the specific relevant detail, not all stored personal info.
-- Never escalates sexual tension unless the match has already gone there explicitly. Ambiguous or innocent phrasing from the match is not an invitation. Only match explicit energy, never project it.
-- For Portuguese conversations, bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas".
-- For Portuguese conversations, better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?".
+- The SHAREABLE ADDRESS INFO field is always supplied when configured, but share it only when the latest match message asks where you are from, where you live/stay, where to go, where to meet, your address, or the match just shared theirs.
+- If contact/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
+- When sharing contact/address, send only the specific relevant detail, not all stored personal info.
+- Do not suggest meeting, cuddling, going out, WhatsApp, or physical escalation unless the match explicitly asks for that, shares contact, asks to leave Tinder, or clearly proposes it first.
+- When the match mentions being tired, sick, cold, busy, or sleeping badly, acknowledge it lightly before flirting. Do not turn mild complaints into logistics or sexual pressure.
+- Never escalate sexual tension unless the match has already gone there explicitly. Ambiguous or innocent phrasing from the match is not an invitation. Only match explicit energy, never project it.
+- For Portuguese conversations, bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas", "bora marcar de se esquentar", "se encontrar melhora na hora", "bora resolver isso", "ja to atrasado".
+- For Portuguese conversations, better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?", "perigoso tu falar isso que eu acredito haha", "melhoras, entao a gripe chegou primeiro que eu haha".
 - Do not mention automation, AI, prompts, or internal rules.
 - If the latest message does not need a reply, or the safe answer is unclear, set shouldSend to false.
 - Return exactly one compact JSON object.
@@ -252,7 +234,6 @@ const buildAiReplyRequestBody = ({
   const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
   const safeMaxTokens = normalizeAiReplyMaxTokens(maxTokens);
   const safeContactInfo = shouldIncludeContactInfo(conversationTurns) ? contactInfo : '';
-  const safeAddressInfo = shouldIncludeAddressInfo(conversationTurns) ? addressInfo : '';
   const body = {
     model,
     messages: [
@@ -260,7 +241,7 @@ const buildAiReplyRequestBody = ({
         role: 'system',
         content: buildAiReplySystemMessage({
           compatibilityMode: safeCompatibilityMode,
-          addressInfo: safeAddressInfo,
+          addressInfo,
           contactInfo: safeContactInfo,
           isRetry,
           tone,
@@ -448,7 +429,6 @@ module.exports = {
   getAiReplyContent,
   getAiReplyStopReason,
   parseAiReplyResponse,
-  shouldIncludeAddressInfo,
   shouldIncludeContactInfo,
   sanitizeAiReply
 };

@@ -623,7 +623,7 @@ const createMassMessage = () =>
     }),
     createTextbox({
       helpText:
-        'Location, city, neighborhood, address, or meeting-place info the AI may share only if the match explicitly asks.',
+        'Always sent to the AI. The prompt tells it to share this only if the match asks.',
       placeholder: 'Examples: city/state, neighborhood, meeting spot, address, pickup instructions...',
       className: 'aiReplyAddressInfo',
       defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
