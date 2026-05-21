@@ -30,12 +30,18 @@ import {
   getRawStorageValue,
   getSetting,
   getToggleState,
+  removeSetting,
   removeRawStorageValue,
   setJsonSetting,
   setSetting
 } from '../misc/settings-store';
 import { resetCounters, renderCounters } from '../misc/counter-store';
 import { createSidebarElement, renderSidebarContent } from './sidebar-renderer';
+import {
+  EPHEMERAL_TOGGLE_SELECTORS,
+  shouldPersistToggleState,
+  shouldRestoreToggleState
+} from './sidebar-toggle-state';
 import {
   getCheckboxValue,
   toggleCheckbox,
@@ -396,7 +402,11 @@ class Sidebar {
   };
 
   initializeToggles = () => {
-    // Restore saved toggle states from localStorage for non-excluded toggles
+    EPHEMERAL_TOGGLE_SELECTORS.forEach((selector) => {
+      removeSetting(`toggleState/${selector}`);
+      setToggleControlState(selector, false);
+    });
+
     const toggleMappings = [
       { selector: '.tinderAutopilotAnonymous', start: this.anonymous?.start, stop: this.anonymous?.stop },
       { selector: '.tinderAutopilotHideMine', start: this.hideUnanswered?.start, stop: this.hideUnanswered?.stop },
@@ -408,7 +418,7 @@ class Sidebar {
     ];
 
     toggleMappings.forEach(({ selector, start, stop }) => {
-      if (getToggleState(selector)) {
+      if (shouldRestoreToggleState(selector) && getToggleState(selector)) {
         setToggleControlState(selector, true);
         this.runAutomationCallback(start, 'start', selector);
       }
@@ -605,21 +615,13 @@ class Sidebar {
       return;
     }
 
-    const excludedSelectors = [
-      '.tinderAutopilot',
-      '.tinderAutopilotMessage',
-      '.tinderAutopilotAIMessageReply',
-      '.tinderAutopilotMessageNewOnly'
-    ];
-
     element.onclick = (e) => {
       e.preventDefault();
 
       const isOn = getCheckboxValue(selector);
       const nextState = toggleCheckbox(selector);
 
-      // Save state to localStorage (except for excluded selectors)
-      if (!excludedSelectors.includes(selector)) {
+      if (shouldPersistToggleState(selector)) {
         setSetting(`toggleState/${selector}`, nextState);
       }
 
