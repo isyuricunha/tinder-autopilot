@@ -9,9 +9,11 @@ const {
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
+  DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_REASONING_EFFORT,
+  DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
@@ -34,8 +36,10 @@ test('AI reply settings expose safe defaults', () => {
   assert.equal(DEFAULT_AI_REPLY_TONE.includes('same language as the conversation'), true);
   assert.equal(DEFAULT_AI_REPLY_TONE.includes('Brazilian Portuguese'), false);
   assert.equal(DEFAULT_AI_REPLY_USER_CONTEXT, '');
+  assert.equal(DEFAULT_AI_REPLY_STYLE_EXAMPLES, '');
   assert.equal(DEFAULT_AI_REPLY_CONTACT_INFO, '');
   assert.equal(DEFAULT_AI_REPLY_ADDRESS_INFO, '');
+  assert.equal(DEFAULT_AI_REPLY_HARD_RULES, '');
   assert.equal(DEFAULT_AI_REPLY_CONTEXT_WINDOW, 10);
   assert.equal(DEFAULT_AI_REPLY_MAX_TOKENS, 2048);
   assert.equal(DEFAULT_AI_REPLY_DELAY_SECONDS, 4);
@@ -91,7 +95,9 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     [AI_REPLY_SETTING_KEYS.reasoningEffort]: AI_REPLY_REASONING_EFFORTS.high,
     [AI_REPLY_SETTING_KEYS.addressInfo]: ' Rua Teste 123 ',
     [AI_REPLY_SETTING_KEYS.contactInfo]: ' WhatsApp +55 11 99999-9999 ',
+    [AI_REPLY_SETTING_KEYS.hardRules]: ' never use emojis ',
     [AI_REPLY_SETTING_KEYS.replyDelaySeconds]: '999',
+    [AI_REPLY_SETTING_KEYS.styleExamples]: ' Match: oi -> Owner: opa ',
     [AI_REPLY_SETTING_KEYS.tone]: ' concise ',
     [AI_REPLY_SETTING_KEYS.userContext]: ' works late '
   };
@@ -101,11 +107,13 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     apiUrl: 'https://example.test/chat',
     compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
     contactInfo: 'WhatsApp +55 11 99999-9999',
+    hardRules: 'never use emojis',
     contextWindow: MAX_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: MAX_AI_REPLY_MAX_TOKENS,
     model: 'custom-model',
     reasoningEffort: AI_REPLY_REASONING_EFFORTS.high,
     replyDelaySeconds: MAX_AI_REPLY_DELAY_SECONDS,
+    styleExamples: 'Match: oi -> Owner: opa',
     tone: 'concise',
     userContext: 'works late'
   });
@@ -117,11 +125,13 @@ test('readAiReplySettings falls back to safe defaults', () => {
     apiUrl: '',
     compatibilityMode: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
     contactInfo: DEFAULT_AI_REPLY_CONTACT_INFO,
+    hardRules: DEFAULT_AI_REPLY_HARD_RULES,
     contextWindow: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: DEFAULT_AI_REPLY_MAX_TOKENS,
     model: DEFAULT_AI_REPLY_MODEL,
     reasoningEffort: DEFAULT_AI_REPLY_REASONING_EFFORT,
     replyDelaySeconds: DEFAULT_AI_REPLY_DELAY_SECONDS,
+    styleExamples: DEFAULT_AI_REPLY_STYLE_EXAMPLES,
     tone: DEFAULT_AI_REPLY_TONE,
     userContext: DEFAULT_AI_REPLY_USER_CONTEXT
   });

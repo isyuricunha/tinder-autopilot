@@ -8,9 +8,11 @@ import {
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
+  DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_REASONING_EFFORT,
+  DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
@@ -292,7 +294,8 @@ const createSlider = ({
   defaultValue,
   step = 1,
   unit = '',
-  parentToggle = null
+  parentToggle = null,
+  manualInput = false
 }) => {
   const valueDisplay = createElement('span', {
     id: `${className}Value`,
@@ -305,12 +308,41 @@ const createSlider = ({
       'width: 100%; height: 6px; border-radius: 3px; background: #333333; outline: none; -webkit-appearance: none; appearance: none;',
     attributes: { type: 'range', min, max, value: defaultValue, step }
   });
-  const syncValue = () => {
-    valueDisplay.textContent = `${input.value}${unit}`;
-    setSetting(className, input.value);
+  const numberInput = manualInput
+    ? createElement('input', {
+        id: `${className}Input`,
+        style:
+          'width: 96px; padding: 8px; background: #1a1a1a; border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 13px;',
+        attributes: { type: 'number', min, max, value: defaultValue, step }
+      })
+    : null;
+  const clampValue = (value) => {
+    const parsedValue = parseInt(value, 10);
+    const fallbackValue = parseInt(defaultValue, 10);
+    const minValue = parseInt(min, 10);
+    const maxValue = parseInt(max, 10);
+    const safeValue = Number.isFinite(parsedValue) ? parsedValue : fallbackValue;
+    return Math.min(maxValue, Math.max(minValue, safeValue));
   };
-  input.addEventListener('input', syncValue);
-  input.addEventListener('change', syncValue);
+  const syncValue = (value = input.value) => {
+    const nextValue = String(clampValue(value));
+    input.value = nextValue;
+    if (numberInput) numberInput.value = nextValue;
+    valueDisplay.textContent = `${nextValue}${unit}`;
+    setSetting(className, nextValue);
+  };
+  input.addEventListener('input', () => syncValue(input.value));
+  input.addEventListener('change', () => syncValue(input.value));
+  if (numberInput) {
+    numberInput.addEventListener('change', () => syncValue(numberInput.value));
+    numberInput.addEventListener('blur', () => syncValue(numberInput.value));
+  }
+  const valueControls = manualInput
+    ? createElement('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
+        numberInput,
+        valueDisplay
+      ])
+    : valueDisplay;
 
   return createFragment([
     createElement(
@@ -344,7 +376,7 @@ const createSlider = ({
                       text: label,
                       style: 'color: #ffffff; font-size: 15px; font-weight: 500;'
                     }),
-                    valueDisplay
+                    valueControls
                   ]
                 ),
                 createElement('div', { style: 'position: relative; width: 100%;' }, [
@@ -653,30 +685,46 @@ const createAiSettings = () =>
       'Reply Reasoning Effort is sent only when AI Reply Compatibility is Reasoning / Thinking.'
     ),
     createTextbox({
-      helpText: 'Conversation style for AI-generated replies.',
-      placeholder: 'Short, casual, human, no emojis, no virtual date suggestions...',
+      helpText:
+        'Conversation style only. Do not include contacts, location, owner facts, or examples here.',
+      placeholder: 'Example: short, dry humor, direct, mirrors energy, no emojis...',
       className: 'aiReplyTone',
       defaultValue: DEFAULT_AI_REPLY_TONE
     }),
     createTextbox({
-      helpText: 'General context the AI may use when relevant. Do not put sensitive contact or location details here.',
-      placeholder: 'Examples: schedule, interests, date preferences, boundaries...',
+      helpText:
+        'Owner profile and stable facts the AI may use when relevant. Do not put contact/location details here.',
+      placeholder: 'Name, age, work, study, hobbies, relationship goals, personality...',
       className: 'aiReplyUserContext',
       defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT
     }),
     createTextbox({
       helpText:
-        'Contact methods the AI may share only if the match asks or shares theirs first.',
+        'Real reply examples. Used for style, rhythm, callbacks, and brevity only; not treated as facts.',
+      placeholder: 'Match: ...\nOwner: ...',
+      className: AI_REPLY_SETTING_KEYS.styleExamples,
+      defaultValue: DEFAULT_AI_REPLY_STYLE_EXAMPLES
+    }),
+    createTextbox({
+      helpText:
+        'Contact methods the AI may share only when the match asks or shares theirs first.',
       placeholder: 'Examples: WhatsApp +55..., Telegram @user, Instagram @user...',
       className: 'aiReplyContactInfo',
       defaultValue: DEFAULT_AI_REPLY_CONTACT_INFO
     }),
     createTextbox({
       helpText:
-        'Always sent to the AI. The prompt tells it to share this only if the match asks.',
-      placeholder: 'Examples: city/state, neighborhood, meeting spot, address, pickup instructions...',
+        'Always sent to the AI. The prompt tells it to share this only when the match asks about location.',
+      placeholder: 'Examples: city/state, neighborhood, region, meeting area, address...',
       className: 'aiReplyAddressInfo',
       defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
+    }),
+    createTextbox({
+      helpText:
+        'Extra strict rules for AI replies. These cannot override contact/location disclosure or JSON rules.',
+      placeholder: 'Examples: never use emojis; never ask two questions; avoid compliment-bombing...',
+      className: AI_REPLY_SETTING_KEYS.hardRules,
+      defaultValue: DEFAULT_AI_REPLY_HARD_RULES
     }),
     createSlider({
       className: 'aiReplyContextWindow',
@@ -690,12 +738,14 @@ const createAiSettings = () =>
     createSlider({
       className: 'aiReplyMaxTokens',
       label: 'Max Tokens',
-      helpText: 'Maximum AI reply completion budget. Reasoning models may need much more.',
+      helpText:
+        'Maximum AI reply completion budget. Common manual values: 4k, 8k, 16k, 32k, 65k tokens.',
       min: MIN_AI_REPLY_MAX_TOKENS,
       max: MAX_AI_REPLY_MAX_TOKENS,
       defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
       step: 512,
-      unit: ' tokens'
+      unit: ' tokens',
+      manualInput: true
     }),
     createSlider({
       className: 'aiReplyDelaySeconds',
@@ -705,6 +755,43 @@ const createAiSettings = () =>
       max: MAX_AI_REPLY_DELAY_SECONDS,
       defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
       unit: ' sec'
+    }),
+    createTextbox({
+      helpText:
+        'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
+      placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
+      className: 'aiReplyTestConversation',
+      defaultValue: ''
+    }),
+    createTextbox({
+      helpText: 'Optional match name used only for the preview/test prompt.',
+      placeholder: 'Ana',
+      className: 'aiReplyTestMatchName',
+      defaultValue: '',
+      type: 'text'
+    }),
+    createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
+      createElement('button', {
+        id: 'previewAiReplyPrompt',
+        text: 'Preview Prompt',
+        style:
+          'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+        attributes: { type: 'button' }
+      }),
+      createElement('button', {
+        id: 'testAiReply',
+        text: 'Test Reply',
+        style:
+          'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+        attributes: { type: 'button' }
+      })
+    ]),
+    createTextbox({
+      helpText: 'Preview or test output. This is never sent automatically.',
+      placeholder: 'Preview/test output appears here.',
+      className: 'aiReplyTestOutput',
+      defaultValue: '',
+      attributes: { readonly: 'true' }
     })
   ]);
 

@@ -10,16 +10,19 @@ import {
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
+  DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_REASONING_EFFORT,
+  DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   normalizeAiReplyCompatibilityMode,
   normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
   normalizeAiReplyReasoningEffort,
-  normalizeAiReplyContextWindow
+  normalizeAiReplyContextWindow,
+  readAiReplySettings
 } from '../misc/ai-message-reply-settings';
 import {
   AI_PROFILE_SETTING_KEYS,
@@ -30,6 +33,11 @@ import {
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
 import { fetchAiModelList } from '../misc/ai-model-list';
+import {
+  buildAiReplyRequestBody,
+  generateAiMessageReply
+} from '../misc/ai-message-reply';
+import { parseAiReplyTestConversation } from '../misc/ai-reply-test-input';
 import { insertCss } from '../misc/insert-css';
 import {
   getExtensionStorageValue,
@@ -287,7 +295,7 @@ class Sidebar {
       this.addTrackedListener(aiReplyToneField, 'blur', (e) => {
         const value = e.target.value.trim();
         setSetting('aiReplyTone', value);
-        logger('💾 Saved AI Reply Tone');
+        logger('💾 Saved AI Reply Style');
       });
     }
 
@@ -296,7 +304,18 @@ class Sidebar {
       this.addTrackedListener(aiReplyUserContextField, 'blur', (e) => {
         const value = e.target.value.trim();
         setSetting('aiReplyUserContext', value);
-        logger('💾 Saved AI Reply Context');
+        logger('💾 Saved AI Reply Owner Profile');
+      });
+    }
+
+    const aiReplyStyleExamplesField = document.getElementById(
+      AI_REPLY_SETTING_KEYS.styleExamples
+    );
+    if (aiReplyStyleExamplesField) {
+      this.addTrackedListener(aiReplyStyleExamplesField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting(AI_REPLY_SETTING_KEYS.styleExamples, value);
+        logger('💾 Saved AI Reply Style Examples');
       });
     }
 
@@ -314,7 +333,30 @@ class Sidebar {
       this.addTrackedListener(aiReplyAddressInfoField, 'blur', (e) => {
         const value = e.target.value.trim();
         setSetting('aiReplyAddressInfo', value);
-        logger('💾 Saved AI Reply Address Info');
+        logger('💾 Saved AI Reply Location Info');
+      });
+    }
+
+    const aiReplyHardRulesField = document.getElementById(AI_REPLY_SETTING_KEYS.hardRules);
+    if (aiReplyHardRulesField) {
+      this.addTrackedListener(aiReplyHardRulesField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting(AI_REPLY_SETTING_KEYS.hardRules, value);
+        logger('💾 Saved AI Reply Hard Rules');
+      });
+    }
+
+    const previewAiReplyPromptButton = document.getElementById('previewAiReplyPrompt');
+    if (previewAiReplyPromptButton) {
+      this.addTrackedListener(previewAiReplyPromptButton, 'click', () => {
+        this.previewAiReplyPrompt();
+      });
+    }
+
+    const testAiReplyButton = document.getElementById('testAiReply');
+    if (testAiReplyButton) {
+      this.addTrackedListener(testAiReplyButton, 'click', () => {
+        this.testAiReply(testAiReplyButton);
       });
     }
 
@@ -493,12 +535,14 @@ class Sidebar {
     sliders.forEach(({ id, defaultValue, unit, normalize }) => {
       const slider = document.getElementById(id);
       const valueDisplay = document.getElementById(`${id}Value`);
+      const manualInput = document.getElementById(`${id}Input`);
 
       if (slider && valueDisplay) {
         const rawStoredValue = getSetting(id, defaultValue);
         const storedValue = normalize ? normalize(rawStoredValue) : rawStoredValue;
         slider.value = storedValue;
         valueDisplay.textContent = storedValue + unit;
+        if (manualInput) manualInput.value = storedValue;
       }
     });
 
@@ -622,6 +666,16 @@ class Sidebar {
       );
     }
 
+    const aiReplyStyleExamplesField = document.getElementById(
+      AI_REPLY_SETTING_KEYS.styleExamples
+    );
+    if (aiReplyStyleExamplesField) {
+      aiReplyStyleExamplesField.value = getSetting(
+        AI_REPLY_SETTING_KEYS.styleExamples,
+        DEFAULT_AI_REPLY_STYLE_EXAMPLES
+      );
+    }
+
     const aiReplyContactInfoField = document.getElementById('aiReplyContactInfo');
     if (aiReplyContactInfoField) {
       aiReplyContactInfoField.value = getSetting(
@@ -635,6 +689,14 @@ class Sidebar {
       aiReplyAddressInfoField.value = getSetting(
         'aiReplyAddressInfo',
         DEFAULT_AI_REPLY_ADDRESS_INFO
+      );
+    }
+
+    const aiReplyHardRulesField = document.getElementById(AI_REPLY_SETTING_KEYS.hardRules);
+    if (aiReplyHardRulesField) {
+      aiReplyHardRulesField.value = getSetting(
+        AI_REPLY_SETTING_KEYS.hardRules,
+        DEFAULT_AI_REPLY_HARD_RULES
       );
     }
 
@@ -706,6 +768,118 @@ class Sidebar {
     } catch (error) {
       logger(`⚠️ Failed to refresh AI models: ${this.getErrorMessage(error)}`);
       return [];
+    } finally {
+      if (triggerButton) triggerButton.disabled = false;
+    }
+  };
+
+  getFieldValue = (id, fallback = '') => {
+    const field = document.getElementById(id);
+    return String(field?.value ?? fallback).trim();
+  };
+
+  getCurrentAiReplySettings = () => {
+    const storedSettings = readAiReplySettings(getSetting);
+    const contextWindowValue = this.getFieldValue(
+      AI_REPLY_SETTING_KEYS.contextWindow,
+      storedSettings.contextWindow
+    );
+    const maxTokensValue = this.getFieldValue(
+      `${AI_REPLY_SETTING_KEYS.maxTokens}Input`,
+      this.getFieldValue(AI_REPLY_SETTING_KEYS.maxTokens, storedSettings.maxTokens)
+    );
+
+    return {
+      ...storedSettings,
+      addressInfo: this.getFieldValue(
+        AI_REPLY_SETTING_KEYS.addressInfo,
+        storedSettings.addressInfo
+      ),
+      apiUrl: this.getFieldValue(AI_REPLY_SETTING_KEYS.apiUrl, storedSettings.apiUrl),
+      compatibilityMode: normalizeAiReplyCompatibilityMode(
+        this.getFieldValue(
+          AI_REPLY_SETTING_KEYS.compatibilityMode,
+          storedSettings.compatibilityMode
+        )
+      ),
+      contactInfo: this.getFieldValue(
+        AI_REPLY_SETTING_KEYS.contactInfo,
+        storedSettings.contactInfo
+      ),
+      contextWindow: normalizeAiReplyContextWindow(contextWindowValue),
+      hardRules: this.getFieldValue(AI_REPLY_SETTING_KEYS.hardRules, storedSettings.hardRules),
+      maxTokens: normalizeAiReplyMaxTokens(maxTokensValue),
+      model: this.getFieldValue(AI_REPLY_SETTING_KEYS.model, storedSettings.model),
+      reasoningEffort: normalizeAiReplyReasoningEffort(
+        this.getFieldValue(AI_REPLY_SETTING_KEYS.reasoningEffort, storedSettings.reasoningEffort)
+      ),
+      styleExamples: this.getFieldValue(
+        AI_REPLY_SETTING_KEYS.styleExamples,
+        storedSettings.styleExamples
+      ),
+      tone: this.getFieldValue(AI_REPLY_SETTING_KEYS.tone, storedSettings.tone),
+      userContext: this.getFieldValue(AI_REPLY_SETTING_KEYS.userContext, storedSettings.userContext)
+    };
+  };
+
+  getAiReplyTestContext = () => {
+    const conversationText = this.getFieldValue('aiReplyTestConversation');
+    const conversationTurns = parseAiReplyTestConversation(conversationText);
+    const matchName = this.getFieldValue('aiReplyTestMatchName');
+    return { conversationTurns, matchName };
+  };
+
+  setAiReplyTestOutput = (value) => {
+    const output = document.getElementById('aiReplyTestOutput');
+    if (output) output.value = String(value || '');
+  };
+
+  previewAiReplyPrompt = () => {
+    const settings = this.getCurrentAiReplySettings();
+    const { conversationTurns, matchName } = this.getAiReplyTestContext();
+
+    if (!conversationTurns.length) {
+      this.setAiReplyTestOutput('Paste at least one USER: or MATCH: line before previewing.');
+      return;
+    }
+
+    const body = buildAiReplyRequestBody({
+      ...settings,
+      conversationTurns,
+      matchName
+    });
+    const systemMessage = body.messages?.[0]?.content || '';
+    const userMessage = body.messages?.[1]?.content?.[0]?.text || '';
+
+    this.setAiReplyTestOutput(`SYSTEM:\n${systemMessage}\n\nUSER:\n${userMessage}`);
+    logger('👀 Generated AI reply prompt preview');
+  };
+
+  testAiReply = async (triggerButton = null) => {
+    if (triggerButton) triggerButton.disabled = true;
+
+    try {
+      const settings = this.getCurrentAiReplySettings();
+      const { conversationTurns, matchName } = this.getAiReplyTestContext();
+
+      if (!conversationTurns.length) {
+        this.setAiReplyTestOutput('Paste at least one USER: or MATCH: line before testing.');
+        return;
+      }
+
+      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+      const result = await generateAiMessageReply({
+        ...settings,
+        apiKey,
+        conversationTurns,
+        matchName
+      });
+
+      this.setAiReplyTestOutput(JSON.stringify(result, null, 2));
+      logger('🧪 Generated AI reply test output');
+    } catch (error) {
+      this.setAiReplyTestOutput(`AI reply test failed: ${this.getErrorMessage(error)}`);
+      logger(`⚠️ AI reply test failed: ${this.getErrorMessage(error)}`);
     } finally {
       if (triggerButton) triggerButton.disabled = false;
     }

@@ -8,9 +8,11 @@ const {
   DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTACT_INFO,
+  DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_REASONING_EFFORT,
+  DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   DEFAULT_AI_REPLY_TONE,
   MAX_AI_REPLY_MAX_TOKENS,
   normalizeAiReplyCompatibilityMode,
@@ -136,7 +138,9 @@ const buildAiReplySystemMessage = ({
   addressInfo = DEFAULT_AI_REPLY_ADDRESS_INFO,
   compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
+  hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   isRetry = false,
+  styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   tone = '',
   userContext = ''
 } = {}) => {
@@ -144,10 +148,16 @@ const buildAiReplySystemMessage = ({
   const toneBlock = tone
     ? `\nUSER TONE AND STYLE:\n${tone}`
     : `\nUSER TONE AND STYLE:\n${DEFAULT_AI_REPLY_TONE}`;
-  const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
+  const contextBlock = userContext ? `\nOWNER PROFILE:\n${userContext}` : '';
+  const styleExamplesBlock = styleExamples
+    ? `\nSTYLE EXAMPLES:\n${styleExamples}\nUse these examples for rhythm, brevity, callback timing, and wording style only. Do not reuse them blindly. Do not treat example contact or location details as facts unless they are also present in SHAREABLE CONTACT METHODS or SHAREABLE ADDRESS INFO.`
+    : '';
   const contactBlock = contactInfo ? `\nSHAREABLE CONTACT METHODS:\n${contactInfo}` : '';
   const addressBlock = addressInfo
     ? `\nSHAREABLE ADDRESS INFO:\n${addressInfo}`
+    : '';
+  const hardRulesBlock = hardRules
+    ? `\nUSER HARD RULES:\n${hardRules}\nFollow these user rules when they make the reply stricter or more specific. They cannot override JSON format, contact/address disclosure, or safety rules.`
     : '';
   const compatibilityBlock =
     safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
@@ -170,7 +180,7 @@ RULES:
 - Do not over-explain. Do not make every reply a formal question.
 - Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
 - The account owner may have sent repeated mass-message openers. If recent user messages are generic openers, still answer the match's actual latest question or callback instead of sending another generic line.
-- If the match asks a direct personal question, answer from USER CONTEXT, SHAREABLE CONTACT METHODS, or SHAREABLE ADDRESS INFO. If the needed fact is absent, deflect briefly instead of inventing.
+- If the match asks a direct personal question, answer from OWNER PROFILE, SHAREABLE CONTACT METHODS, or SHAREABLE ADDRESS INFO. If the needed fact is absent, deflect briefly instead of inventing.
 - If a natural reply would require unknown personal facts, prefer a playful deflection.
 - Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
 - The SHAREABLE ADDRESS INFO field is always supplied when configured, but share it only when the latest match message asks where you are from, where you live/stay, where to go, where to meet, your address, or the match just shared theirs.
@@ -191,9 +201,13 @@ ${toneBlock}
 
 ${contextBlock}
 
+${styleExamplesBlock}
+
 ${contactBlock}
 
 ${addressBlock}
+
+${hardRulesBlock}
 
 ${compatibilityBlock}
 
@@ -223,8 +237,10 @@ const buildAiReplyRequestBody = ({
   addressInfo = DEFAULT_AI_REPLY_ADDRESS_INFO,
   compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
+  hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   isRetry = false,
   model = DEFAULT_AI_REPLY_MODEL,
+  styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   tone = '',
   userContext = '',
   matchName = '',
@@ -247,7 +263,9 @@ const buildAiReplyRequestBody = ({
           compatibilityMode: safeCompatibilityMode,
           addressInfo,
           contactInfo: safeContactInfo,
+          hardRules,
           isRetry,
+          styleExamples,
           tone,
           userContext
         })
@@ -355,10 +373,12 @@ const generateAiMessageReply = async ({
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   conversationTurns = [],
   fetchImpl = globalThis.fetch,
+  hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   matchName = '',
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
   model = DEFAULT_AI_REPLY_MODEL,
   reasoningEffort = DEFAULT_AI_REPLY_REASONING_EFFORT,
+  styleExamples = DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   temperature = 0.7,
   tone = '',
   userContext = ''
@@ -376,12 +396,14 @@ const generateAiMessageReply = async ({
     compatibilityMode,
     addressInfo,
     contactInfo,
+    hardRules,
     contextWindow,
     conversationTurns: recentConversationTurns,
     matchName,
     maxTokens,
     model,
     reasoningEffort,
+    styleExamples,
     temperature,
     tone,
     userContext

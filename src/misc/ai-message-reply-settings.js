@@ -1,8 +1,10 @@
 const DEFAULT_AI_REPLY_TONE =
   'Reply in the same language as the conversation unless instructed otherwise. Short, casual, human, direct, and lightly playful only when the conversation invites it. No emojis by default. No virtual date suggestions. No dash or slash. Write like a human. Avoid polished assistant-like phrasing.';
 const DEFAULT_AI_REPLY_USER_CONTEXT = '';
+const DEFAULT_AI_REPLY_STYLE_EXAMPLES = '';
 const DEFAULT_AI_REPLY_CONTACT_INFO = '';
 const DEFAULT_AI_REPLY_ADDRESS_INFO = '';
+const DEFAULT_AI_REPLY_HARD_RULES = '';
 const DEFAULT_AI_REPLY_CONTEXT_WINDOW = 10;
 const DEFAULT_AI_REPLY_MODEL = 'gpt-4o-mini';
 const DEFAULT_AI_REPLY_MAX_TOKENS = 2048;
@@ -31,8 +33,10 @@ const AI_REPLY_SETTING_KEYS = {
   model: 'aiReplyModel',
   addressInfo: 'aiReplyAddressInfo',
   contactInfo: 'aiReplyContactInfo',
+  hardRules: 'aiReplyHardRules',
   reasoningEffort: 'aiReplyReasoningEffort',
   replyDelaySeconds: 'aiReplyDelaySeconds',
+  styleExamples: 'aiReplyStyleExamples',
   tone: 'aiReplyTone',
   userContext: 'aiReplyUserContext'
 };
@@ -115,6 +119,11 @@ const readAiReplySettings = (readSetting) => {
     AI_REPLY_SETTING_KEYS.userContext,
     DEFAULT_AI_REPLY_USER_CONTEXT
   ).trim();
+  const styleExamples = readSettingValue(
+    readSetting,
+    AI_REPLY_SETTING_KEYS.styleExamples,
+    DEFAULT_AI_REPLY_STYLE_EXAMPLES
+  ).trim();
   const contactInfo = readSettingValue(
     readSetting,
     AI_REPLY_SETTING_KEYS.contactInfo,
@@ -124,6 +133,11 @@ const readAiReplySettings = (readSetting) => {
     readSetting,
     AI_REPLY_SETTING_KEYS.addressInfo,
     DEFAULT_AI_REPLY_ADDRESS_INFO
+  ).trim();
+  const hardRules = readSettingValue(
+    readSetting,
+    AI_REPLY_SETTING_KEYS.hardRules,
+    DEFAULT_AI_REPLY_HARD_RULES
   ).trim();
   const contextWindow = normalizeAiReplyContextWindow(
     readSettingValue(
@@ -162,11 +176,13 @@ const readAiReplySettings = (readSetting) => {
     apiUrl,
     compatibilityMode,
     contactInfo,
+    hardRules,
     contextWindow,
     maxTokens,
     model,
     reasoningEffort,
     replyDelaySeconds,
+    styleExamples,
     tone,
     userContext
   };
@@ -181,9 +197,11 @@ module.exports = {
   DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
   DEFAULT_AI_REPLY_DELAY_SECONDS,
+  DEFAULT_AI_REPLY_HARD_RULES,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_REASONING_EFFORT,
+  DEFAULT_AI_REPLY_STYLE_EXAMPLES,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_DELAY_SECONDS,

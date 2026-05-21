@@ -40,3 +40,6 @@
 - [x] Split AI profile filtering and AI message reply model/reasoning settings with legacy fallbacks.
 - [x] Reorganize sidebar AI settings into shared connection and module-specific sections.
 - [x] Add manual model fields with optional OpenAI-compatible model refresh suggestions.
+- [x] Split AI reply prompt inputs into style, owner profile, examples, contact, location, and hard rules.
+- [x] Add synchronized manual max-token input next to the AI reply max-token slider.
+- [x] Add AI reply prompt preview and test generation without sending Tinder messages.

@@ -20,6 +20,8 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   const message = buildAiReplySystemMessage({
     addressInfo: 'Rua Teste 123',
     contactInfo: 'WhatsApp +55 11 99999-9999',
+    hardRules: 'Never ask two questions in one reply.',
+    styleExamples: 'Match: oi -> Owner: opa',
     tone: 'Playful, direct, Brazilian Portuguese.',
     userContext: 'I live in Sao Paulo and prefer casual dates.'
   });
@@ -30,6 +32,10 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Share contact methods only when'), true);
   assert.equal(message.includes('SHAREABLE ADDRESS INFO field is always supplied'), true);
   assert.equal(message.includes('SHAREABLE ADDRESS INFO'), true);
+  assert.equal(message.includes('OWNER PROFILE'), true);
+  assert.equal(message.includes('STYLE EXAMPLES'), true);
+  assert.equal(message.includes('USER HARD RULES'), true);
+  assert.equal(message.includes('Do not treat example contact or location details as facts'), true);
   assert.equal(message.includes('repeated mass-message openers'), true);
   assert.equal(message.includes('Do not suggest meeting'), true);
   assert.equal(message.includes('same language as the latest match message'), true);
@@ -38,6 +44,8 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('bora marcar de se esquentar'), true);
   assert.equal(message.includes('Playful, direct'), true);
   assert.equal(message.includes('I live in Sao Paulo'), true);
+  assert.equal(message.includes('Match: oi -> Owner: opa'), true);
+  assert.equal(message.includes('Never ask two questions'), true);
   assert.equal(message.includes('WhatsApp +55 11 99999-9999'), true);
   assert.equal(message.includes('Rua Teste 123'), true);
 });
@@ -234,6 +242,8 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
     model: 'custom-model',
     contactInfo: 'Telegram @me',
     addressInfo: 'Only share if asked where to meet.',
+    hardRules: 'Never use emojis.',
+    styleExamples: 'Match: oi -> Owner: opa',
     tone: 'Short, warm replies.',
     userContext: 'Use Brazilian Portuguese.'
   });
@@ -250,6 +260,8 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
   assert.equal(body.model, 'custom-model');
   assert.equal(body.messages[0].content.includes('Telegram @me'), false);
   assert.equal(body.messages[0].content.includes('Only share if asked where to meet.'), true);
+  assert.equal(body.messages[0].content.includes('Never use emojis.'), true);
+  assert.equal(body.messages[0].content.includes('Match: oi -> Owner: opa'), true);
   assert.equal(prompt.includes('MATCH NAME: Ana'), true);
   assert.equal(prompt.includes('Bom dia'), true);
   assert.equal(prompt.includes('Dormiu bem?'), true);
