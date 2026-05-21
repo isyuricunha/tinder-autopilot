@@ -7,7 +7,9 @@ const {
   clearUnansweredMessagesFilter,
   getMessageItemVisibilityTarget,
   getMessageListItems,
+  getScrollMetrics,
   isOutgoingLastMessage,
+  scrollMessageListToEnd,
   shouldShowUnansweredMessageItem
 } = require('../src/misc/message-list-filter');
 
@@ -37,7 +39,29 @@ class FakeMessageItem {
   }
 }
 
-const createRoot = (items) => ({
+class FakeScrollElement {
+  constructor({ clientHeight = 100, scrollHeight = 500, scrollTop = 0 } = {}) {
+    this.clientHeight = clientHeight;
+    this.scrollHeight = scrollHeight;
+    this.scrollTop = scrollTop;
+    this.parentElement = null;
+    this.events = [];
+  }
+
+  closest() {
+    return null;
+  }
+
+  dispatchEvent(event) {
+    this.events.push(event.type);
+  }
+
+  scrollTo({ top }) {
+    this.scrollTop = top;
+  }
+}
+
+const createRoot = (items, messageList = null) => ({
   querySelectorAll(selector) {
     const messageItemSelectors = [
       '.messageList .messageListItem',
@@ -45,6 +69,7 @@ const createRoot = (items) => ({
       '.messageListItem'
     ];
 
+    if (selector === '.messageList' && messageList) return [messageList];
     return messageItemSelectors.includes(selector) ? items : [];
   }
 });
@@ -100,6 +125,25 @@ test('getMessageListItems deduplicates selector overlap', () => {
   const root = createRoot([item]);
 
   assert.deepEqual(getMessageListItems(root), [item]);
+});
+
+test('scrollMessageListToEnd scrolls the real message list container to bottom', () => {
+  const messageList = new FakeScrollElement({
+    clientHeight: 200,
+    scrollHeight: 1200,
+    scrollTop: 0
+  });
+  const root = createRoot([], messageList);
+
+  assert.deepEqual(getScrollMetrics(messageList), {
+    clientHeight: 200,
+    isAtBottom: false,
+    scrollHeight: 1200,
+    scrollTop: 0
+  });
+  assert.equal(scrollMessageListToEnd(root), true);
+  assert.equal(messageList.scrollTop, 1200);
+  assert.deepEqual(getScrollMetrics(messageList).isAtBottom, true);
 });
 
 test('applyUnansweredMessagesFilter hides the message row wrapper when present', () => {

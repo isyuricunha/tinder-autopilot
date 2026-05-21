@@ -4,12 +4,15 @@ import {
   clearUnansweredMessagesFilter,
   findMessageScrollContainer,
   findMessagesTab,
+  getScrollMetrics,
   getMessageListItems,
+  scrollMessageListToEnd,
   scrollMessageListToTop
 } from '../misc/message-list-filter';
 
-const MAX_SCROLL_STEPS = 120;
-const SCROLL_DELAY_MS = 100;
+const MAX_SCROLL_STEPS = 240;
+const SCROLL_DELAY_MS = 150;
+const STABLE_END_CHECKS = 4;
 
 class HideUnanswered {
   selector = '.tinderAutopilotHideMine';
@@ -17,6 +20,8 @@ class HideUnanswered {
   totalMessages = 0;
 
   counter = 0;
+
+  stableEndChecks = 0;
 
   finishHiding = () => {
     const result = applyUnansweredMessagesFilter(document);
@@ -35,22 +40,33 @@ class HideUnanswered {
     }
 
     const currentScrollTop = scrollContainer.scrollTop || 0;
-    const viewportHeight = scrollContainer.clientHeight || window.outerHeight || 0;
-    const totalHeight = scrollContainer.scrollHeight || 0;
+    const { isAtBottom } = getScrollMetrics(scrollContainer);
     const newTotal = getMessageListItems(document).length;
-    const hasMoreScroll = currentScrollTop + viewportHeight < totalHeight - 4;
+    const hasNewMessages = newTotal > this.totalMessages;
 
-    if (this.counter < MAX_SCROLL_STEPS && hasMoreScroll) {
+    if (hasNewMessages) {
+      this.counter = 0;
+      this.stableEndChecks = 0;
+    } else if (isAtBottom) {
+      this.stableEndChecks += 1;
+    } else {
+      this.stableEndChecks = 0;
+    }
+
+    const shouldKeepScrolling =
+      this.counter < MAX_SCROLL_STEPS &&
+      (!isAtBottom || this.stableEndChecks < STABLE_END_CHECKS || hasNewMessages);
+
+    if (shouldKeepScrolling) {
       this.counter += 1;
-      scrollContainer.scrollTop = currentScrollTop + viewportHeight;
+      scrollMessageListToEnd(document);
+      if (scrollContainer.scrollTop === currentScrollTop && !isAtBottom) {
+        scrollContainer.scrollTop = currentScrollTop + (scrollContainer.clientHeight || 600);
+      }
       setTimeout(() => this.scrollMatchesToEnd(cb), SCROLL_DELAY_MS);
     } else {
       logger(`Finished scrolling, total matches found: ${newTotal}`);
       cb();
-    }
-
-    if (newTotal > this.totalMessages) {
-      this.counter = 0;
     }
 
     this.totalMessages = newTotal;
@@ -60,6 +76,7 @@ class HideUnanswered {
     const runFilter = () => {
       this.totalMessages = getMessageListItems(document).length;
       this.counter = 0;
+      this.stableEndChecks = 0;
 
       this.scrollMatchesToEnd(this.finishHiding);
     };

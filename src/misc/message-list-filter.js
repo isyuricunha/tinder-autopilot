@@ -123,6 +123,43 @@ const findScrollableAncestor = (element) => {
   return null;
 };
 
+const getScrollMetrics = (element) => {
+  const scrollTop = Number(element?.scrollTop || 0);
+  const clientHeight = Number(element?.clientHeight || 0);
+  const scrollHeight = Number(element?.scrollHeight || 0);
+
+  return {
+    clientHeight,
+    isAtBottom: scrollTop + clientHeight >= scrollHeight - 4,
+    scrollHeight,
+    scrollTop
+  };
+};
+
+const dispatchScrollEvents = (element) => {
+  if (!element?.dispatchEvent) return;
+  if (typeof Event === 'function') {
+    element.dispatchEvent(new Event('scroll', { bubbles: true }));
+  }
+  if (typeof WheelEvent === 'function') {
+    element.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: 1200 }));
+  }
+};
+
+const scrollMessageListToEnd = (root = document) => {
+  const scrollContainer = findMessageScrollContainer(root);
+  if (!scrollContainer) return false;
+
+  const { scrollHeight } = getScrollMetrics(scrollContainer);
+  if (typeof scrollContainer.scrollTo === 'function') {
+    scrollContainer.scrollTo({ top: scrollHeight, behavior: 'auto' });
+  } else {
+    scrollContainer.scrollTop = scrollHeight;
+  }
+  dispatchScrollEvents(scrollContainer);
+  return true;
+};
+
 const findMessageScrollContainer = (root = document) => {
   const messageList = getMessageListElement(root);
   return (
@@ -146,9 +183,11 @@ module.exports = {
   clearUnansweredMessagesFilter,
   findMessageScrollContainer,
   findMessagesTab,
+  getScrollMetrics,
   getMessageListItems,
   getMessageItemVisibilityTarget,
   isOutgoingLastMessage,
+  scrollMessageListToEnd,
   scrollMessageListToTop,
   shouldShowUnansweredMessageItem
 };
