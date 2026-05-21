@@ -1,4 +1,5 @@
 import Messenger from '../automations/Messenger';
+import AiMessageResponder from '../automations/AiMessageResponder';
 import Swiper from '../automations/Swiper';
 import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
@@ -50,6 +51,7 @@ class Sidebar {
     this.hideUnanswered = new HideUnanswered();
     this.swiper = new Swiper();
     this.messenger = new Messenger();
+    this.aiMessageResponder = new AiMessageResponder();
 
     this.mountWhenReady();
   }
@@ -214,6 +216,12 @@ class Sidebar {
     this.bindCheckbox(this.swiper.selector, this.swiper.start, this.swiper.stop);
 
     this.bindCheckbox(this.messenger.selector, this.messenger.start, this.messenger.stop);
+
+    this.bindCheckbox(
+      this.aiMessageResponder.selector,
+      this.aiMessageResponder.start,
+      this.aiMessageResponder.stop
+    );
 
     this.bindCheckbox(
       this.hideUnanswered.selector,
@@ -538,6 +546,7 @@ class Sidebar {
     const excludedSelectors = [
       '.tinderAutopilot',
       '.tinderAutopilotMessage',
+      '.tinderAutopilotAIMessageReply',
       '.tinderAutopilotMessageNewOnly'
     ];
 

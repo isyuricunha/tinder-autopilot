@@ -17,6 +17,6 @@
 - [x] Model conversation turns with sender role, timestamp, and text.
 - [x] Add AI reply settings for tone, user context, and conversation window size.
 - [x] Generate AI replies with guarded JSON output and no-send fallback on invalid responses.
-- [ ] Process pending conversations one by one with stop support, delays, and rate limits.
+- [x] Process pending conversations one by one with stop support, delays, and rate limits.
 - [x] Add initial tests for conversation parsing, prompt building, and response parsing.
-- [ ] Add send gating tests when the send flow is connected.
+- [x] Add send gating tests when the send flow is connected.

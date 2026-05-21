@@ -572,6 +572,11 @@ const createMassMessage = () =>
       defaultValue: getDefaultMessage()
     }),
     createTitle('AI Message Replies'),
+    createCheckbox(
+      'tinderAutopilotAIMessageReply',
+      'AI reply unanswered messages',
+      'Generate and send AI replies only when the latest message is from the match.'
+    ),
     createTextbox({
       helpText: 'Conversation style for AI-generated replies.',
       placeholder: 'Short, warm, playful, direct, Brazilian Portuguese...',
