@@ -75,15 +75,22 @@ class AiMessageResponder {
     if (result.status === 'sent') {
       this.sentMessages += 1;
       logger(` AI reply sent to ${result.matchName || matchName}`);
-      return;
+      return result;
     }
 
     if (result.status === 'failed') {
       logger(` AI reply failed for ${result.matchName || matchName}: ${result.reason}`);
-      return;
+      return result;
     }
 
     logger(` AI reply skipped ${result.matchName || matchName}: ${result.reason}`);
+    return result;
+  };
+
+  waitAfterSentReply = async (settings) => {
+    const delayMs = Math.max(0, Number(settings.replyDelaySeconds || 0)) * 1000;
+    if (!delayMs || !this.isRunning) return;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   };
 
   run = async () => {
@@ -110,7 +117,10 @@ class AiMessageResponder {
 
         try {
           await randomDelay();
-          await this.processMatch({ apiKey, match, profileData, settings });
+          const result = await this.processMatch({ apiKey, match, profileData, settings });
+          if (result?.status === 'sent') {
+            await this.waitAfterSentReply(settings);
+          }
         } catch (error) {
           const matchName = get(match, 'person.name', 'match');
           logger(` Error processing AI reply for ${matchName}: ${error.message}`);

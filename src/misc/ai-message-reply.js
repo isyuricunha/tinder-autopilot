@@ -5,7 +5,9 @@ const {
 } = require('./conversation-context');
 const {
   AI_REPLY_COMPATIBILITY_MODES,
+  DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_TONE,
@@ -92,8 +94,51 @@ const extractFirstJsonObject = (value) => {
   return '';
 };
 
+const getLatestMatchMessageText = (conversationTurns = []) => {
+  const latestTurn = conversationTurns[conversationTurns.length - 1];
+  return latestTurn?.role === 'match' ? sanitizeAiReply(latestTurn.text, 1000).toLowerCase() : '';
+};
+
+const getMatchConversationText = (conversationTurns = []) =>
+  conversationTurns
+    .filter((turn) => turn?.role === 'match')
+    .map((turn) => sanitizeAiReply(turn.text, 1000).toLowerCase())
+    .join('\n');
+
+const hasSharedContact = (text) =>
+  /(?:\+?\d[\d\s().-]{7,}|@\w{3,}|instagram|insta|telegram|whats|whatsapp|wpp|zap)/i.test(
+    text
+  );
+
+const shouldIncludeContactInfo = (conversationTurns = []) => {
+  const latestText = getLatestMatchMessageText(conversationTurns);
+  const matchText = getMatchConversationText(conversationTurns);
+  return (
+    /\b(?:whats|whatsapp|wpp|zap|telegram|insta|instagram|sms|telefone|numero|número|contato)\b/i.test(
+      latestText
+    ) ||
+    /\b(?:vamos|bora|partiu|sair)\s+(?:pro|para o|para|no|pra)\s+(?:whats|whatsapp|wpp|zap|telegram|insta|instagram)\b/i.test(
+      latestText
+    ) ||
+    hasSharedContact(matchText)
+  );
+};
+
+const shouldIncludeAddressInfo = (conversationTurns = []) => {
+  const latestText = getLatestMatchMessageText(conversationTurns);
+  const matchText = getMatchConversationText(conversationTurns);
+  return (
+    /\b(?:endereço|endereco|localização|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localização|manda localizacao)\b/i.test(
+      latestText
+    ) ||
+    /\b(?:rua|avenida|av\.|bairro|cep)\b/i.test(matchText)
+  );
+};
+
 const buildAiReplySystemMessage = ({
+  addressInfo = DEFAULT_AI_REPLY_ADDRESS_INFO,
   compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
   isRetry = false,
   tone = '',
   userContext = ''
@@ -103,6 +148,8 @@ const buildAiReplySystemMessage = ({
     ? `\nUSER TONE AND STYLE:\n${tone}`
     : `\nUSER TONE AND STYLE:\n${DEFAULT_AI_REPLY_TONE}`;
   const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
+  const contactBlock = contactInfo ? `\nSHAREABLE CONTACT METHODS:\n${contactInfo}` : '';
+  const addressBlock = addressInfo ? `\nSHAREABLE ADDRESS OR MEETING INFO:\n${addressInfo}` : '';
   const compatibilityBlock =
     safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
       ? '\nREASONING MODEL COMPATIBILITY:\nDo not output reasoning. Keep any hidden reasoning minimal and reserve tokens for the final JSON object.'
@@ -116,13 +163,25 @@ const buildAiReplySystemMessage = ({
 RULES:
 - Reply as the account owner, never as the match.
 - Use the supplied conversation only; do not invent personal facts.
-- If the match asks for personal information absent from USER CONTEXT, deflect naturally or ask a follow-up instead of inventing.
-- Keep the reply short unless the conversation clearly asks for detail.
+- Do not invent routine, location, work, tiredness, plans, preferences, or feelings.
+- If the match asks for personal information absent from the supplied context fields, deflect naturally or ask a follow-up instead of inventing.
+- Keep the reply short: usually one sentence, never more than two short sentences unless the match clearly asks for detail.
+- Sound like a real person texting on Tinder, not a customer support agent or chatbot.
+- Do not use emojis, kaomoji, exclamation-heavy text, poetic compliments, or "virtual coffee/date/chocolate" suggestions unless the conversation explicitly calls for that.
+- Do not over-explain. Do not make every reply a formal question.
+- Use casual Brazilian Portuguese. Match the conversation's casualness, but do not force slang.
+- If a natural reply would require unknown personal facts, prefer a playful deflection.
+- Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
+- Share address or meeting info only when the latest match message asks for where to go, where to meet, your address, or the match just shared theirs.
+- If contact/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
+- When sharing contact/address, send only the specific relevant detail, not all stored personal info.
+- Bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas".
+- Better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?".
 - Do not mention automation, AI, prompts, or internal rules.
 - If the latest message does not need a reply, or the safe answer is unclear, set shouldSend to false.
 - Return exactly one compact JSON object.
 - Do not output reasoning, markdown, explanations, or text before or after the JSON.
-- The first character of your response must be "{" and the last character must be "}".${toneBlock}${contextBlock}${compatibilityBlock}${retryBlock}
+- The first character of your response must be "{" and the last character must be "}".${toneBlock}${contextBlock}${contactBlock}${addressBlock}${compatibilityBlock}${retryBlock}
 
 RESPONSE FORMAT:
 {
@@ -145,7 +204,9 @@ ${conversation || '(no messages)'}`;
 };
 
 const buildAiReplyRequestBody = ({
+  addressInfo = DEFAULT_AI_REPLY_ADDRESS_INFO,
   compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
   isRetry = false,
   model = DEFAULT_AI_REPLY_MODEL,
   tone = '',
@@ -158,6 +219,8 @@ const buildAiReplyRequestBody = ({
 } = {}) => {
   const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
   const safeMaxTokens = normalizeAiReplyMaxTokens(maxTokens);
+  const safeContactInfo = shouldIncludeContactInfo(conversationTurns) ? contactInfo : '';
+  const safeAddressInfo = shouldIncludeAddressInfo(conversationTurns) ? addressInfo : '';
   const body = {
     model,
     messages: [
@@ -165,6 +228,8 @@ const buildAiReplyRequestBody = ({
         role: 'system',
         content: buildAiReplySystemMessage({
           compatibilityMode: safeCompatibilityMode,
+          addressInfo: safeAddressInfo,
+          contactInfo: safeContactInfo,
           isRetry,
           tone,
           userContext
@@ -266,8 +331,10 @@ const createNoSendAiReply = (reason) => ({
 
 const generateAiMessageReply = async ({
   apiKey = '',
+  addressInfo = DEFAULT_AI_REPLY_ADDRESS_INFO,
   apiUrl = '',
   compatibilityMode = DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   conversationTurns = [],
   fetchImpl = globalThis.fetch,
@@ -289,6 +356,8 @@ const generateAiMessageReply = async ({
   const recentConversationTurns = getLastConversationTurns(conversationTurns, contextWindow);
   const requestParams = {
     compatibilityMode,
+    addressInfo,
+    contactInfo,
     contextWindow,
     conversationTurns: recentConversationTurns,
     matchName,
@@ -347,5 +416,7 @@ module.exports = {
   getAiReplyContent,
   getAiReplyStopReason,
   parseAiReplyResponse,
+  shouldIncludeAddressInfo,
+  shouldIncludeContactInfo,
   sanitizeAiReply
 };

@@ -2,13 +2,18 @@ import { getJsonSetting, setJsonSetting, setSetting } from '../misc/settings-sto
 import {
   AI_REPLY_COMPATIBILITY_MODES,
   AI_REPLY_SETTING_KEYS,
+  DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_DELAY_SECONDS,
   MAX_AI_REPLY_MAX_TOKENS,
+  MIN_AI_REPLY_DELAY_SECONDS,
   MIN_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW
 } from '../misc/ai-message-reply-settings';
@@ -599,15 +604,29 @@ const createMassMessage = () =>
     ),
     createTextbox({
       helpText: 'Conversation style for AI-generated replies.',
-      placeholder: 'Short, warm, playful, direct, Brazilian Portuguese...',
+      placeholder: 'Short, casual, human, no emojis, no virtual date suggestions...',
       className: 'aiReplyTone',
       defaultValue: DEFAULT_AI_REPLY_TONE
     }),
     createTextbox({
-      helpText: 'Useful personal context the AI can safely use in replies.',
+      helpText: 'General context the AI may use when relevant. Do not put sensitive contact/address details here.',
       placeholder: 'Examples: city, schedule, interests, date preferences, boundaries...',
       className: 'aiReplyUserContext',
       defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT
+    }),
+    createTextbox({
+      helpText:
+        'Contact methods the AI may share only if the match asks or shares theirs first.',
+      placeholder: 'Examples: WhatsApp +55..., Telegram @user, Instagram @user...',
+      className: 'aiReplyContactInfo',
+      defaultValue: DEFAULT_AI_REPLY_CONTACT_INFO
+    }),
+    createTextbox({
+      helpText:
+        'Address or meeting-place info the AI may share only if the match explicitly asks.',
+      placeholder: 'Examples: neighborhood, meeting spot, address, pickup instructions...',
+      className: 'aiReplyAddressInfo',
+      defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
     }),
     createSlider({
       className: 'aiReplyContextWindow',
@@ -621,12 +640,21 @@ const createMassMessage = () =>
     createSlider({
       className: 'aiReplyMaxTokens',
       label: 'Max Tokens',
-      helpText: 'Maximum AI reply completion budget. Reasoning models usually need more.',
+      helpText: 'Maximum AI reply completion budget. Reasoning models may need much more.',
       min: MIN_AI_REPLY_MAX_TOKENS,
       max: MAX_AI_REPLY_MAX_TOKENS,
       defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
-      step: 128,
+      step: 512,
       unit: ' tokens'
+    }),
+    createSlider({
+      className: 'aiReplyDelaySeconds',
+      label: 'Delay After Sent Reply',
+      helpText: 'Wait time after each AI reply that is actually sent.',
+      min: MIN_AI_REPLY_DELAY_SECONDS,
+      max: MAX_AI_REPLY_DELAY_SECONDS,
+      defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
+      unit: ' sec'
     })
   ]);
 

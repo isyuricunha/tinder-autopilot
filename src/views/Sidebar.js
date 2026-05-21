@@ -5,12 +5,16 @@ import HideUnanswered from '../automations/HideUnanswered';
 import Anonymous from '../automations/Anonymous';
 import {
   AI_REPLY_SETTING_KEYS,
+  DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   normalizeAiReplyCompatibilityMode,
+  normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
   normalizeAiReplyContextWindow
 } from '../misc/ai-message-reply-settings';
@@ -279,6 +283,24 @@ class Sidebar {
       });
     }
 
+    const aiReplyContactInfoField = document.getElementById('aiReplyContactInfo');
+    if (aiReplyContactInfoField) {
+      this.addTrackedListener(aiReplyContactInfoField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting('aiReplyContactInfo', value);
+        logger('💾 Saved AI Reply Contact Info');
+      });
+    }
+
+    const aiReplyAddressInfoField = document.getElementById('aiReplyAddressInfo');
+    if (aiReplyAddressInfoField) {
+      this.addTrackedListener(aiReplyAddressInfoField, 'blur', (e) => {
+        const value = e.target.value.trim();
+        setSetting('aiReplyAddressInfo', value);
+        logger('💾 Saved AI Reply Address Info');
+      });
+    }
+
     // Save bio blacklist when user updates it
     const bioBlacklistField = document.getElementById('bioBlacklist');
     if (bioBlacklistField) {
@@ -410,6 +432,12 @@ class Sidebar {
         defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
         unit: ' tokens',
         normalize: normalizeAiReplyMaxTokens
+      },
+      {
+        id: 'aiReplyDelaySeconds',
+        defaultValue: DEFAULT_AI_REPLY_DELAY_SECONDS,
+        unit: ' sec',
+        normalize: normalizeAiReplyDelaySeconds
       }
     ];
 
@@ -520,6 +548,22 @@ class Sidebar {
       aiReplyUserContextField.value = getSetting(
         'aiReplyUserContext',
         DEFAULT_AI_REPLY_USER_CONTEXT
+      );
+    }
+
+    const aiReplyContactInfoField = document.getElementById('aiReplyContactInfo');
+    if (aiReplyContactInfoField) {
+      aiReplyContactInfoField.value = getSetting(
+        'aiReplyContactInfo',
+        DEFAULT_AI_REPLY_CONTACT_INFO
+      );
+    }
+
+    const aiReplyAddressInfoField = document.getElementById('aiReplyAddressInfo');
+    if (aiReplyAddressInfoField) {
+      aiReplyAddressInfoField.value = getSetting(
+        'aiReplyAddressInfo',
+        DEFAULT_AI_REPLY_ADDRESS_INFO
       );
     }
 

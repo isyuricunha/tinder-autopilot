@@ -8,19 +8,31 @@ const {
   extractFirstJsonObject,
   generateAiMessageReply,
   parseAiReplyResponse,
+  shouldIncludeAddressInfo,
+  shouldIncludeContactInfo,
   sanitizeAiReply
 } = require('../src/misc/ai-message-reply');
 const { AI_REPLY_COMPATIBILITY_MODES } = require('../src/misc/ai-message-reply-settings');
 
 test('buildAiReplySystemMessage includes tone and user context instructions', () => {
   const message = buildAiReplySystemMessage({
+    addressInfo: 'Rua Teste 123',
+    contactInfo: 'WhatsApp +55 11 99999-9999',
     tone: 'Playful, direct, Brazilian Portuguese.',
     userContext: 'I live in Sao Paulo and prefer casual dates.'
   });
 
   assert.equal(message.includes('Reply as the account owner'), true);
+  assert.equal(message.includes('Do not invent routine'), true);
+  assert.equal(message.includes('Do not use emojis'), true);
+  assert.equal(message.includes('Share contact methods only when'), true);
+  assert.equal(message.includes('Share address or meeting info only when'), true);
+  assert.equal(message.includes('Bad style examples to avoid'), true);
+  assert.equal(message.includes('cafe virtual'), true);
   assert.equal(message.includes('Playful, direct'), true);
   assert.equal(message.includes('I live in Sao Paulo'), true);
+  assert.equal(message.includes('WhatsApp +55 11 99999-9999'), true);
+  assert.equal(message.includes('Rua Teste 123'), true);
 });
 
 test('buildAiReplyUserMessage formats recent conversation turns', () => {
@@ -47,7 +59,7 @@ test('buildAiReplyRequestBody creates an OpenAI-compatible JSON response request
 
   assert.equal(body.model, 'gpt-4o-mini');
   assert.equal(body.response_format.type, 'json_object');
-  assert.equal(body.max_tokens, 768);
+  assert.equal(body.max_tokens, 2048);
   assert.equal(body.messages[0].role, 'system');
   assert.equal(body.messages[1].content[0].type, 'text');
 });
@@ -68,6 +80,47 @@ test('buildAiReplyRequestBody supports reasoning and loose JSON compatibility mo
   });
   assert.equal(looseBody.max_tokens, 512);
   assert.equal(looseBody.response_format, undefined);
+});
+
+test('buildAiReplyRequestBody only includes contact and address info when requested', () => {
+  const neutralBody = buildAiReplyRequestBody({
+    contactInfo: 'WhatsApp +55 11 99999-9999',
+    addressInfo: 'Rua Teste 123',
+    conversationTurns: [{ role: 'match', text: 'Dormiu bem?' }]
+  });
+  assert.equal(neutralBody.messages[0].content.includes('WhatsApp +55'), false);
+  assert.equal(neutralBody.messages[0].content.includes('Rua Teste 123'), false);
+
+  const contactBody = buildAiReplyRequestBody({
+    contactInfo: 'WhatsApp +55 11 99999-9999',
+    conversationTurns: [{ role: 'match', text: 'Vamos sair daqui e ir pro whats?' }]
+  });
+  assert.equal(contactBody.messages[0].content.includes('WhatsApp +55'), true);
+
+  const addressBody = buildAiReplyRequestBody({
+    addressInfo: 'Rua Teste 123',
+    conversationTurns: [{ role: 'match', text: 'Qual lugar tu prefere?' }]
+  });
+  assert.equal(addressBody.messages[0].content.includes('Rua Teste 123'), true);
+});
+
+test('contact and address disclosure detectors require relevant match context', () => {
+  assert.equal(
+    shouldIncludeContactInfo([{ role: 'match', text: 'Me passa teu whats?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeContactInfo([{ role: 'match', text: 'Bom dia, tudo bem?' }]),
+    false
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'Manda o local pra eu ir' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'de onde vc era?' }]),
+    false
+  );
 });
 
 test('parseAiReplyResponse returns sendable replies only from valid JSON', () => {
@@ -179,6 +232,8 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
     fetchImpl,
     matchName: 'Ana',
     model: 'custom-model',
+    contactInfo: 'Telegram @me',
+    addressInfo: 'Only share if asked where to meet.',
     tone: 'Short, warm replies.',
     userContext: 'Use Brazilian Portuguese.'
   });
@@ -193,6 +248,8 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
   const body = JSON.parse(calls[0].options.body);
   const prompt = body.messages[1].content[0].text;
   assert.equal(body.model, 'custom-model');
+  assert.equal(body.messages[0].content.includes('Telegram @me'), false);
+  assert.equal(body.messages[0].content.includes('Only share if asked where to meet.'), false);
   assert.equal(prompt.includes('MATCH NAME: Ana'), true);
   assert.equal(prompt.includes('Bom dia'), true);
   assert.equal(prompt.includes('Dormiu bem?'), true);

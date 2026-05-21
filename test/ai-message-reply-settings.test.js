@@ -3,18 +3,24 @@ const assert = require('node:assert/strict');
 const {
   AI_REPLY_COMPATIBILITY_MODES,
   AI_REPLY_SETTING_KEYS,
+  DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+  DEFAULT_AI_REPLY_CONTACT_INFO,
   DEFAULT_AI_REPLY_CONTEXT_WINDOW,
+  DEFAULT_AI_REPLY_DELAY_SECONDS,
   DEFAULT_AI_REPLY_MAX_TOKENS,
   DEFAULT_AI_REPLY_MODEL,
   DEFAULT_AI_REPLY_TONE,
   DEFAULT_AI_REPLY_USER_CONTEXT,
   MAX_AI_REPLY_CONTEXT_WINDOW,
+  MAX_AI_REPLY_DELAY_SECONDS,
   MAX_AI_REPLY_MAX_TOKENS,
   MIN_AI_REPLY_CONTEXT_WINDOW,
+  MIN_AI_REPLY_DELAY_SECONDS,
   MIN_AI_REPLY_MAX_TOKENS,
   normalizeAiReplyCompatibilityMode,
   normalizeAiReplyContextWindow,
+  normalizeAiReplyDelaySeconds,
   normalizeAiReplyMaxTokens,
   readAiReplySettings
 } = require('../src/misc/ai-message-reply-settings');
@@ -23,8 +29,11 @@ test('AI reply settings expose safe defaults', () => {
   assert.equal(typeof DEFAULT_AI_REPLY_TONE, 'string');
   assert.equal(DEFAULT_AI_REPLY_TONE.length > 0, true);
   assert.equal(DEFAULT_AI_REPLY_USER_CONTEXT, '');
-  assert.equal(DEFAULT_AI_REPLY_CONTEXT_WINDOW, 5);
-  assert.equal(DEFAULT_AI_REPLY_MAX_TOKENS, 768);
+  assert.equal(DEFAULT_AI_REPLY_CONTACT_INFO, '');
+  assert.equal(DEFAULT_AI_REPLY_ADDRESS_INFO, '');
+  assert.equal(DEFAULT_AI_REPLY_CONTEXT_WINDOW, 10);
+  assert.equal(DEFAULT_AI_REPLY_MAX_TOKENS, 2048);
+  assert.equal(DEFAULT_AI_REPLY_DELAY_SECONDS, 4);
   assert.equal(DEFAULT_AI_REPLY_COMPATIBILITY_MODE, AI_REPLY_COMPATIBILITY_MODES.standardJson);
   assert.equal(DEFAULT_AI_REPLY_MODEL, 'gpt-4o-mini');
 });
@@ -43,6 +52,13 @@ test('normalizeAiReplyMaxTokens clamps invalid and out-of-range values', () => {
   assert.equal(normalizeAiReplyMaxTokens(1024), 1024);
 });
 
+test('normalizeAiReplyDelaySeconds clamps invalid and out-of-range values', () => {
+  assert.equal(normalizeAiReplyDelaySeconds('abc'), DEFAULT_AI_REPLY_DELAY_SECONDS);
+  assert.equal(normalizeAiReplyDelaySeconds(-1), MIN_AI_REPLY_DELAY_SECONDS);
+  assert.equal(normalizeAiReplyDelaySeconds(999), MAX_AI_REPLY_DELAY_SECONDS);
+  assert.equal(normalizeAiReplyDelaySeconds(8), 8);
+});
+
 test('normalizeAiReplyCompatibilityMode accepts only known modes', () => {
   assert.equal(
     normalizeAiReplyCompatibilityMode(AI_REPLY_COMPATIBILITY_MODES.reasoningJson),
@@ -58,16 +74,22 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     [AI_REPLY_SETTING_KEYS.contextWindow]: '99',
     [AI_REPLY_SETTING_KEYS.maxTokens]: '99999',
     [AI_REPLY_SETTING_KEYS.model]: ' custom-model ',
+    [AI_REPLY_SETTING_KEYS.addressInfo]: ' Rua Teste 123 ',
+    [AI_REPLY_SETTING_KEYS.contactInfo]: ' WhatsApp +55 11 99999-9999 ',
+    [AI_REPLY_SETTING_KEYS.replyDelaySeconds]: '999',
     [AI_REPLY_SETTING_KEYS.tone]: ' concise ',
     [AI_REPLY_SETTING_KEYS.userContext]: ' works late '
   };
 
   assert.deepEqual(readAiReplySettings((key, fallback) => settings[key] ?? fallback), {
+    addressInfo: 'Rua Teste 123',
     apiUrl: 'https://example.test/chat',
     compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    contactInfo: 'WhatsApp +55 11 99999-9999',
     contextWindow: MAX_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: MAX_AI_REPLY_MAX_TOKENS,
     model: 'custom-model',
+    replyDelaySeconds: MAX_AI_REPLY_DELAY_SECONDS,
     tone: 'concise',
     userContext: 'works late'
   });
@@ -75,11 +97,14 @@ test('readAiReplySettings reads and normalizes stored values', () => {
 
 test('readAiReplySettings falls back to safe defaults', () => {
   assert.deepEqual(readAiReplySettings(), {
+    addressInfo: DEFAULT_AI_REPLY_ADDRESS_INFO,
     apiUrl: '',
     compatibilityMode: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+    contactInfo: DEFAULT_AI_REPLY_CONTACT_INFO,
     contextWindow: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: DEFAULT_AI_REPLY_MAX_TOKENS,
     model: DEFAULT_AI_REPLY_MODEL,
+    replyDelaySeconds: DEFAULT_AI_REPLY_DELAY_SECONDS,
     tone: DEFAULT_AI_REPLY_TONE,
     userContext: DEFAULT_AI_REPLY_USER_CONTEXT
   });
