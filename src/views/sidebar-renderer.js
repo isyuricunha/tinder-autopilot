@@ -29,12 +29,12 @@ const clearChildren = (element) => {
 };
 
 const createResetCountersButton = () =>
-  createElement('div', { style: 'margin: 0 12px 16px 12px; display: flex; gap: 8px;' }, [
+  createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
     createElement('button', {
       id: 'resetCounters',
       text: 'Reset Counters',
       style:
-        'width: 100%; padding: 10px 16px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);',
+        'width: 100%; padding: 8px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);',
       attributes: { type: 'button' }
     })
   ]);

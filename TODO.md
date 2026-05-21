@@ -66,4 +66,5 @@
 - [x] Add inline AI connection status for provider changes and model refresh results.
 - [x] Replace separate AI reply toggles with one Off / Reply once / Continuous mode selector.
 - [x] Disable continuous-only runtime controls unless Continuous AI reply mode is selected.
+- [x] Compact the top counters and reduce repeated card chrome in the sidebar.
 - [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.

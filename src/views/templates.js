@@ -115,7 +115,7 @@ const createCard = (children) =>
     'div',
     {
       style:
-        'background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);'
+        'background: #000000; border: 1px solid #333333; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);'
     },
     [
       createElement(
@@ -431,7 +431,7 @@ const createSlider = ({
       {
         className: 'slider-container',
         style:
-          'background: #000000; border: 1px solid #333333; border-radius: 16px; margin: 8px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);',
+          'background: #000000; border: 1px solid #333333; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);',
         attributes: { 'data-parent': parentToggle || '', ...attributes }
       },
       [
@@ -538,40 +538,34 @@ const createCounterCard = ({ id, label, pathD }) =>
     'div',
     {
       style:
-        'position: relative; padding: 32px 16px 20px 16px; flex: 1; text-align: center; border-radius: 16px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); cursor: pointer; background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;'
+        'min-width: 0; padding: 10px; flex: 1; display: flex; align-items: center; gap: 8px; text-align: left; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;'
     },
     [
       createElement(
-        'div',
-        { style: 'position: absolute; left: 50%; top: -20px; transform: translateX(-50%);' },
-        [
-          createElement(
-            'span',
-            {
-              style:
-                'width: 40px; height: 40px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; margin: 0 auto;'
-            },
-            [createSvgIcon(pathD)]
-          )
-        ]
+        'span',
+        {
+          style:
+            'width: 28px; height: 28px; flex: 0 0 28px; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.24); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; display: flex; align-items: center; justify-content: center;'
+        },
+        [createSvgIcon(pathD)]
       ),
-      createElement('div', { style: 'margin-top: 8px;' }, [
+      createElement('div', { style: 'min-width: 0;' }, [
         createElement(
           'h3',
-          { style: 'font-size: 20px; font-weight: 700; margin: 4px 0 2px 0; color: #ffffff;' },
+          { style: 'font-size: 18px; font-weight: 700; margin: 0 0 1px 0; color: #ffffff;' },
           [createElement('span', { id })]
         ),
         createElement('span', {
           text: label,
           style:
-            'color: #ff6b35; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;'
+            'display: block; color: #ff6b35; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
         })
       ])
     ]
   );
 
 const createCounterLogs = () =>
-  createElement('div', { style: 'margin: 32px 12px 24px 12px; display: flex; gap: 8px;' }, [
+  createElement('div', { style: 'margin: 16px 12px 12px 12px; display: flex; gap: 8px;' }, [
     createCounterCard({
       id: 'likeCount',
       label: 'Liked',
