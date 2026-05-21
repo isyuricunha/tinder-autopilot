@@ -206,6 +206,18 @@ RULES:
 - Do not output reasoning, markdown, explanations, or text before or after the JSON.
 - The first character of your response must be "{" and the last character must be "}".
 
+${toneBlock}
+
+${contextBlock}
+
+${contactBlock}
+
+${addressBlock}
+
+${compatibilityBlock}
+
+${retryBlock}
+
 RESPONSE FORMAT:
 {
   "shouldSend": true | false,
