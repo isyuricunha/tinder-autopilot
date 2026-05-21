@@ -1,18 +1,22 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
   applyUnansweredMessagesFilter,
   clearUnansweredMessagesFilter,
+  getMessageItemVisibilityTarget,
   getMessageListItems,
   isOutgoingLastMessage,
   shouldShowUnansweredMessageItem
 } = require('../src/misc/message-list-filter');
 
 class FakeMessageItem {
-  constructor(textContent, display = '') {
+  constructor(textContent, display = '', wrapper = null) {
     this.textContent = textContent;
     this.style = { display };
     this.attributes = new Map();
+    this.wrapper = wrapper;
   }
 
   getAttribute(name) {
@@ -25,6 +29,11 @@ class FakeMessageItem {
 
   removeAttribute(name) {
     this.attributes.delete(name);
+  }
+
+  closest(selector) {
+    if (selector === 'li') return this.wrapper;
+    return null;
   }
 }
 
@@ -42,9 +51,11 @@ const createRoot = (items) => ({
 
 test('isOutgoingLastMessage detects conversations where our last message is latest', () => {
   const outgoing = new FakeMessageItem('Your last message was: Hello');
+  const outgoingWithoutSpace = new FakeMessageItem('Visible preview.Your last message was: Hello');
   const incoming = new FakeMessageItem('Helena Santos’s last message was: Oii');
 
   assert.equal(isOutgoingLastMessage(outgoing), true);
+  assert.equal(isOutgoingLastMessage(outgoingWithoutSpace), true);
   assert.equal(shouldShowUnansweredMessageItem(outgoing), false);
   assert.equal(isOutgoingLastMessage(incoming), false);
   assert.equal(shouldShowUnansweredMessageItem(incoming), true);
@@ -89,4 +100,45 @@ test('getMessageListItems deduplicates selector overlap', () => {
   const root = createRoot([item]);
 
   assert.deepEqual(getMessageListItems(root), [item]);
+});
+
+test('applyUnansweredMessagesFilter hides the message row wrapper when present', () => {
+  const wrapper = new FakeMessageItem('', 'list-item');
+  const outgoing = new FakeMessageItem('Your last message was: Hello', 'flex', wrapper);
+  const root = createRoot([outgoing]);
+
+  assert.equal(getMessageItemVisibilityTarget(outgoing), wrapper);
+
+  applyUnansweredMessagesFilter(root);
+  assert.equal(wrapper.style.display, 'none');
+  assert.equal(outgoing.style.display, 'flex');
+
+  clearUnansweredMessagesFilter(root);
+  assert.equal(wrapper.style.display, 'list-item');
+});
+
+test('applyUnansweredMessagesFilter classifies the real Tinder messages sidebar snapshot', () => {
+  const html = fs.readFileSync(
+    path.join(__dirname, '..', 'tinder-html', 'tinder-messages-sidebar.html'),
+    'utf8'
+  );
+  const items = Array.from(
+    html.matchAll(/<a\b[^>]*class="[^"]*\bmessageListItem\b[^"]*"[\s\S]*?<\/a>/gi)
+  ).map((match) => {
+    const textContent = match[0]
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return new FakeMessageItem(textContent, 'flex');
+  });
+  const root = createRoot(items);
+
+  const result = applyUnansweredMessagesFilter(root);
+
+  assert.equal(result.total, 64);
+  assert.equal(result.hidden, 13);
+  assert.equal(result.visible, 51);
 });

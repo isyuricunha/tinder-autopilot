@@ -41,29 +41,37 @@ const getMessageListItems = (root = document) =>
 
 const isOutgoingLastMessage = (messageItem) => {
   const text = normalizeText(messageItem?.textContent);
-  return /(?:^|\s)Your last message was\s*:/i.test(text);
+  return /\bYour\s+last\s+message\s+was\s*:/i.test(text);
 };
 
 const shouldShowUnansweredMessageItem = (messageItem) => !isOutgoingLastMessage(messageItem);
 
+const getMessageItemVisibilityTarget = (messageItem) =>
+  messageItem?.closest?.('li') || messageItem;
+
 const setPreviousDisplay = (messageItem) => {
+  if (!messageItem) return;
   if (messageItem.getAttribute?.(PREVIOUS_DISPLAY_ATTR) !== null) return;
   messageItem.setAttribute?.(PREVIOUS_DISPLAY_ATTR, messageItem.style?.display || '');
 };
 
 const restoreMessageItem = (messageItem) => {
-  if (messageItem.getAttribute?.(HIDDEN_UNANSWERED_ATTR) === null) return;
+  const visibilityTarget = getMessageItemVisibilityTarget(messageItem);
+  if (!visibilityTarget) return;
+  if (visibilityTarget.getAttribute?.(HIDDEN_UNANSWERED_ATTR) === null) return;
 
-  const previousDisplay = messageItem.getAttribute?.(PREVIOUS_DISPLAY_ATTR) || '';
-  if (messageItem.style) messageItem.style.display = previousDisplay;
-  messageItem.removeAttribute?.(HIDDEN_UNANSWERED_ATTR);
-  messageItem.removeAttribute?.(PREVIOUS_DISPLAY_ATTR);
+  const previousDisplay = visibilityTarget.getAttribute?.(PREVIOUS_DISPLAY_ATTR) || '';
+  if (visibilityTarget.style) visibilityTarget.style.display = previousDisplay;
+  visibilityTarget.removeAttribute?.(HIDDEN_UNANSWERED_ATTR);
+  visibilityTarget.removeAttribute?.(PREVIOUS_DISPLAY_ATTR);
 };
 
 const hideMessageItem = (messageItem) => {
-  setPreviousDisplay(messageItem);
-  messageItem.setAttribute?.(HIDDEN_UNANSWERED_ATTR, 'true');
-  if (messageItem.style) messageItem.style.display = 'none';
+  const visibilityTarget = getMessageItemVisibilityTarget(messageItem);
+  if (!visibilityTarget) return;
+  setPreviousDisplay(visibilityTarget);
+  visibilityTarget.setAttribute?.(HIDDEN_UNANSWERED_ATTR, 'true');
+  if (visibilityTarget.style) visibilityTarget.style.display = 'none';
 };
 
 const applyUnansweredMessagesFilter = (root = document) => {
@@ -104,9 +112,21 @@ const findMessagesTab = (root = document) => {
 
 const getMessageListElement = (root = document) => getFirstElement(root, MESSAGE_LIST_SELECTORS);
 
+const findScrollableAncestor = (element) => {
+  let current = element;
+  while (current) {
+    if (Number(current.scrollHeight || 0) > Number(current.clientHeight || 0)) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+  return null;
+};
+
 const findMessageScrollContainer = (root = document) => {
   const messageList = getMessageListElement(root);
   return (
+    findScrollableAncestor(messageList) ||
     messageList?.closest?.('[role="tabpanel"]') ||
     getElements(root, '[role="tabpanel"][aria-hidden="false"]')[0] ||
     messageList?.parentElement ||
@@ -127,6 +147,7 @@ module.exports = {
   findMessageScrollContainer,
   findMessagesTab,
   getMessageListItems,
+  getMessageItemVisibilityTarget,
   isOutgoingLastMessage,
   scrollMessageListToTop,
   shouldShowUnansweredMessageItem

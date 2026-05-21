@@ -8,6 +8,9 @@ import {
   scrollMessageListToTop
 } from '../misc/message-list-filter';
 
+const MAX_SCROLL_STEPS = 120;
+const SCROLL_DELAY_MS = 100;
+
 class HideUnanswered {
   selector = '.tinderAutopilotHideMine';
 
@@ -31,14 +34,16 @@ class HideUnanswered {
       return;
     }
 
-    const currHeight = scrollContainer.scrollTop;
-    const totalHeight = scrollContainer.scrollHeight;
+    const currentScrollTop = scrollContainer.scrollTop || 0;
+    const viewportHeight = scrollContainer.clientHeight || window.outerHeight || 0;
+    const totalHeight = scrollContainer.scrollHeight || 0;
     const newTotal = getMessageListItems(document).length;
+    const hasMoreScroll = currentScrollTop + viewportHeight < totalHeight - 4;
 
-    if (this.counter < 30 && currHeight < totalHeight) {
+    if (this.counter < MAX_SCROLL_STEPS && hasMoreScroll) {
       this.counter += 1;
-      scrollContainer.scrollTop += window.outerHeight;
-      setTimeout(() => this.scrollMatchesToEnd(cb), 100);
+      scrollContainer.scrollTop = currentScrollTop + viewportHeight;
+      setTimeout(() => this.scrollMatchesToEnd(cb), SCROLL_DELAY_MS);
     } else {
       logger(`Finished scrolling, total matches found: ${newTotal}`);
       cb();
