@@ -64,6 +64,7 @@ class AiMessageResponder {
     const result = await processAiReplyMatch({
       apiKey,
       generateReply: generateAiMessageReply,
+      loadRawMessages: getRawMessagesForMatch,
       match,
       profileData,
       rawMessages,

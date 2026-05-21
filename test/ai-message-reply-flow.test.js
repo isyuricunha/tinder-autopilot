@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   buildPendingAiReplyContext,
   getCurrentUserId,
+  getLatestConversationSignature,
   getMatchId,
   getMatchName,
   getMatchUserId,
@@ -51,6 +52,7 @@ test('buildPendingAiReplyContext only allows conversations waiting on the match'
   assert.equal(pending.status, 'pending');
   assert.equal(pending.matchId, 'match-1');
   assert.equal(pending.matchName, 'Ana');
+  assert.equal(typeof pending.latestMessageSignature, 'string');
   assert.deepEqual(
     pending.conversationTurns.map((turn) => turn.text),
     ['Dormiu bem?']
@@ -67,6 +69,21 @@ test('buildPendingAiReplyContext only allows conversations waiting on the match'
 
   assert.equal(notPending.status, 'skipped');
   assert.equal(notPending.reason, 'Latest message is not from match');
+});
+
+test('getLatestConversationSignature identifies the latest pending message', () => {
+  assert.equal(
+    getLatestConversationSignature([
+      {
+        id: 'message-1',
+        role: 'match',
+        senderId: 'person-1',
+        sentDate: '2026-01-01T10:01:00Z',
+        text: 'Dormiu bem?'
+      }
+    ]),
+    'message-1|match|2026-01-01T10:01:00Z|person-1|Dormiu bem?'
+  );
 });
 
 test('processAiReplyMatch sends only approved AI replies', async () => {
@@ -86,6 +103,15 @@ test('processAiReplyMatch sends only approved AI replies', async () => {
     match,
     profileData,
     rawMessages: [
+      { from: 'user-1', to: 'person-1', message: 'Bom dia', sent_date: '2026-01-01T10:00:00Z' },
+      {
+        from: 'person-1',
+        to: 'user-1',
+        message: 'Dormiu bem?',
+        sent_date: '2026-01-01T10:01:00Z'
+      }
+    ],
+    loadRawMessages: async () => [
       { from: 'user-1', to: 'person-1', message: 'Bom dia', sent_date: '2026-01-01T10:00:00Z' },
       {
         from: 'person-1',
@@ -153,5 +179,50 @@ test('processAiReplyMatch does not send when gating fails', async () => {
   assert.equal(declined.status, 'skipped');
   assert.equal(declined.reason, 'No reply needed');
   assert.equal(generateCalls, 1);
+  assert.equal(sendCalls, 0);
+});
+
+test('processAiReplyMatch rechecks the latest message before sending', async () => {
+  let sendCalls = 0;
+  const result = await processAiReplyMatch({
+    generateReply: async () => ({
+      shouldSend: true,
+      reply: 'Claro, te conto sim',
+      reason: 'Answers question'
+    }),
+    loadRawMessages: async () => [
+      { from: 'user-1', to: 'person-1', message: 'Bom dia', sent_date: '2026-01-01T10:00:00Z' },
+      {
+        from: 'person-1',
+        to: 'user-1',
+        message: 'Dormiu bem?',
+        sent_date: '2026-01-01T10:01:00Z'
+      },
+      {
+        from: 'person-1',
+        to: 'user-1',
+        message: 'E de onde voce era?',
+        sent_date: '2026-01-01T10:02:00Z'
+      }
+    ],
+    match,
+    profileData,
+    rawMessages: [
+      { from: 'user-1', to: 'person-1', message: 'Bom dia', sent_date: '2026-01-01T10:00:00Z' },
+      {
+        from: 'person-1',
+        to: 'user-1',
+        message: 'Dormiu bem?',
+        sent_date: '2026-01-01T10:01:00Z'
+      }
+    ],
+    sendMessage: async () => {
+      sendCalls += 1;
+    },
+    settings: { contextWindow: 5 }
+  });
+
+  assert.equal(result.status, 'skipped');
+  assert.equal(result.reason, 'Latest message changed before send');
   assert.equal(sendCalls, 0);
 });

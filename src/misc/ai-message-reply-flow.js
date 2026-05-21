@@ -50,6 +50,20 @@ const createSkippedAiReplyMatchResult = (reason, extra = {}) => ({
   ...extra
 });
 
+const getLatestConversationSignature = (conversationTurns = []) => {
+  const latestTurn = conversationTurns[conversationTurns.length - 1];
+  if (!latestTurn) return '';
+  return [
+    latestTurn.id,
+    latestTurn.role,
+    latestTurn.sentDate,
+    latestTurn.senderId,
+    latestTurn.text
+  ]
+    .map((value) => String(value || '').trim())
+    .join('|');
+};
+
 const buildPendingAiReplyContext = ({
   contextWindow,
   match,
@@ -78,6 +92,7 @@ const buildPendingAiReplyContext = ({
   return {
     conversationTurns: getLastConversationTurns(conversationTurns, contextWindow),
     didSend: false,
+    latestMessageSignature: getLatestConversationSignature(conversationTurns),
     matchId,
     matchName: getMatchName(match),
     reason: 'Pending reply',
@@ -88,6 +103,7 @@ const buildPendingAiReplyContext = ({
 const processAiReplyMatch = async ({
   apiKey = '',
   generateReply = generateAiMessageReply,
+  loadRawMessages,
   match,
   profileData,
   rawMessages = [],
@@ -115,6 +131,30 @@ const processAiReplyMatch = async ({
       matchId: context.matchId,
       matchName: context.matchName
     });
+  }
+
+  if (typeof loadRawMessages === 'function') {
+    const latestRawMessages = await loadRawMessages(context.matchId);
+    const latestContext = buildPendingAiReplyContext({
+      contextWindow: settings.contextWindow,
+      match,
+      profileData,
+      rawMessages: latestRawMessages
+    });
+
+    if (latestContext.status !== 'pending') {
+      return createSkippedAiReplyMatchResult('Latest message changed before send', {
+        matchId: context.matchId,
+        matchName: context.matchName
+      });
+    }
+
+    if (latestContext.latestMessageSignature !== context.latestMessageSignature) {
+      return createSkippedAiReplyMatchResult('Latest message changed before send', {
+        matchId: context.matchId,
+        matchName: context.matchName
+      });
+    }
   }
 
   if (typeof sendMessage !== 'function') {
@@ -149,6 +189,7 @@ const processAiReplyMatch = async ({
 module.exports = {
   buildPendingAiReplyContext,
   getCurrentUserId,
+  getLatestConversationSignature,
   getMatchId,
   getMatchName,
   getMatchUserId,
