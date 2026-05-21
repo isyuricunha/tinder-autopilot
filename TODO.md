@@ -35,3 +35,4 @@
 - [x] Make default AI reply prompt less robotic and restrict contact/address disclosure.
 - [x] Add configurable AI reply contact, address, token, context, and sent-reply delay settings.
 - [x] Make default AI reply language neutral and expand location-question detection.
+- [x] Treat AI reply location details as city/neighborhood/address context and detect inverted "you are from where" questions.

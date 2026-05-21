@@ -609,8 +609,8 @@ const createMassMessage = () =>
       defaultValue: DEFAULT_AI_REPLY_TONE
     }),
     createTextbox({
-      helpText: 'General context the AI may use when relevant. Do not put sensitive contact/address details here.',
-      placeholder: 'Examples: city, schedule, interests, date preferences, boundaries...',
+      helpText: 'General context the AI may use when relevant. Do not put sensitive contact or location details here.',
+      placeholder: 'Examples: schedule, interests, date preferences, boundaries...',
       className: 'aiReplyUserContext',
       defaultValue: DEFAULT_AI_REPLY_USER_CONTEXT
     }),
@@ -623,8 +623,8 @@ const createMassMessage = () =>
     }),
     createTextbox({
       helpText:
-        'Address or meeting-place info the AI may share only if the match explicitly asks.',
-      placeholder: 'Examples: neighborhood, meeting spot, address, pickup instructions...',
+        'Location, city, neighborhood, address, or meeting-place info the AI may share only if the match explicitly asks.',
+      placeholder: 'Examples: city/state, neighborhood, meeting spot, address, pickup instructions...',
       className: 'aiReplyAddressInfo',
       defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
     }),

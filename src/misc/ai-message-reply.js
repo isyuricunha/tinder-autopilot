@@ -116,6 +116,19 @@ const hasSharedContact = (text) =>
     text
   );
 
+const LOCATION_REQUEST_PATTERNS = Object.freeze([
+  /\b(?:endereco|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localizacao)\b/i,
+  /\b(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\b/i,
+  /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+(?:onde|aonde)\b/i,
+  /\bmora\s+(?:onde|aonde)\b/i,
+  /\b(?:de|da|d)\s+(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora|fica)\b/i,
+  /\b(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora|fica)\s+(?:de|da|d)?\s*(?:onde|aonde)\b/i,
+  /\b(?:qual|q(?:ual)?)\s+(?:e|eh)?\s*(?:sua|seu|teu|tua)?\s*(?:cidade|bairro|endereco|localizacao)\b/i,
+  /\bem\s+que\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)?\s*(?:mora|vive|fica)?\b/i,
+  /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+em\s+(?:qual|q(?:ual)?)\s+(?:cidade|bairro)\b/i,
+  /\b(?:qual|q(?:ual)?)\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica|e|eh)\b/i
+]);
+
 const shouldIncludeContactInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const matchText = getMatchConversationText(conversationTurns);
@@ -134,25 +147,7 @@ const shouldIncludeAddressInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const matchText = getMatchConversationText(conversationTurns);
   return (
-    /\b(?:endereco|localizacao|local|lugar|onde te pego|onde te busco|onde nos encontramos|onde vamos|qual lugar|manda o local|manda localizacao)\b/i.test(
-      latestText
-    ) ||
-    /\b(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\b/i.test(
-      latestText
-    ) ||
-    /\b(?:voce|vc|ce|tu)\s+(?:mora|vive|fica)\s+(?:onde|aonde)\b/i.test(
-      latestText
-    ) ||
-    /\bmora\s+(?:onde|aonde)\b/i.test(latestText) ||
-    /\b(?:de|d)\s+(?:onde|aonde)\s+(?:voce|vc|ce|tu)\s+(?:e|eh|era|vem|mora)\b/i.test(
-      latestText
-    ) ||
-    /\b(?:qual|q(?:ual)?)\s+(?:e|eh)?\s*(?:sua|seu|teu|tua)?\s*(?:cidade|bairro|endereco|localizacao)\b/i.test(
-      latestText
-    ) ||
-    /\bem\s+que\s+(?:cidade|bairro)\s+(?:voce|vc|ce|tu)?\s*(?:mora|vive|fica)?\b/i.test(
-      latestText
-    ) ||
+    LOCATION_REQUEST_PATTERNS.some((pattern) => pattern.test(latestText)) ||
     /\b(?:rua|avenida|av\.|bairro|cep)\b/i.test(matchText)
   );
 };
@@ -171,7 +166,9 @@ const buildAiReplySystemMessage = ({
     : `\nUSER TONE AND STYLE:\n${DEFAULT_AI_REPLY_TONE}`;
   const contextBlock = userContext ? `\nUSER CONTEXT:\n${userContext}` : '';
   const contactBlock = contactInfo ? `\nSHAREABLE CONTACT METHODS:\n${contactInfo}` : '';
-  const addressBlock = addressInfo ? `\nSHAREABLE ADDRESS OR MEETING INFO:\n${addressInfo}` : '';
+  const addressBlock = addressInfo
+    ? `\nSHAREABLE LOCATION, CITY, NEIGHBORHOOD, ADDRESS, OR MEETING INFO:\n${addressInfo}`
+    : '';
   const compatibilityBlock =
     safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson
       ? '\nREASONING MODEL COMPATIBILITY:\nDo not output reasoning. Think befor answer.'
@@ -194,9 +191,9 @@ RULES:
 - Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
 - If a natural reply would require unknown personal facts, prefer a playful deflection.
 - Share contact methods only when the latest match message asks to move to WhatsApp, SMS, Telegram, Instagram, another app, or asks for contact information, or when the match just shared their own contact.
-- Share address or meeting info only when the latest match message asks for where to go, where to meet, your address, or the match just shared theirs.
-- If contact/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
-- When sharing contact/address, send only the specific relevant detail, not all stored personal info.
+- Share location, city, neighborhood, address, or meeting info only when the latest match message asks where you are from, where you live/stay, where to go, where to meet, your address, or the match just shared theirs.
+- If contact/location/address was requested but the relevant field is not supplied, do not invent it; ask what they prefer or deflect.
+- When sharing contact/location/address, send only the specific relevant detail, not all stored personal info.
 - Never escalates sexual tension unless the match has already gone there explicitly. Ambiguous or innocent phrasing from the match is not an invitation. Only match explicit energy, never project it.
 - For Portuguese conversations, bad style examples to avoid: "semana corrida mas animada", "cafe virtual", "chocolate virtual", "recarregar as energias", "de onde vem essa energia?", "sou de um lugar que combina com boas risadas".
 - For Portuguese conversations, better style examples: "por aqui tudo certo, e por ai?", "te conto se tu me contar primeiro haha", "bora, me chama no whats", "pode ser, qual lugar tu prefere?".

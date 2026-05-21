@@ -26,7 +26,8 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Do not invent routine'), true);
   assert.equal(message.includes('Do not use emojis'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
-  assert.equal(message.includes('Share address or meeting info only when'), true);
+  assert.equal(message.includes('Share location, city, neighborhood, address'), true);
+  assert.equal(message.includes('SHAREABLE LOCATION, CITY, NEIGHBORHOOD'), true);
   assert.equal(message.includes('same language as the latest match message'), true);
   assert.equal(message.includes('For Portuguese conversations, bad style examples to avoid'), true);
   assert.equal(message.includes('cafe virtual'), true);
@@ -103,6 +104,12 @@ test('buildAiReplyRequestBody only includes contact and address info when reques
     conversationTurns: [{ role: 'match', text: 'Qual lugar tu prefere?' }]
   });
   assert.equal(addressBody.messages[0].content.includes('Rua Teste 123'), true);
+
+  const cityBody = buildAiReplyRequestBody({
+    addressInfo: 'Porto Alegre, RS',
+    conversationTurns: [{ role: 'match', text: 'kkkkkk você é de onde mesmo?' }]
+  });
+  assert.equal(cityBody.messages[0].content.includes('Porto Alegre, RS'), true);
 });
 
 test('contact and address disclosure detectors require relevant match context', () => {
@@ -123,6 +130,14 @@ test('contact and address disclosure detectors require relevant match context', 
     true
   );
   assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'você é de onde mesmo?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'tu é da onde?' }]),
+    true
+  );
+  assert.equal(
     shouldIncludeAddressInfo([{ role: 'match', text: 'aonde tu mora?' }]),
     true
   );
@@ -132,6 +147,10 @@ test('contact and address disclosure detectors require relevant match context', 
   );
   assert.equal(
     shouldIncludeAddressInfo([{ role: 'match', text: 'em que bairro voce fica?' }]),
+    true
+  );
+  assert.equal(
+    shouldIncludeAddressInfo([{ role: 'match', text: 'vc mora em qual cidade?' }]),
     true
   );
   assert.equal(
