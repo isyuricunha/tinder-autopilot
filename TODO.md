@@ -7,4 +7,5 @@
 - [x] Integrate detectors into the Auto Like flow in small steps.
 - [x] Verify each milestone with `pnpm run lint`, `pnpm run build`, and `pnpm test`.
 - [x] Make Bio Filtering respect the `Enable Bio Filtering` toggle.
+- [x] Centralize Gender, Advanced, and Super Like decision rules with focused tests.
 - [ ] Run live browser verification after rebuilding and reloading the extension.

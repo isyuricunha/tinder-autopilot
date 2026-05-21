@@ -1,5 +1,6 @@
-import { logger, warnLog, generateRandomNumber } from '../misc/helper';
+import { logger, warnLog } from '../misc/helper';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
+import { shouldUseSuperLike } from '../misc/super-like-rules';
 import { findSuperLikeButton } from '../misc/tinder-dom-detectors';
 import { getSetting, setSetting } from '../misc/settings-store';
 import { getCheckboxValue } from '../views/toggle-control';
@@ -98,33 +99,29 @@ class SuperLiker {
   }
 
   shouldSuperLike(profileContext = this.getProfileContext()) {
-    if (!this.isEnabled()) return false;
-    if (!this.canSuperLike()) return false;
-
-    // Get Super Like strategy from settings
     const strategy = this.getSuperLikeStrategy();
+    const decisionInput = {
+      isEnabled: this.isEnabled(),
+      canSuperLike: this.canSuperLike(),
+      strategy,
+      randomValue: Math.random()
+    };
 
     switch (strategy) {
-      case 'random':
-        // 10% chance to Super Like
-        return Math.random() < 0.1;
-
       case 'verified':
-        // Super Like verified profiles only
-        return this.isProfileVerified();
-
+        decisionInput.isVerified = this.isProfileVerified();
+        break;
       case 'photos':
-        // Super Like profiles with many photos
-        return this.getPhotoCount(profileContext) >= 5;
-
+        decisionInput.photoCount = this.getPhotoCount(profileContext);
+        break;
       case 'distance':
-        // Super Like nearby profiles
-        const distance = this.getDistance(profileContext);
-        return distance && distance.value <= 10;
-
+        decisionInput.distance = this.getDistance(profileContext);
+        break;
       default:
-        return false;
+        break;
     }
+
+    return shouldUseSuperLike(decisionInput);
   }
 
   isEnabled() {

@@ -1,10 +1,9 @@
 import { errorLog, logger, warnLog } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import {
-  isAgeOutsideRange,
-  isDistanceOverMax,
-  isPhotoCountBelowMinimum,
-  parseFilterList
+  isGenderBlocked,
+  parseFilterList,
+  shouldSkipAdvancedProfile
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
@@ -849,19 +848,10 @@ class ProfileAnalyzer {
     // Check gender filtering
     if (this.isGenderFilterEnabled()) {
       const genderIdentity = this.getGenderIdentity(profileContext);
-      if (genderIdentity) {
-        // Refresh gender filter from storage
-        this.genderFilter = this.loadGenderFilter();
+      this.genderFilter = this.loadGenderFilter();
 
-        if (this.genderFilter.length > 0) {
-          const shouldSkip = this.genderFilter.some((filterGender) =>
-            genderIdentity.includes(filterGender)
-          );
-
-          if (shouldSkip) {
-            return true;
-          }
-        }
+      if (isGenderBlocked(genderIdentity, this.genderFilter)) {
+        return true;
       }
     }
 
@@ -872,21 +862,20 @@ class ProfileAnalyzer {
       this.maxDistance = this.loadMaxDistance();
       this.minPhotoCount = this.loadMinPhotoCount();
 
-      // Age filtering
       const age = this.getAge(profileContext);
-      if (isAgeOutsideRange(age, this.ageRange)) {
-        return true;
-      }
-
-      // Distance filtering
       const distance = this.getDistance(profileContext);
-      if (isDistanceOverMax(distance, this.maxDistance)) {
-        return true;
-      }
-
-      // Photo count filtering
       const photoCount = this.getPhotoCount(profileContext);
-      if (isPhotoCountBelowMinimum(photoCount, this.minPhotoCount)) {
+
+      if (
+        shouldSkipAdvancedProfile({
+          age,
+          distance,
+          photoCount,
+          ageRange: this.ageRange,
+          maxDistance: this.maxDistance,
+          minPhotoCount: this.minPhotoCount
+        })
+      ) {
         return true;
       }
     }
