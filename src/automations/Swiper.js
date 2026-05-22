@@ -10,6 +10,12 @@ import {
 } from '../misc/tinder-dom-detectors';
 import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
 import {
+  KEYBOARD_SHORTCUT_EVENT_TYPES,
+  buildKeyboardShortcutEventInit,
+  getKeyboardShortcutTarget
+} from '../misc/keyboard-shortcut-events';
+import {
+  canRetrySwipeActionForProfile,
   canUseSwipeActionButton,
   clearProfileActionFailure,
   hasProfileAdvanced,
@@ -126,53 +132,22 @@ class Swiper {
   // Method to press keyboard shortcuts
   pressKey = (key, keyCode) => {
     try {
-      const events = [
-        new KeyboardEvent('keydown', {
-          key: key,
-          code: key,
-          keyCode: keyCode,
-          which: keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }),
-        new KeyboardEvent('keypress', {
-          key: key,
-          code: key,
-          keyCode: keyCode,
-          which: keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }),
-        new KeyboardEvent('keyup', {
-          key: key,
-          code: key,
-          keyCode: keyCode,
-          which: keyCode,
-          bubbles: true,
-          cancelable: true,
-          view: window
-        })
-      ];
+      const target = getKeyboardShortcutTarget({
+        activeElement: document.activeElement,
+        body: document.body,
+        documentElement: document.documentElement,
+        documentNode: document
+      });
 
-      // Try dispatching on different elements
-      const targets = [
-        document,
-        document.documentElement,
-        document.body,
-        document.activeElement,
-        document.querySelector('[data-testid="card-stack"]'),
-        document.querySelector('.recsCardboard__cards'),
-        document.querySelector('.gamepad-card'),
-        document.querySelector('[role="application"]'),
-        window
-      ].filter(Boolean);
+      if (!target) return false;
 
-      for (const target of targets) {
-        for (const event of events) {
-          target.dispatchEvent(event);
-        }
+      for (const eventType of KEYBOARD_SHORTCUT_EVENT_TYPES) {
+        target.dispatchEvent(
+          new KeyboardEvent(
+            eventType,
+            buildKeyboardShortcutEventInit({ key, keyCode, view: window })
+          )
+        );
       }
 
       return true;
@@ -392,6 +367,34 @@ class Swiper {
     }
   };
 
+  incrementDislikeCounter = () => {
+    const deslikeCountEl = document.getElementById('deslikeCount');
+    if (deslikeCountEl) {
+      deslikeCountEl.textContent = incrementCounter('deslikeCount');
+    }
+  };
+
+  hasActionTargetAdvanced = (targetProfileId) =>
+    hasProfileAdvanced({
+      beforeProfileId: targetProfileId,
+      afterProfileId: this.getCurrentProfileId(),
+      hasProfile: this.hasProfile()
+    });
+
+  canRetryActionForProfile = (targetProfileId) =>
+    canRetrySwipeActionForProfile({
+      targetProfileId,
+      currentProfileId: this.getCurrentProfileId(),
+      hasProfile: this.hasProfile()
+    });
+
+  finishDislikeAction = (targetProfileId, method) => {
+    logger(`⏭️ ❌ Skipped profile using ${method}`);
+    this.incrementDislikeCounter();
+    this.clearProfileActionState(targetProfileId);
+    return true;
+  };
+
   clearProfileActionState = (profileId) => {
     delete this.profileFirstSeen[profileId];
     clearProfileActionFailure(this.profileActionFailures, profileId);
@@ -419,7 +422,7 @@ class Swiper {
     likeButton.click();
     logger('✅ ❤️ Like clicked, waiting for next profile');
 
-    if (await this.waitForProfileAdvance(beforeProfileId)) {
+    if (await this.waitForProfileAdvance(beforeProfileId, 4500)) {
       logger('✅ ❤️ Liked profile');
       this.incrementLikeCounter();
       this.clearProfileActionState(profileId);
@@ -427,18 +430,15 @@ class Swiper {
       return true;
     }
 
-    logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
-    logger('⌨️ Trying keyboard shortcut for like (ArrowRight) as fallback...');
-    this.pressKey('ArrowRight', 39);
-
-    if (await this.waitForProfileAdvance(beforeProfileId)) {
-      logger('✅ ❤️ Liked profile using keyboard ArrowRight');
+    if (this.hasActionTargetAdvanced(beforeProfileId)) {
+      logger('✅ ❤️ Liked profile after delayed DOM update');
       this.incrementLikeCounter();
       this.clearProfileActionState(profileId);
       this.scheduleProfileCleanup(profileId);
       return true;
     }
 
+    logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
     this.recordProfileActionFailure(beforeProfileId, 'Like action did not advance profile');
     return false;
   };
@@ -608,87 +608,89 @@ class Swiper {
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
       logger('🚫 Profile should be skipped, attempting to dislike...');
-      const skipStartId = this.getCurrentProfileId();
+      const targetProfileId = profileId || this.getCurrentProfileId();
       // Make sure any modal/overlay is closed
       try {
         this.profileAnalyzer.closeProfile();
         await this.profileAnalyzer.waitForModalClose(1200);
       } catch { }
 
-      // Track if dislike button click was executed (to avoid double-execution)
+      // Track whether a real dislike action was already sent before trying any fallback.
       let dislikeExecuted = false;
+      let sentDislikeAction = false;
+      let lastDislikeMethod = '';
 
       // Method 1: Try clicking dislike button
       const dislikeButton = this.hasDislike();
       if (dislikeButton) {
         try {
-          const currentProfileId = this.getCurrentProfileId();
+          if (!this.canRetryActionForProfile(targetProfileId)) {
+            logger('⏭️ Target profile changed before dislike button click; skipping fallback action');
+            this.clearProfileActionState(targetProfileId);
+            return true;
+          }
+
           dislikeButton.click();
           dislikeExecuted = true;
+          sentDislikeAction = true;
+          lastDislikeMethod = 'dislike button';
 
-          // FIX: Wait for modal to close after dislike (Tinder doesn't auto-close expanded profile)
+          if (await this.waitForProfileAdvance(targetProfileId, 3500)) {
+            return this.finishDislikeAction(targetProfileId, 'dislike button');
+          }
+
           logger('🚪 Waiting for modal to close after dislike...');
-          await this.profileAnalyzer.waitForModalClose(2000);
+          await this.profileAnalyzer.waitForModalClose(1200);
 
-          // FIX: If modal still open, explicitly close it
           if (this.profileAnalyzer.isProfileModalOpen()) {
             logger('🚪 Modal still open, forcing close...');
             this.profileAnalyzer.closeProfile();
-            await this.profileAnalyzer.waitForModalClose(1500);
+            await this.profileAnalyzer.waitForModalClose(1200);
           }
 
-          // FIX: Increased wait time from 600ms to 1500ms to allow DOM to update
-          await sleep(1500);
-          const newProfileId = this.getCurrentProfileId();
-          if (currentProfileId !== newProfileId || !this.hasProfile()) {
-            logger('⏭️ ❌ Skipped profile using dislike button');
-            // Update deslike counter
-            const deslikeCountEl = document.getElementById('deslikeCount');
-            if (deslikeCountEl) {
-              deslikeCountEl.textContent = incrementCounter('deslikeCount');
-            }
-            this.clearProfileActionState(profileId);
-            return true;
-          } else {
-            logger(
-              `⚠️ Dislike button click did not change profile (id before=${currentProfileId}, after=${newProfileId})`
-            );
+          if (this.hasActionTargetAdvanced(targetProfileId)) {
+            return this.finishDislikeAction(targetProfileId, 'dislike button');
           }
+
+          logger(
+            `⚠️ Dislike button click did not change target profile (id=${targetProfileId})`
+          );
         } catch (e) {
           logger(`⚠️ Error clicking dislike button: ${e.message}`);
         }
       }
 
       // Method 2: Try keyboard shortcut (ArrowLeft for dislike)
-      // FIX: Only execute fallback if dislike button was clicked but didn't work
-      // (not just if the verification failed)
       if (dislikeExecuted) {
         logger('⌨️ Trying keyboard shortcut for dislike (ArrowLeft) as fallback...');
 
-        // FIX: Verify modal is closed before attempting keyboard fallback
+        if (!this.canRetryActionForProfile(targetProfileId)) {
+          if (sentDislikeAction) {
+            return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
+          }
+          return true;
+        }
+
         if (this.profileAnalyzer.isProfileModalOpen()) {
           logger('🚪 Modal still open, closing before keyboard fallback...');
           this.profileAnalyzer.closeProfile();
           await this.profileAnalyzer.waitForModalClose(1500);
         }
 
-        const currentProfileId = this.getCurrentProfileId();
-        for (let i = 0; i < 3; i++) {
-          this.pressKey('ArrowLeft', 37);
-          await sleep(250);
-          const newProfileId = this.getCurrentProfileId();
-          if (currentProfileId !== newProfileId || !this.hasProfile()) {
-            logger('⏭️ ❌ Skipped profile using keyboard ArrowLeft');
-            // Update deslike counter
-            const deslikeCountEl = document.getElementById('deslikeCount');
-            if (deslikeCountEl) {
-              deslikeCountEl.textContent = incrementCounter('deslikeCount');
-            }
-            this.clearProfileActionState(profileId);
-            return true;
+        if (!this.canRetryActionForProfile(targetProfileId)) {
+          if (sentDislikeAction) {
+            return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
           }
-          logger(`↩️ ArrowLeft attempt ${i + 1}/3 did not change profile (id=${currentProfileId})`);
+          return true;
         }
+
+        this.pressKey('ArrowLeft', 37);
+        sentDislikeAction = true;
+        lastDislikeMethod = 'keyboard ArrowLeft';
+        if (await this.waitForProfileAdvance(targetProfileId, 3000)) {
+          return this.finishDislikeAction(targetProfileId, 'keyboard ArrowLeft');
+        }
+        logger(`↩️ ArrowLeft did not change target profile (id=${targetProfileId})`);
       }
 
       // Try alternative keyboard shortcuts
@@ -700,40 +702,43 @@ class Swiper {
       ];
 
       for (const shortcut of shortcuts) {
-        this.pressKey(shortcut.key, shortcut.keyCode);
-        await sleep(300);
-
-        const latestProfileId = this.getCurrentProfileId();
-        if (skipStartId !== latestProfileId || !this.hasProfile()) {
-          logger(`⏭️ ❌ Skipped profile using '${shortcut.key}' key`);
-          // Update deslike counter
-          const deslikeCountEl = document.getElementById('deslikeCount');
-          if (deslikeCountEl) {
-            deslikeCountEl.textContent = incrementCounter('deslikeCount');
+        if (!this.canRetryActionForProfile(targetProfileId)) {
+          if (sentDislikeAction) {
+            return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
           }
-          this.clearProfileActionState(profileId);
+          logger('⏭️ Target profile changed before alternative shortcut; stopping fallback chain');
+          this.clearProfileActionState(targetProfileId);
           return true;
+        }
+
+        this.pressKey(shortcut.key, shortcut.keyCode);
+        sentDislikeAction = true;
+        lastDislikeMethod = `'${shortcut.key}' key`;
+        if (await this.waitForProfileAdvance(targetProfileId, 1800)) {
+          return this.finishDislikeAction(targetProfileId, `'${shortcut.key}' key`);
         }
       }
 
       // Method 3: Simulate a real swipe-left drag
-      logger('�️ Simulating swipe-left drag...');
+      logger('Simulating swipe-left drag...');
+      if (!this.canRetryActionForProfile(targetProfileId)) {
+        if (sentDislikeAction) {
+          return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
+        }
+        logger('⏭️ Target profile changed before swipe-left drag; stopping fallback chain');
+        this.clearProfileActionState(targetProfileId);
+        return true;
+      }
+
       const swipeOk = await this.simulateSwipeLeft();
       if (swipeOk) {
-        await sleep(400);
-        const afterSwipeId = this.getCurrentProfileId();
-        if (skipStartId !== afterSwipeId || !this.hasProfile()) {
-          logger('⏭️ ❌ Skipped profile using swipe-left drag');
-          // Update deslike counter
-          const deslikeCountEl = document.getElementById('deslikeCount');
-          if (deslikeCountEl) {
-            deslikeCountEl.textContent = incrementCounter('deslikeCount');
-          }
-          this.clearProfileActionState(profileId);
-          return true;
+        sentDislikeAction = true;
+        lastDislikeMethod = 'swipe-left drag';
+        if (await this.waitForProfileAdvance(targetProfileId, 2500)) {
+          return this.finishDislikeAction(targetProfileId, 'swipe-left drag');
         }
         logger(
-          `⚠️ Swipe-left drag did not change profile (id before=${skipStartId}, after=${afterSwipeId})`
+          `⚠️ Swipe-left drag did not change target profile (id=${targetProfileId})`
         );
       }
 

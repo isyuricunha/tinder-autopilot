@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  canRetrySwipeActionForProfile,
   canUseSwipeActionButton,
   clearProfileActionFailure,
   getProfileActionFailureKey,
@@ -33,6 +34,41 @@ test('hasProfileAdvanced confirms card removal or profile id changes', () => {
       hasProfile: false
     }),
     true
+  );
+});
+
+test('canRetrySwipeActionForProfile only retries while still on the target profile', () => {
+  assert.equal(
+    canRetrySwipeActionForProfile({
+      targetProfileId: 'name:A',
+      currentProfileId: 'name:A',
+      hasProfile: true
+    }),
+    true
+  );
+  assert.equal(
+    canRetrySwipeActionForProfile({
+      targetProfileId: 'name:A',
+      currentProfileId: 'name:B',
+      hasProfile: true
+    }),
+    false
+  );
+  assert.equal(
+    canRetrySwipeActionForProfile({
+      targetProfileId: 'name:A',
+      currentProfileId: 'name:A',
+      hasProfile: false
+    }),
+    false
+  );
+  assert.equal(
+    canRetrySwipeActionForProfile({
+      targetProfileId: null,
+      currentProfileId: 'name:A',
+      hasProfile: true
+    }),
+    false
   );
 });
 

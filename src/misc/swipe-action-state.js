@@ -8,6 +8,14 @@ const hasProfileAdvanced = ({ beforeProfileId, afterProfileId, hasProfile }) => 
   return Boolean(before && after && before !== after);
 };
 
+const canRetrySwipeActionForProfile = ({ targetProfileId, currentProfileId, hasProfile }) => {
+  if (!hasProfile) return false;
+
+  const target = normalizeProfileId(targetProfileId);
+  const current = normalizeProfileId(currentProfileId);
+  return Boolean(target && current && target === current);
+};
+
 const getProfileActionFailureKey = (profileId) => normalizeProfileId(profileId) || 'unknown';
 
 const incrementProfileActionFailure = (failures, profileId) => {
@@ -28,6 +36,7 @@ const canUseSwipeActionButton = ({ actionButton, hasBlockingDialog, hasProfile }
   Boolean(actionButton && hasProfile && !hasBlockingDialog);
 
 module.exports = {
+  canRetrySwipeActionForProfile,
   canUseSwipeActionButton,
   clearProfileActionFailure,
   getProfileActionFailureKey,
