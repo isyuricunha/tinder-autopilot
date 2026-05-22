@@ -18,6 +18,7 @@
 - [x] Prevent Auto Like fallback actions from swiping the next profile after a delayed advance.
 - [x] Keep Auto Like inside nested Explorer sections without clicking Back to Explore.
 - [x] Stabilize Auto Like profile identity before retrying dislike fallbacks.
+- [x] Add scoped Like fallback for Explorer profiles that do not advance after click.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies

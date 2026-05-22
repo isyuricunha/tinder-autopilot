@@ -69,9 +69,23 @@ const textIncludesAny = (text, values) => values.some((value) => text.includes(v
 
 const classIncludesAny = (classText, values) => values.some((value) => classText.includes(value));
 
+const hasHiddenActionAncestor = (element) => {
+  let current = element;
+
+  while (current?.getAttribute) {
+    if (current.getAttribute('aria-hidden') === 'true' || current.hasAttribute?.('inert')) {
+      return true;
+    }
+    current = current.parentElement;
+  }
+
+  return false;
+};
+
 const isActionButton = (button, action) => {
   const config = ACTION_CONFIG[action];
   if (!config || !isVisibleElement(button)) return false;
+  if (hasHiddenActionAncestor(button)) return false;
 
   const text = getControlText(button);
   const classText = getClassText(button).toLowerCase();

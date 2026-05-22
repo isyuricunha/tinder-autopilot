@@ -4,6 +4,7 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const {
   getActiveProfileCard,
+  getActiveProfileSurface,
   getProfileIdentity
 } = require('../src/misc/profile-identity');
 
@@ -204,4 +205,10 @@ test('uses expanded profile content before the background card stack', () => {
   const root = loadFixture('tinder-html/tinder-open-profile-with-gender.html');
 
   assert.equal(getProfileIdentity(root), 'name:Maria Eduarda|age:26');
+});
+
+test('exposes the expanded profile as the active action surface', () => {
+  const root = loadFixture('tinder-html/tinder-explore-page-open-profile.html');
+
+  assert.match(getActiveProfileSurface(root).className, /profileContent/);
 });

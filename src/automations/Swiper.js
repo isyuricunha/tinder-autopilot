@@ -9,7 +9,11 @@ import {
   findVisibleDialog
 } from '../misc/tinder-dom-detectors';
 import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
-import { getActiveProfileCard, getProfileIdentity } from '../misc/profile-identity';
+import {
+  getActiveProfileCard,
+  getActiveProfileSurface,
+  getProfileIdentity
+} from '../misc/profile-identity';
 import {
   KEYBOARD_SHORTCUT_EVENT_TYPES,
   buildKeyboardShortcutEventInit,
@@ -359,6 +363,16 @@ class Swiper {
       hasProfile: this.hasProfile()
     });
 
+  getScopedLikeButton = () => {
+    const activeSurface = getActiveProfileSurface(document);
+    return findLikeButton(activeSurface) || findLikeButton(document);
+  };
+
+  getScopedDislikeButton = () => {
+    const activeSurface = getActiveProfileSurface(document);
+    return findDislikeButton(activeSurface) || findDislikeButton(document);
+  };
+
   stopFallbackForChangedTarget = (targetProfileId, phase) => {
     const currentProfileId = this.getCurrentProfileId();
     logger(
@@ -375,6 +389,14 @@ class Swiper {
     logger(`⏭️ ❌ Skipped profile using ${method}`);
     this.incrementDislikeCounter();
     this.clearProfileActionState(targetProfileId);
+    return true;
+  };
+
+  finishLikeAction = (targetProfileId, method) => {
+    logger(`✅ ❤️ Liked profile${method ? ` using ${method}` : ''}`);
+    this.incrementLikeCounter();
+    this.clearProfileActionState(targetProfileId);
+    this.scheduleProfileCleanup(targetProfileId);
     return true;
   };
 
@@ -406,19 +428,26 @@ class Swiper {
     logger('✅ ❤️ Like clicked, waiting for next profile');
 
     if (await this.waitForProfileAdvance(beforeProfileId, 4500)) {
-      logger('✅ ❤️ Liked profile');
-      this.incrementLikeCounter();
-      this.clearProfileActionState(profileId);
-      this.scheduleProfileCleanup(profileId);
-      return true;
+      return this.finishLikeAction(beforeProfileId, '');
     }
 
     if (this.hasActionTargetAdvanced(beforeProfileId)) {
-      logger('✅ ❤️ Liked profile after delayed DOM update');
-      this.incrementLikeCounter();
-      this.clearProfileActionState(profileId);
-      this.scheduleProfileCleanup(profileId);
-      return true;
+      return this.finishLikeAction(beforeProfileId, 'delayed DOM update');
+    }
+
+    if (this.canRetryActionForProfile(beforeProfileId)) {
+      logger('⌨️ Trying keyboard shortcut for like (ArrowRight) as fallback...');
+      this.pressKey('ArrowRight', 39);
+
+      if (await this.waitForProfileAdvance(beforeProfileId, 3500)) {
+        return this.finishLikeAction(beforeProfileId, 'keyboard ArrowRight');
+      }
+
+      if (this.hasActionTargetAdvanced(beforeProfileId)) {
+        return this.finishLikeAction(beforeProfileId, 'delayed keyboard ArrowRight update');
+      }
+    } else {
+      return this.stopFallbackForChangedTarget(beforeProfileId, 'like keyboard fallback');
     }
 
     logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
@@ -495,7 +524,7 @@ class Swiper {
   };
 
   hasLike = () => {
-    const detectedLike = findLikeButton(document);
+    const detectedLike = this.getScopedLikeButton();
     if (detectedLike) return detectedLike;
 
     // Prefer explicit Like selectors and exclude Boost
@@ -758,7 +787,7 @@ class Swiper {
   hasDislike = () => {
     logger('🔍 Searching for dislike button...');
 
-    const detectedDislike = findDislikeButton(document);
+    const detectedDislike = this.getScopedDislikeButton();
     if (detectedDislike) {
       logger('✅ Found dislike button using DOM detector');
       return detectedDislike;
@@ -1060,7 +1089,7 @@ class Swiper {
       .then((success) => {
         if (success) {
           this.scheduleRun(generateRandomNumber(3000, 4000));
-        } else {
+        } else if (this.isRunning) {
           logger('No profiles found. Waiting 4s');
           this.scheduleRun(generateRandomNumber(3000, 4000));
         }

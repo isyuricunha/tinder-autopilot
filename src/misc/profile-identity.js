@@ -159,8 +159,12 @@ const getProfileIdentity = (root = document) =>
   getProfileIdentityFromScope(getActiveProfileCard(root)) ||
   getProfileIdentityFromScope(root);
 
+const getActiveProfileSurface = (root = document) =>
+  getExpandedProfileContent(root) || getActiveProfileCard(root) || root;
+
 module.exports = {
   getActiveProfileCard,
+  getActiveProfileSurface,
   getExpandedProfileContent,
   getProfileIdentity,
   getProfileIdentityFromScope,

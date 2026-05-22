@@ -140,6 +140,17 @@ test('finds gamepad actions from a nested Explorer section snapshot', () => {
   assert.match(findOpenProfileButton(root).textContent, /Open Profile/);
 });
 
+test('ignores action buttons inside hidden Tinder panels', () => {
+  const hiddenPanel = new FakeElement('div', { 'aria-hidden': 'true' });
+  const hiddenLike = new FakeElement('button', {}, 'Like');
+  hiddenLike.parentElement = hiddenPanel;
+  const root = {
+    querySelectorAll: (selector) => (selector === 'button, [role="button"]' ? [hiddenLike] : [])
+  };
+
+  assert.equal(findLikeButton(root), null);
+});
+
 test('classifies visible super like upsell and ignores hidden Tinder sheets', () => {
   const superLikeDialog = loadFixture('tinder-html/tinder-modal-super-like.html');
   const hiddenExploreDialog = loadFixture('tinder-html/tinder-explore-page-open-profile.html');
