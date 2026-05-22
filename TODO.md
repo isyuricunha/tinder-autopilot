@@ -70,4 +70,5 @@
 - [x] Compact the top counters and reduce repeated card chrome in the sidebar.
 - [x] Add shared Cursor-like dark theme tokens for sidebar surfaces and controls.
 - [x] Apply the Cursor-like theme across sidebar templates, toggles, activity log, and injected CSS.
+- [x] Remove the unreliable Matched counter from the sidebar and counter store.
 - [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.

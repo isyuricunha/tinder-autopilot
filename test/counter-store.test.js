@@ -17,14 +17,12 @@ test('counter-store reads, writes, increments, and resets counters', () => {
   assert.equal(incrementCounter('likeCount'), 3);
   assert.deepEqual(readCounters(), {
     likeCount: 3,
-    matchCount: 0,
     deslikeCount: 0
   });
 
   resetCounters();
   assert.deepEqual(readCounters(), {
     likeCount: 0,
-    matchCount: 0,
     deslikeCount: 0
   });
 });

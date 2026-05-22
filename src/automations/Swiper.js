@@ -1010,10 +1010,6 @@ class Swiper {
       if (buttons.length > 0) {
         const button = buttons[0];
         if (button && button.offsetParent !== null) {
-          const matchCountEl = document.getElementById('matchCount');
-          if (matchCountEl) {
-            matchCountEl.textContent = incrementCounter('matchCount');
-          }
           logger("Congrats! We've got a match! 🤡");
           button.click();
           return true;

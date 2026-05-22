@@ -2,7 +2,6 @@ const { getSetting, setSetting } = require('./settings-store');
 
 const COUNTERS = {
   likes: 'likeCount',
-  matches: 'matchCount',
   dislikes: 'deslikeCount'
 };
 
@@ -21,7 +20,6 @@ const resetCounters = () => {
 
 const readCounters = () => ({
   likeCount: getCounter(COUNTERS.likes),
-  matchCount: getCounter(COUNTERS.matches),
   deslikeCount: getCounter(COUNTERS.dislikes)
 });
 
@@ -33,7 +31,6 @@ const updateCounterElement = (elementId, value) => {
 const renderCounters = () => {
   const counters = readCounters();
   updateCounterElement('likeCount', counters.likeCount);
-  updateCounterElement('matchCount', counters.matchCount);
   updateCounterElement('deslikeCount', counters.deslikeCount);
   return counters;
 };
