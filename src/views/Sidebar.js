@@ -87,6 +87,7 @@ import {
   toggleCheckbox,
   setToggleState as setToggleControlState
 } from './toggle-control';
+import { SIDEBAR_THEME } from './sidebar-theme';
 
 const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
@@ -140,23 +141,23 @@ class Sidebar {
         width: 8px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
-        background: #1a1a1a;
+        background: ${SIDEBAR_THEME.surfaceMuted};
         border-radius: 4px;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        background: ${SIDEBAR_THEME.accentGradient};
         border-radius: 4px;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: linear-gradient(135deg, #ff8c42, #ffab42);
+        background: ${SIDEBAR_THEME.accentHover};
       }
       
       /* Hover effects */
       .autopilot-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15) !important;
-        border-color: #ff6b35 !important;
+        box-shadow: 0 8px 32px ${SIDEBAR_THEME.shadow} !important;
+        border-color: ${SIDEBAR_THEME.accentBorder} !important;
       }
       
       /* Activity log styling */
@@ -164,29 +165,31 @@ class Sidebar {
         margin: 4px 0 !important;
         padding: 8px 12px !important;
         border-radius: 8px !important;
-        background: rgba(255, 107, 53, 0.05) !important;
-        border-left: 3px solid #ff6b35 !important;
+        background: ${SIDEBAR_THEME.accentSofter} !important;
+        border-left: 3px solid ${SIDEBAR_THEME.accent} !important;
       }
       .txt span {
-        color: #ff6b35 !important;
+        color: ${SIDEBAR_THEME.accentHover} !important;
         font-weight: 600 !important;
       }
       
       /* Textarea focus effects */
-      textarea:focus {
+      textarea:focus,
+      input:focus,
+      select:focus {
         outline: none !important;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(255, 107, 53, 0.3) !important;
-        border-color: #ff6b35 !important;
+        box-shadow: 0 0 0 2px ${SIDEBAR_THEME.focusShadow} !important;
+        border-color: ${SIDEBAR_THEME.accent} !important;
       }
       
       /* Selection colors */
       ::selection {
-        background: rgba(255, 107, 53, 0.3);
-        color: #ffffff;
+        background: ${SIDEBAR_THEME.focusShadow};
+        color: ${SIDEBAR_THEME.text};
       }
       ::-moz-selection {
-        background: rgba(255, 107, 53, 0.3);
-        color: #ffffff;
+        background: ${SIDEBAR_THEME.focusShadow};
+        color: ${SIDEBAR_THEME.text};
       }
     `,
       { id: 'sidebar' }
@@ -827,16 +830,11 @@ class Sidebar {
     if (!statusElement) return false;
 
     const styles = {
-      error:
-        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 68, 88, 0.08); border: 1px solid rgba(255, 68, 88, 0.24); color: #ff8a97; font-size: 11px; line-height: 1.4; text-align: left;',
-      idle:
-        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 53, 0.06); border: 1px solid rgba(255, 107, 53, 0.18); color: #bcbcbc; font-size: 11px; line-height: 1.4; text-align: left;',
-      loading:
-        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 140, 66, 0.09); border: 1px solid rgba(255, 140, 66, 0.24); color: #ffb27d; font-size: 11px; line-height: 1.4; text-align: left;',
-      success:
-        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(49, 196, 141, 0.08); border: 1px solid rgba(49, 196, 141, 0.24); color: #72d8b3; font-size: 11px; line-height: 1.4; text-align: left;',
-      warning:
-        'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 184, 77, 0.08); border: 1px solid rgba(255, 184, 77, 0.24); color: #ffc875; font-size: 11px; line-height: 1.4; text-align: left;'
+      error: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.dangerSoft}; border: 1px solid ${SIDEBAR_THEME.dangerBorder}; color: ${SIDEBAR_THEME.danger}; font-size: 11px; line-height: 1.4; text-align: left;`,
+      idle: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.accentSofter}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; color: ${SIDEBAR_THEME.textMuted}; font-size: 11px; line-height: 1.4; text-align: left;`,
+      loading: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.warningSoft}; border: 1px solid ${SIDEBAR_THEME.warningBorder}; color: ${SIDEBAR_THEME.warning}; font-size: 11px; line-height: 1.4; text-align: left;`,
+      success: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.successSoft}; border: 1px solid ${SIDEBAR_THEME.successBorder}; color: ${SIDEBAR_THEME.success}; font-size: 11px; line-height: 1.4; text-align: left;`,
+      warning: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.warningSoft}; border: 1px solid ${SIDEBAR_THEME.warningBorder}; color: ${SIDEBAR_THEME.warning}; font-size: 11px; line-height: 1.4; text-align: left;`
     };
 
     statusElement.textContent = String(message || 'Provider ready. Refresh models to load suggestions.');
@@ -1039,8 +1037,8 @@ class Sidebar {
       const isSelected = button.getAttribute('data-ai-reply-mode') === selectedMode;
       button.setAttribute('data-selected', String(isSelected));
       button.style.cssText = isSelected
-        ? 'flex: 1; padding: 10px 8px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: 1px solid #ff8c42; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;'
-        : 'flex: 1; padding: 10px 8px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;';
+        ? `flex: 1; padding: 10px 8px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`
+        : `flex: 1; padding: 10px 8px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`;
     });
 
     this.updateAiReplyRuntimeControls(selectedMode);

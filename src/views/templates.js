@@ -47,6 +47,7 @@ import {
   readSidebarSectionOpen,
   writeSidebarSectionOpen
 } from './sidebar-section-state';
+import { SIDEBAR_THEME } from './sidebar-theme';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
 const DEFAULT_MESSAGE =
@@ -54,8 +55,7 @@ const DEFAULT_MESSAGE =
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
-const SECTION_TITLE_STYLE =
-  'color: #ff6b35; padding: 16px 20px 12px 20px; letter-spacing: 1px; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 4px solid #ff6b35; background: rgba(255, 107, 53, 0.05); border-radius: 0 12px 12px 0;';
+const SECTION_TITLE_STYLE = `color: ${SIDEBAR_THEME.text}; padding: 16px 20px 12px 20px; letter-spacing: 0; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 3px solid ${SIDEBAR_THEME.accent}; background: ${SIDEBAR_THEME.accentSofter}; border-radius: 0 8px 8px 0;`;
 const TEXTAREA_SIZE_STYLES = {
   default: 'min-height: 60px; max-height: 120px;',
   large: 'min-height: 120px; max-height: 280px;',
@@ -94,7 +94,7 @@ const createSvgIcon = (pathD) => {
 
   const path = document.createElementNS(SVG_NS, 'path');
   path.setAttribute('d', pathD);
-  path.setAttribute('fill', '#000000');
+  path.setAttribute('fill', SIDEBAR_THEME.text);
   svg.appendChild(path);
 
   return svg;
@@ -105,8 +105,7 @@ const createHelpText = (helpText) => {
 
   return createElement('div', {
     text: helpText,
-    style:
-      'margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: #888888; font-size: 11px; text-align: left; line-height: 1.4;'
+    style: `margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: ${SIDEBAR_THEME.textSubtle}; font-size: 11px; text-align: left; line-height: 1.4;`
   });
 };
 
@@ -114,14 +113,13 @@ const createCard = (children) =>
   createElement(
     'div',
     {
-      style:
-        'background: #000000; border: 1px solid #333333; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);'
+      style: `background: ${SIDEBAR_THEME.surface}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.2s ease; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);`
     },
     [
       createElement(
         'div',
         {
-          style: 'background: #000000; border: none; transition: all 0.3s ease; position: relative;'
+          style: `background: ${SIDEBAR_THEME.surface}; border: none; transition: all 0.2s ease; position: relative;`
         },
         children
       )
@@ -132,22 +130,20 @@ const createTopBanner = () =>
   createElement(
     'div',
     {
-      style:
-        'position: relative; z-index: 2; transition: all 0.3s ease; text-align: center; background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 0 0 24px 24px; padding: 16px 8px; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.2); min-height: 60px; display: flex; align-items: center; justify-content: center;'
+      style: `position: relative; z-index: 2; transition: all 0.2s ease; text-align: center; background: ${SIDEBAR_THEME.backgroundElevated}; border-bottom: 1px solid ${SIDEBAR_THEME.border}; padding: 14px 8px; min-height: 54px; display: flex; align-items: center; justify-content: center;`
     },
     [
       createElement(
         'a',
         {
-          style:
-            'display: flex; align-items: center; color: #000000; font-weight: 700; font-size: 18px; text-decoration: none; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); white-space: nowrap; overflow: hidden;',
+          style: `display: flex; align-items: center; color: ${SIDEBAR_THEME.text}; font-weight: 700; font-size: 18px; text-decoration: none; white-space: nowrap; overflow: hidden;`,
           attributes: { href: '/app/profile' }
         },
         [
           createElement(
             'span',
             { style: 'display: flex; align-items: center; gap: 6px;' },
-            ['🔥 ', createElement('span', { text: 'Autopilot' })]
+            [createElement('span', { text: 'Autopilot' })]
           )
         ]
       )
@@ -170,7 +166,7 @@ const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) 
   });
   const indicator = createElement('span', {
     text: isOpen ? '-' : '+',
-    style: 'margin-left: 12px; color: #ffffff; font-size: 15px; font-weight: 700;'
+    style: `margin-left: 12px; color: ${SIDEBAR_THEME.textMuted}; font-size: 15px; font-weight: 700;`
   });
   const content = createElement(
     'div',
@@ -221,8 +217,7 @@ const createTextbox = ({
   attributes = {},
   textareaSize = 'default'
 }) => {
-  const fieldStyle =
-    "width: calc(100% - 32px); display: block; border: none; background: #1a1a1a; color: #ffffff; padding: 12px; border-radius: 12px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);";
+  const fieldStyle = `width: calc(100% - 32px); display: block; border: 1px solid ${SIDEBAR_THEME.border}; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; padding: 12px; border-radius: 8px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-shadow: none;`;
   const inputAttributes = { placeholder, ...attributes };
   if (defaultValue !== undefined) inputAttributes.value = defaultValue;
   const field =
@@ -301,8 +296,7 @@ const createCheckbox = (className, label, helpText = '') => {
                   createElement(
                     'div',
                     {
-                      style:
-                        'flex: 1; overflow: hidden; padding: 0; color: #ffffff; font-size: 15px; font-weight: 500; line-height: 1.3;'
+                      style: `flex: 1; overflow: hidden; padding: 0; color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; line-height: 1.3;`
                     },
                     [createElement('span', { text: label })]
                   ),
@@ -337,29 +331,29 @@ const createSliderStyle = (className) =>
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        background: ${SIDEBAR_THEME.accentGradient};
         cursor: pointer;
-        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        box-shadow: 0 2px 8px ${SIDEBAR_THEME.focusShadow};
       }
       #${className}::-moz-range-thumb {
         width: 20px;
         height: 20px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #ff6b35, #ff8c42);
+        background: ${SIDEBAR_THEME.accentGradient};
         cursor: pointer;
         border: none;
-        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        box-shadow: 0 2px 8px ${SIDEBAR_THEME.focusShadow};
       }
       #${className}:disabled::-webkit-slider-thumb {
-        background: #555555;
+        background: ${SIDEBAR_THEME.borderStrong};
         cursor: not-allowed;
       }
       #${className}:disabled::-moz-range-thumb {
-        background: #555555;
+        background: ${SIDEBAR_THEME.borderStrong};
         cursor: not-allowed;
       }
       #${className}:disabled {
-        background: #222222;
+        background: ${SIDEBAR_THEME.surfaceMuted};
         cursor: not-allowed;
       }
     `
@@ -381,19 +375,17 @@ const createSlider = ({
   const valueDisplay = createElement('span', {
     id: `${className}Value`,
     text: `${defaultValue}${unit}`,
-    style: 'color: #ff6b35; font-size: 14px; font-weight: 600;'
+    style: `color: ${SIDEBAR_THEME.accentHover}; font-size: 14px; font-weight: 600;`
   });
   const input = createElement('input', {
     id: className,
-    style:
-      'width: 100%; height: 6px; border-radius: 3px; background: #333333; outline: none; -webkit-appearance: none; appearance: none;',
+    style: `width: 100%; height: 6px; border-radius: 3px; background: ${SIDEBAR_THEME.borderStrong}; outline: none; -webkit-appearance: none; appearance: none;`,
     attributes: { type: 'range', min, max, value: defaultValue, step }
   });
   const numberInput = manualInput
     ? createElement('input', {
         id: `${className}Input`,
-        style:
-          'width: 96px; padding: 8px; background: #1a1a1a; border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 13px;',
+        style: `width: 96px; padding: 8px; background: ${SIDEBAR_THEME.surfaceMuted}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; color: ${SIDEBAR_THEME.text}; font-size: 13px;`,
         attributes: { type: 'number', min, max, value: defaultValue, step }
       })
     : null;
@@ -430,16 +422,14 @@ const createSlider = ({
       'div',
       {
         className: 'slider-container',
-        style:
-          'background: #000000; border: 1px solid #333333; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);',
+        style: `background: ${SIDEBAR_THEME.surface}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; margin: 6px 12px; overflow: hidden; transition: all 0.2s ease; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);`,
         attributes: { 'data-parent': parentToggle || '', ...attributes }
       },
       [
         createElement(
           'div',
           {
-            style:
-              'background: #000000; border: none; transition: all 0.3s ease; position: relative;'
+            style: `background: ${SIDEBAR_THEME.surface}; border: none; transition: all 0.2s ease; position: relative;`
           },
           [
             createElement(
@@ -455,7 +445,7 @@ const createSlider = ({
                   [
                     createElement('span', {
                       text: label,
-                      style: 'color: #ffffff; font-size: 15px; font-weight: 500;'
+                      style: `color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500;`
                     }),
                     valueControls
                   ]
@@ -477,8 +467,7 @@ const createSlider = ({
 const createSelectCard = ({ id, label, options, storageKey, defaultValue }) => {
   const select = createElement('select', {
     id,
-    style:
-      'width: 100%; padding: 12px; background: #1a1a1a; border: 1px solid #333333; border-radius: 8px; color: #ffffff; font-size: 14px;'
+    style: `width: 100%; padding: 12px; background: ${SIDEBAR_THEME.surfaceMuted}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; color: ${SIDEBAR_THEME.text}; font-size: 14px;`
   });
   options.forEach(({ value, text }) => {
     select.appendChild(createElement('option', { text, attributes: { value } }));
@@ -490,8 +479,7 @@ const createSelectCard = ({ id, label, options, storageKey, defaultValue }) => {
     createElement('div', { style: 'padding: 16px;' }, [
       createElement('label', {
         text: label,
-        style:
-          'color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;'
+        style: `color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;`
       }),
       select
     ])
@@ -503,8 +491,7 @@ const createAiModelDatalist = () => createElement('datalist', { id: AI_MODEL_DAT
 const createAiReplyModeButton = ({ mode, label }) =>
   createElement('button', {
     text: label,
-    style:
-      'flex: 1; padding: 10px 8px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;',
+    style: `flex: 1; padding: 10px 8px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`,
     attributes: {
       type: 'button',
       'data-ai-reply-mode': mode,
@@ -518,8 +505,7 @@ const createAiReplyModeSelector = () =>
       createElement('div', { style: 'padding: 16px;' }, [
         createElement('label', {
           text: 'AI Reply Mode',
-          style:
-            'color: #ffffff; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;'
+          style: `color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;`
         }),
         createElement('div', { style: 'display: flex; gap: 8px;' }, [
           createAiReplyModeButton({ mode: 'off', label: 'Off' }),
@@ -537,28 +523,27 @@ const createCounterCard = ({ id, label, pathD }) =>
   createElement(
     'div',
     {
-      style:
-        'min-width: 0; padding: 10px; flex: 1; display: flex; align-items: center; gap: 8px; text-align: left; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); background: linear-gradient(135deg, #1a1a1a, #000000); border: 1px solid #333333; transition: all 0.3s ease;'
+      style: `min-width: 0; padding: 10px; flex: 1; display: flex; align-items: center; gap: 8px; text-align: left; border-radius: 8px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03); background: ${SIDEBAR_THEME.surface}; border: 1px solid ${SIDEBAR_THEME.border}; transition: all 0.2s ease;`
     },
     [
       createElement(
         'span',
         {
-          style:
-            'width: 28px; height: 28px; flex: 0 0 28px; box-shadow: 0 2px 8px rgba(255, 107, 53, 0.24); background: linear-gradient(135deg, #ff6b35, #ff8c42); border-radius: 50%; display: flex; align-items: center; justify-content: center;'
+          style: `width: 28px; height: 28px; flex: 0 0 28px; box-shadow: 0 2px 8px ${SIDEBAR_THEME.focusShadow}; background: ${SIDEBAR_THEME.accentGradient}; border-radius: 50%; display: flex; align-items: center; justify-content: center;`
         },
         [createSvgIcon(pathD)]
       ),
       createElement('div', { style: 'min-width: 0;' }, [
         createElement(
           'h3',
-          { style: 'font-size: 18px; font-weight: 700; margin: 0 0 1px 0; color: #ffffff;' },
+          {
+            style: `font-size: 18px; font-weight: 700; margin: 0 0 1px 0; color: ${SIDEBAR_THEME.text};`
+          },
           [createElement('span', { id })]
         ),
         createElement('span', {
           text: label,
-          style:
-            'display: block; color: #ff6b35; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
+          style: `display: block; color: ${SIDEBAR_THEME.textMuted}; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`
         })
       ])
     ]
@@ -758,23 +743,20 @@ const createAiSettings = () =>
           createElement('button', {
             id: 'clearAiApiKey',
             text: 'Clear API Key',
-            style:
-              'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           }),
           createElement('button', {
             id: 'refreshAiModels',
             text: 'Refresh Models',
-            style:
-              'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           })
         ]),
         createElement('div', {
           id: 'aiConnectionStatus',
           text: 'Provider ready. Refresh models to load suggestions.',
-          style:
-            'margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: rgba(255, 107, 53, 0.06); border: 1px solid rgba(255, 107, 53, 0.18); color: #bcbcbc; font-size: 11px; line-height: 1.4; text-align: left;'
+          style: `margin: 0 16px 12px 16px; padding: 8px 10px; border-radius: 8px; background: ${SIDEBAR_THEME.accentSofter}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; color: ${SIDEBAR_THEME.textMuted}; font-size: 11px; line-height: 1.4; text-align: left;`
         }),
         createAiModelDatalist(),
         createHelpText(
@@ -1008,15 +990,13 @@ const createAiSettings = () =>
           createElement('button', {
             id: 'previewAiReplyPrompt',
             text: 'Preview Prompt',
-            style:
-              'width: 100%; padding: 10px 12px; background: #1a1a1a; color: #ffffff; border: 1px solid #333333; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           }),
           createElement('button', {
             id: 'testAiReply',
             text: 'Test Reply',
-            style:
-              'width: 100%; padding: 10px 12px; background: linear-gradient(135deg, #ff6b35, #ff8c42); color: #000000; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;',
+            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           })
         ]),
@@ -1057,8 +1037,7 @@ const createLoggerHeader = () =>
 const createInfoBanner = () =>
   createElement('div', {
     id: 'infoBanner',
-    style:
-      'overflow: hidden; background: #000000; position: relative; height: 100%; z-index: 9999; border-right: 1px solid #333333;'
+    style: `overflow: hidden; background: ${SIDEBAR_THEME.background}; position: relative; height: 100%; z-index: 9999; border-right: 1px solid ${SIDEBAR_THEME.border};`
   });
 
 export {

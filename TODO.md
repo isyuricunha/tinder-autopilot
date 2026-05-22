@@ -68,4 +68,6 @@
 - [x] Replace separate AI reply toggles with one Off / Reply once / Continuous mode selector.
 - [x] Disable continuous-only runtime controls unless Continuous AI reply mode is selected.
 - [x] Compact the top counters and reduce repeated card chrome in the sidebar.
+- [x] Add shared Cursor-like dark theme tokens for sidebar surfaces and controls.
+- [x] Apply the Cursor-like theme across sidebar templates, toggles, activity log, and injected CSS.
 - [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
