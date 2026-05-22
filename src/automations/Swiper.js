@@ -9,6 +9,7 @@ import {
   findVisibleDialog
 } from '../misc/tinder-dom-detectors';
 import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
+import { getActiveProfileCard, getProfileIdentity } from '../misc/profile-identity';
 import {
   KEYBOARD_SHORTCUT_EVENT_TYPES,
   buildKeyboardShortcutEventInit,
@@ -160,6 +161,7 @@ class Swiper {
   // Simulate a real swipe-left drag gesture on the visible card
   simulateSwipeLeft = async () => {
     try {
+      let card = getActiveProfileCard(document);
       const cardSelectors = [
         '.keen-slider__slide:not(.keen-slider__slide--clone)',
         '[data-testid="card-stack"] > div > div',
@@ -167,12 +169,13 @@ class Swiper {
         '.StretchedBox',
         '.gamepad-card'
       ];
-      let card = null;
-      for (const sel of cardSelectors) {
-        const el = document.querySelector(sel);
-        if (el && el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) {
-          card = el;
-          break;
+      if (!card) {
+        for (const sel of cardSelectors) {
+          const el = document.querySelector(sel);
+          if (el && el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) {
+            card = el;
+            break;
+          }
         }
       }
       if (!card) return false;
@@ -267,39 +270,7 @@ class Swiper {
   // Save current profile ID to detect changes
   getCurrentProfileId = () => {
     try {
-      // Try to get a unique identifier from the current profile
-      const nameElement = [
-        'h1[aria-label*="years"]',
-        '[itemprop="name"]',
-        'h1'
-      ].reduce(
-        (found, selector) =>
-          found || Array.from(document.querySelectorAll(selector)).find(this.isVisibleElement),
-        null
-      );
-
-      if (nameElement) {
-        const txt = (nameElement.textContent || '').trim();
-        if (txt) return `name:${txt}`;
-      }
-
-      // Fallback: use first image src as identifier
-      const firstImage = Array.from(
-        document.querySelectorAll('.keen-slider__slide img, [data-testid="card-stack"] img')
-      ).find(this.isVisibleElement);
-      if (firstImage && firstImage.src) {
-        return `img:${firstImage.src}`;
-      }
-
-      // As a last resort, try to use visible slide index
-      const slides = Array.from(
-        document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)')
-      );
-      const visible = slides.filter((el) => el && el.offsetParent !== null);
-      const idx = visible.length ? slides.indexOf(visible[0]) : -1;
-      if (idx >= 0) return `slideIndex:${idx}`;
-
-      return null;
+      return getProfileIdentity(document);
     } catch (e) {
       return null;
     }
@@ -387,6 +358,18 @@ class Swiper {
       currentProfileId: this.getCurrentProfileId(),
       hasProfile: this.hasProfile()
     });
+
+  stopFallbackForChangedTarget = (targetProfileId, phase) => {
+    const currentProfileId = this.getCurrentProfileId();
+    logger(
+      `⏭️ Target profile changed before ${phase}; target=${targetProfileId || 'unknown'}, current=${currentProfileId || 'unknown'}`
+    );
+    this.recordProfileActionFailure(
+      targetProfileId || currentProfileId,
+      `Target profile changed before ${phase}`
+    );
+    return false;
+  };
 
   finishDislikeAction = (targetProfileId, method) => {
     logger(`⏭️ ❌ Skipped profile using ${method}`);
@@ -625,9 +608,7 @@ class Swiper {
       if (dislikeButton) {
         try {
           if (!this.canRetryActionForProfile(targetProfileId)) {
-            logger('⏭️ Target profile changed before dislike button click; skipping fallback action');
-            this.clearProfileActionState(targetProfileId);
-            return true;
+            return this.stopFallbackForChangedTarget(targetProfileId, 'dislike button click');
           }
 
           dislikeButton.click();
@@ -668,7 +649,7 @@ class Swiper {
           if (sentDislikeAction) {
             return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
           }
-          return true;
+          return this.stopFallbackForChangedTarget(targetProfileId, 'keyboard fallback');
         }
 
         if (this.profileAnalyzer.isProfileModalOpen()) {
@@ -681,7 +662,7 @@ class Swiper {
           if (sentDislikeAction) {
             return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
           }
-          return true;
+          return this.stopFallbackForChangedTarget(targetProfileId, 'keyboard fallback');
         }
 
         this.pressKey('ArrowLeft', 37);
@@ -706,9 +687,7 @@ class Swiper {
           if (sentDislikeAction) {
             return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
           }
-          logger('⏭️ Target profile changed before alternative shortcut; stopping fallback chain');
-          this.clearProfileActionState(targetProfileId);
-          return true;
+          return this.stopFallbackForChangedTarget(targetProfileId, 'alternative shortcut');
         }
 
         this.pressKey(shortcut.key, shortcut.keyCode);
@@ -725,9 +704,7 @@ class Swiper {
         if (sentDislikeAction) {
           return this.finishDislikeAction(targetProfileId, lastDislikeMethod);
         }
-        logger('⏭️ Target profile changed before swipe-left drag; stopping fallback chain');
-        this.clearProfileActionState(targetProfileId);
-        return true;
+        return this.stopFallbackForChangedTarget(targetProfileId, 'swipe-left drag');
       }
 
       const swipeOk = await this.simulateSwipeLeft();

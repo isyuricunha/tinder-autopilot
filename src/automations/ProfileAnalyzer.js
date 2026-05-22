@@ -7,6 +7,7 @@ import {
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
+import { getActiveProfileCard } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
 import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
 import { getCheckboxValue } from '../views/toggle-control';
@@ -96,29 +97,7 @@ class ProfileAnalyzer {
   // Open the profile modal by clicking on the card
   async openProfile() {
     try {
-      const getActiveCard = () => {
-        const cands = Array.from(
-          document.querySelectorAll('.keen-slider__slide:not(.keen-slider__slide--clone)')
-        );
-        const visible = cands.filter((el) => {
-          if (!el || el.offsetParent === null) return false;
-          const r = el.getBoundingClientRect();
-          return r.width > 100 && r.height > 100;
-        });
-        if (visible.length === 0) return null;
-        let best = visible[0];
-        let maxArea = 0;
-        for (const el of visible) {
-          const r = el.getBoundingClientRect();
-          const area = r.width * r.height;
-          if (area > maxArea) {
-            maxArea = area;
-            best = el;
-          }
-        }
-        return best;
-      };
-      const activeCard = getActiveCard();
+      const activeCard = getActiveProfileCard(document);
       const isSafeButton = (btn) => {
         if (!btn) return false;
         const s = `${btn.getAttribute('aria-label') || ''} ${btn.getAttribute('title') || ''} ${btn.getAttribute('data-testid') || ''
