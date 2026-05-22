@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  canUseSwipeActionButton,
   clearProfileActionFailure,
   getProfileActionFailureKey,
   hasProfileAdvanced,
@@ -45,4 +46,33 @@ test('profile action failure helpers track repeated failures per profile', () =>
 
   clearProfileActionFailure(failures, 'name:A');
   assert.equal(failures['name:A'], undefined);
+});
+
+test('canUseSwipeActionButton allows visible action buttons without blocking dialogs', () => {
+  const actionButton = {};
+
+  assert.equal(
+    canUseSwipeActionButton({
+      actionButton,
+      hasBlockingDialog: false,
+      hasProfile: true
+    }),
+    true
+  );
+  assert.equal(
+    canUseSwipeActionButton({
+      actionButton,
+      hasBlockingDialog: true,
+      hasProfile: true
+    }),
+    false
+  );
+  assert.equal(
+    canUseSwipeActionButton({
+      actionButton: null,
+      hasBlockingDialog: false,
+      hasProfile: true
+    }),
+    false
+  );
 });

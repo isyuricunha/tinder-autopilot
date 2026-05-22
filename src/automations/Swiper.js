@@ -10,6 +10,7 @@ import {
 } from '../misc/tinder-dom-detectors';
 import { hasEnabledBioBlacklist } from '../misc/profile-filter-state';
 import {
+  canUseSwipeActionButton,
   clearProfileActionFailure,
   hasProfileAdvanced,
   incrementProfileActionFailure,
@@ -333,13 +334,22 @@ class Swiper {
     const start = Date.now();
 
     while (Date.now() - start < timeout) {
+      const isProfileModalOpen = this.profileAnalyzer.isProfileModalOpen();
+      const likeButton = this.hasLike();
+      const hasProfile = this.hasProfile();
+      const hasBlockingDialog = Boolean(findVisibleDialog(document));
+
       if (
-        !this.profileAnalyzer.isProfileModalOpen() &&
-        !findVisibleDialog(document) &&
-        this.hasProfile()
+        canUseSwipeActionButton({
+          actionButton: likeButton,
+          hasBlockingDialog,
+          hasProfile
+        })
       ) {
-        const likeButton = this.hasLike();
-        if (likeButton) return likeButton;
+        if (isProfileModalOpen) {
+          logger('✅ Like button is available inside the open profile');
+        }
+        return likeButton;
       }
 
       await sleep(150);

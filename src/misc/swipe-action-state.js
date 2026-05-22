@@ -24,7 +24,11 @@ const clearProfileActionFailure = (failures, profileId) => {
 const shouldStopAfterProfileActionFailures = (failureCount, maxFailures) =>
   failureCount >= maxFailures;
 
+const canUseSwipeActionButton = ({ actionButton, hasBlockingDialog, hasProfile }) =>
+  Boolean(actionButton && hasProfile && !hasBlockingDialog);
+
 module.exports = {
+  canUseSwipeActionButton,
   clearProfileActionFailure,
   getProfileActionFailureKey,
   hasProfileAdvanced,
