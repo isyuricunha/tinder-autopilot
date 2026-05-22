@@ -1,17 +1,14 @@
 import { logger } from './helper';
 import { clickDialogDismissControl } from './modal-dismiss';
 import { findVisibleDialog } from './tinder-dom-detectors';
+import { isSwipeSurfaceUrl } from './tinder-route-state';
 
 class Interactions {
-  isOnMatchesPage = () => {
-    return (
-      window.location.toString().indexOf('app/recs') !== -1 ||
-      window.location.toString().indexOf('app/matches') !== -1 ||
-      window.location.toString().indexOf('app/explore') !== -1
-    );
-  };
+  isOnMatchesPage = () => isSwipeSurfaceUrl(window.location);
 
   goToMainPage = () => {
+    if (this.isOnMatchesPage()) return true;
+
     // Try multiple selectors for navigation
     const selectors = [
       "a[href='/app/recs']",

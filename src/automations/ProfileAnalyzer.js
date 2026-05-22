@@ -7,7 +7,8 @@ import {
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
-import { findOpenProfileButton, findProfileBackButton } from '../misc/tinder-dom-detectors';
+import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
+import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -294,111 +295,22 @@ class ProfileAnalyzer {
 
   // Check if profile modal is open
   isProfileModalOpen() {
-    // Check for scroll container AND profile elements
-    // Look for the scrollable container using structural selector
-    const scrollContainer =
-      document.querySelector('div[class*="M(16px)"]') || document.querySelector('.M\\(16px\\)');
-    if (scrollContainer && scrollContainer.offsetParent !== null) {
-      // Verify it contains profile-specific content (not just any scrollable)
-      const hasProfileContent =
-        scrollContainer.querySelector('section[aria-labelledby]') ||
-        scrollContainer.querySelector('.Px\\(16px\\)--ml') ||
-        scrollContainer.querySelector('h2') ||
-        scrollContainer.querySelector('img') ||
-        scrollContainer.querySelector('.keen-slider');
-
-      if (hasProfileContent) {
-        // Additional check: the container should be large (profile modal size)
-        const rect = scrollContainer.getBoundingClientRect();
-        const isLargeEnough = rect.width > 300 && rect.height > 400;
-
-        if (isLargeEnough) {
-          return true;
-        }
-      }
-    }
-
-    // Fallback: Look for specific profile modal classes
-    const profileContentSelectors = [
-      '.Expand.profileContent',
-      '.profileContent',
-      'div[class*="profileContent"]',
-      '.Pos\\(r\\)--ml.Z\\(1\\).Bgc\\(\\$c-ds-background-primary\\).Ov\\(h\\).Expand.profileContent'
-    ];
-
-    for (const selector of profileContentSelectors) {
-      try {
-        const elements = document.querySelectorAll(selector);
-        for (const element of elements) {
-          if (element && element.offsetParent !== null) {
-            // Check if this is actually a profile with substantial content
-            const hasText = element.textContent && element.textContent.length > 50;
-            const hasImages = element.querySelector('img') || element.querySelector('.keen-slider');
-            const hasSections = element.querySelector('section') || element.querySelector('ul');
-
-            if (hasText || hasImages || hasSections) {
-              // Additional check: profile should be wider than a card
-              const rect = element.getBoundingClientRect();
-              if (rect.width > 400 || rect.height > 500) {
-                return true;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // Continue checking other selectors
-      }
-    }
-
-    // Strategy 2: Check for profile-specific elements that only appear in expanded view
-    const profileOnlyElements = [
-      '[aria-labelledby*=":r"]',
-      '.Mb\\(16px\\).C\\(\\$c-ds-text-secondary\\)',
-      '.keen-slider__slide:nth-child(3)',
-      'button[aria-label*="back" i]',
-      'button[aria-label*="close" i]',
-      'button[title*="voltar" i]',
-      'button[title*="fechar" i]'
-    ];
-
-    for (const selector of profileOnlyElements) {
-      try {
-        const element = document.querySelector(selector);
-        if (element && element.offsetParent !== null) {
-          return true;
-        }
-      } catch (e) {
-        // Continue
-      }
-    }
-
-    // Strategy 3: Check if the view has changed (card stack hidden)
-    const cardStack = document.querySelector('.recsCardboard__cardsContainer');
-    const hasHiddenCards =
-      cardStack && (cardStack.style.display === 'none' || cardStack.style.visibility === 'hidden');
-    if (hasHiddenCards) {
-      return true;
-    }
-
-    // Strategy 4: Check URL or history state
-    if (
-      window.location.pathname.includes('/profile') ||
-      window.location.search.includes('profile=')
-    ) {
-      return true;
-    }
-
-    return false;
+    return isProfileModalOpen(document, window.location);
   }
 
   // Close the profile modal by clicking close button
   closeProfile() {
     try {
-      const profileBackButton = findProfileBackButton(document);
-      if (profileBackButton?.getAttribute?.('data-testid') === 'profileBackButton') {
+      const profileBackButton = findProfileCloseControl(document);
+      if (profileBackButton) {
         profileBackButton.click();
-        logger('🚪 Profile close command sent using profile back button');
+        logger('🚪 Profile close command sent using profile close control');
         return true;
+      }
+
+      if (!this.isProfileModalOpen()) {
+        logger('🚪 No profile modal detected; skipping profile close command');
+        return false;
       }
 
       // Strategy 1: Try DOWN arrow key (most reliable for closing profile)
@@ -482,24 +394,6 @@ class ProfileAnalyzer {
         })
       ];
       for (const ev of escapeEvents) document.dispatchEvent(ev);
-
-      const closeCandidates = Array.from(document.querySelectorAll('button, [role="button"]'));
-      for (const btn of closeCandidates) {
-        const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
-        const title = (btn.getAttribute('title') || '').toLowerCase();
-        const dtid = (btn.getAttribute('data-testid') || '').toLowerCase();
-        const txt = (btn.textContent || '').toLowerCase();
-        const content = `${aria} ${title} ${dtid} ${txt}`;
-        if (
-          content.includes('back') ||
-          content.includes('close') ||
-          content.includes('voltar') ||
-          content.includes('fechar')
-        ) {
-          btn.click();
-          break;
-        }
-      }
 
       logger('🚪 Profile close command sent (DOWN arrow + Escape)');
       return true;

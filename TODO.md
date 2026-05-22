@@ -16,6 +16,7 @@
 - [x] Confirm like actions advance the card before scheduling the next Auto Like cycle.
 - [x] Allow Auto Like to use the visible Like action inside an open profile after AI approval.
 - [x] Prevent Auto Like fallback actions from swiping the next profile after a delayed advance.
+- [x] Keep Auto Like inside nested Explorer sections without clicking Back to Explore.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies

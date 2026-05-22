@@ -131,6 +131,15 @@ test('does not confuse explore boost or first impression controls with like acti
   assert.equal(findSuperLikeButton(root).textContent, 'Super Like');
 });
 
+test('finds gamepad actions from a nested Explorer section snapshot', () => {
+  const root = loadFixture('tinder-html/tinder-explorer.html');
+
+  assert.equal(findDislikeButton(root).textContent, 'Nope');
+  assert.equal(findLikeButton(root).textContent, 'Like');
+  assert.equal(findSuperLikeButton(root).textContent, 'Super Like');
+  assert.match(findOpenProfileButton(root).textContent, /Open Profile/);
+});
+
 test('classifies visible super like upsell and ignores hidden Tinder sheets', () => {
   const superLikeDialog = loadFixture('tinder-html/tinder-modal-super-like.html');
   const hiddenExploreDialog = loadFixture('tinder-html/tinder-explore-page-open-profile.html');
