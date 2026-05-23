@@ -56,12 +56,15 @@
 - [x] Skip AI replies when the owner already shared direct contact in the conversation.
 - [x] Make continuous AI replies scan all match pages before waiting for the next cycle.
 - [x] Clarify AI reply transcript speaker labels with OWNER/MATCH framing.
+- [x] Add local conversation signal hints and stricter AI reply output validation.
+- [x] Add a real pending-match AI reply review tool that never sends messages.
 
 ## AI Provider Support
 
 - [x] Add a shared AI API type selector for OpenAI-Compatible, Mistral AI, Anthropic, and NVIDIA NIM.
 - [x] Route profile filtering, AI message replies, and model listing through provider-specific request adapters.
 - [x] Cover provider request conversion, response parsing, settings, and model listing with tests.
+- [x] Align Mistral and NVIDIA NIM chat request behavior with official API docs.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## Sidebar UX

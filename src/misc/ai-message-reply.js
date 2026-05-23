@@ -5,6 +5,7 @@ const {
 } = require('./conversation-context');
 const {
   AI_REPLY_COMPATIBILITY_MODES,
+  AI_REPLY_REASONING_EFFORTS,
   DEFAULT_AI_REPLY_ADDRESS_INFO,
   DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
   DEFAULT_AI_REPLY_CONTACT_INFO,
@@ -20,13 +21,21 @@ const {
   normalizeAiReplyReasoningEffort
 } = require('./ai-message-reply-settings');
 const { formatAiReplyLocalTime } = require('./ai-reply-current-time');
+const { formatAiReplyConversationSignals } = require('./ai-reply-conversation-intent');
 const {
   buildAiChatRequestOptions,
+  clampAiChatMaxTokens,
+  getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
-  isAiChatLengthStopReason
+  isAiChatLengthStopReason,
+  supportsNativeJsonResponseFormat
 } = require('./ai-chat-provider');
-const { DEFAULT_AI_PROVIDER_TYPE } = require('./ai-provider-settings');
+const {
+  AI_PROVIDER_TYPES,
+  DEFAULT_AI_PROVIDER_TYPE,
+  normalizeAiProviderType
+} = require('./ai-provider-settings');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
   String(value || '')
@@ -111,6 +120,24 @@ const hasSharedContact = (text) =>
     text
   );
 
+const hasDirectContactValue = (text) => /(?:\+?\d[\d\s().-]{7,}\d|(?:^|\s)@[\w.]{3,})/.test(
+  normalizeDisclosureText(text)
+);
+
+const hasSpeakerLabelPrefix = (text) =>
+  /^(?:owner|match|user|assistant|ai)\s*:/i.test(String(text || '').trim());
+
+const validateAiReplyCandidate = (reply, { allowContactDisclosure = false } = {}) => {
+  if (!reply) return { isValid: false, reason: 'Empty reply' };
+  if (hasSpeakerLabelPrefix(reply)) {
+    return { isValid: false, reason: 'AI reply included a speaker label' };
+  }
+  if (!allowContactDisclosure && hasDirectContactValue(reply)) {
+    return { isValid: false, reason: 'AI reply included contact without permission' };
+  }
+  return { isValid: true, reason: '' };
+};
+
 const shouldIncludeContactInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const matchText = getMatchConversationText(conversationTurns);
@@ -123,6 +150,40 @@ const shouldIncludeContactInfo = (conversationTurns = []) => {
     ) ||
     hasSharedContact(matchText)
   );
+};
+
+const mapMistralReasoningEffort = (reasoningEffort) =>
+  reasoningEffort === AI_REPLY_REASONING_EFFORTS.high ? 'high' : 'none';
+
+const applyProviderTokenAndReasoningFields = ({
+  body,
+  compatibilityMode,
+  maxTokens,
+  providerType,
+  reasoningEffort
+}) => {
+  const normalizedProviderType = normalizeAiProviderType(providerType);
+  const capabilities = getAiChatProviderCapabilities(normalizedProviderType);
+  const safeMaxTokens = clampAiChatMaxTokens(normalizedProviderType, maxTokens);
+
+  if (
+    compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&
+    capabilities.reasoningEffort === 'openai'
+  ) {
+    body.max_completion_tokens = safeMaxTokens;
+    body.reasoning_effort = reasoningEffort;
+    return;
+  }
+
+  body[capabilities.maxTokensField] = safeMaxTokens;
+
+  if (
+    compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&
+    normalizedProviderType === AI_PROVIDER_TYPES.mistral
+  ) {
+    body.prompt_mode = 'reasoning';
+    body.reasoning_effort = mapMistralReasoningEffort(reasoningEffort);
+  }
 };
 
 const buildAiReplySystemMessage = ({
@@ -176,6 +237,7 @@ RULES:
 - Do not use emojis, kaomoji, or exclamation-heavy text unless the match is already using them frequently.
 - Do not over-explain. Do not make every reply a formal question.
 - Reply in the same language as the latest match message and recent conversation unless USER TONE AND STYLE explicitly requests another language. Match the conversation's casualness, but do not force slang.
+- Use CONVERSATION SIGNALS as metadata about the latest match message. Do not mention those labels in the reply.
 - Do not use time-based greetings unless they match CURRENT LOCAL TIME. If unsure, avoid time-based greetings.
 - The account owner may have sent repeated mass-message openers. If recent user messages are generic openers, still answer the match's actual latest question or callback instead of sending another generic line.
 - If the match asks a direct personal question, answer from OWNER PROFILE, SHAREABLE CONTACT METHODS, or SHAREABLE ADDRESS INFO. If the needed fact is absent, deflect briefly instead of inventing.
@@ -228,14 +290,19 @@ const buildAiReplyUserMessage = ({
   contextWindow = DEFAULT_CONTEXT_WINDOW
 } = {}) => {
   const conversation = formatConversationTurns(conversationTurns);
+  const conversationSignals = formatAiReplyConversationSignals(conversationTurns);
   const matchLine = matchName ? `MATCH NAME: ${matchName}\n` : '';
   const matchLabel = matchName
     ? `MATCH = ${matchName}, the other Tinder user.`
     : 'MATCH = the other Tinder user.';
+  const signalsBlock = conversationSignals
+    ? `\nCONVERSATION SIGNALS:\n${conversationSignals}\n`
+    : '';
 
   return `${matchLine}SPEAKER LABELS:
 OWNER = the account owner. You are writing the next reply as OWNER.
 ${matchLabel}
+${signalsBlock}
 
 CONVERSATION, oldest to newest, last ${contextWindow} messages:
 ${conversation || '(no messages)'}
@@ -258,12 +325,14 @@ const buildAiReplyRequestBody = ({
   conversationTurns = [],
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,
+  providerType = DEFAULT_AI_PROVIDER_TYPE,
   temperature = 0.7,
   reasoningEffort = DEFAULT_AI_REPLY_REASONING_EFFORT
 } = {}) => {
   const safeCompatibilityMode = normalizeAiReplyCompatibilityMode(compatibilityMode);
   const safeMaxTokens = normalizeAiReplyMaxTokens(maxTokens);
   const safeReasoningEffort = normalizeAiReplyReasoningEffort(reasoningEffort);
+  const safeProviderType = normalizeAiProviderType(providerType);
   const safeContactInfo = shouldIncludeContactInfo(conversationTurns) ? contactInfo : '';
   const body = {
     model,
@@ -295,14 +364,18 @@ const buildAiReplyRequestBody = ({
     temperature
   };
 
-  if (safeCompatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson) {
-    body.max_completion_tokens = safeMaxTokens;
-    body.reasoning_effort = safeReasoningEffort;
-  } else {
-    body.max_tokens = safeMaxTokens;
-  }
+  applyProviderTokenAndReasoningFields({
+    body,
+    compatibilityMode: safeCompatibilityMode,
+    maxTokens: safeMaxTokens,
+    providerType: safeProviderType,
+    reasoningEffort: safeReasoningEffort
+  });
 
-  if (safeCompatibilityMode !== AI_REPLY_COMPATIBILITY_MODES.looseJson) {
+  if (
+    safeCompatibilityMode !== AI_REPLY_COMPATIBILITY_MODES.looseJson &&
+    supportsNativeJsonResponseFormat(safeProviderType)
+  ) {
     body.response_format = { type: 'json_object' };
   }
 
@@ -330,7 +403,7 @@ const parseJsonReply = (content, { allowJsonExtraction }) => {
 
 const parseAiReplyResponse = (
   data,
-  { allowJsonExtraction = true, maxLength = 500 } = {}
+  { allowContactDisclosure = false, allowJsonExtraction = true, maxLength = 500 } = {}
 ) => {
   const stopReason = getAiReplyStopReason(data);
   const content = getAiReplyContent(data);
@@ -361,6 +434,17 @@ const parseAiReplyResponse = (
   }
 
   const reply = sanitizeAiReply(parsed.reply || parsed.message, maxLength);
+  const validation = validateAiReplyCandidate(reply, { allowContactDisclosure });
+  if (!validation.isValid) {
+    return {
+      shouldRetry: true,
+      shouldSend: false,
+      reply: '',
+      reason: validation.reason,
+      stopReason
+    };
+  }
+
   return {
     shouldRetry: false,
     shouldSend: parsed.shouldSend !== false && Boolean(reply),
@@ -406,6 +490,7 @@ const generateAiMessageReply = async ({
   }
 
   const recentConversationTurns = getLastConversationTurns(conversationTurns, contextWindow);
+  const allowContactDisclosure = shouldIncludeContactInfo(recentConversationTurns);
   const requestParams = {
     compatibilityMode,
     addressInfo,
@@ -438,7 +523,10 @@ const generateAiMessageReply = async ({
 
     const data = await response.json();
     return parseAiReplyResponse(data, {
-      allowJsonExtraction: params.compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.looseJson
+      allowContactDisclosure,
+      allowJsonExtraction:
+        params.compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.looseJson ||
+        !supportsNativeJsonResponseFormat(params.providerType)
     });
   };
 
@@ -468,7 +556,11 @@ module.exports = {
   generateAiMessageReply,
   getAiReplyContent,
   getAiReplyStopReason,
+  hasDirectContactValue,
+  hasSpeakerLabelPrefix,
+  mapMistralReasoningEffort,
   parseAiReplyResponse,
   shouldIncludeContactInfo,
-  sanitizeAiReply
+  sanitizeAiReply,
+  validateAiReplyCandidate
 };

@@ -52,7 +52,9 @@ import {
   buildAiReplyRequestBody,
   generateAiMessageReply
 } from '../misc/ai-message-reply';
+import { reviewNextPendingAiReply } from '../misc/ai-message-reply-flow';
 import { parseAiReplyTestConversation } from '../misc/ai-reply-test-input';
+import { getMatches, getRawMessagesForMatch } from '../misc/api';
 import { insertCss } from '../misc/insert-css';
 import {
   getExtensionStorageValue,
@@ -60,6 +62,7 @@ import {
   removeExtensionStorageValue
 } from '../misc/extension-storage';
 import {
+  getJsonSetting,
   getRawStorageValue,
   getSetting,
   getToggleState,
@@ -386,6 +389,13 @@ class Sidebar {
     if (testAiReplyButton) {
       this.addTrackedListener(testAiReplyButton, 'click', () => {
         this.testAiReply(testAiReplyButton);
+      });
+    }
+
+    const reviewNextAiReplyButton = document.getElementById('reviewNextAiReply');
+    if (reviewNextAiReplyButton) {
+      this.addTrackedListener(reviewNextAiReplyButton, 'click', () => {
+        this.reviewNextAiReply(reviewNextAiReplyButton);
       });
     }
 
@@ -966,9 +976,43 @@ class Sidebar {
     return { conversationTurns, matchName };
   };
 
+  getStoredProfileData = () => {
+    try {
+      return getJsonSetting('ProfileData');
+    } catch {
+      return null;
+    }
+  };
+
   setAiReplyTestOutput = (value) => {
     const output = document.getElementById('aiReplyTestOutput');
     if (output) output.value = String(value || '');
+  };
+
+  formatAiReplyReviewOutput = (result) => {
+    if (!result) return 'No review result returned.';
+
+    return JSON.stringify(
+      {
+        status: result.status,
+        reason: result.reason,
+        didSend: result.didSend,
+        checkedMatches: result.checkedMatches,
+        checkedPages: result.checkedPages,
+        match:
+          result.status === 'reviewed'
+            ? {
+                id: result.matchId,
+                name: result.matchName,
+                latestMatchMessage: result.latestMatchMessage
+              }
+            : undefined,
+        aiReply: result.aiReply,
+        conversation: result.conversationTurns
+      },
+      null,
+      2
+    );
   };
 
   previewAiReplyPrompt = () => {
@@ -1017,6 +1061,47 @@ class Sidebar {
     } catch (error) {
       this.setAiReplyTestOutput(`AI reply test failed: ${this.getErrorMessage(error)}`);
       logger(`⚠️ AI reply test failed: ${this.getErrorMessage(error)}`);
+    } finally {
+      if (triggerButton) triggerButton.disabled = false;
+    }
+  };
+
+  reviewNextAiReply = async (triggerButton = null) => {
+    if (triggerButton) triggerButton.disabled = true;
+
+    try {
+      if (this.aiMessageResponder.isRunning) {
+        this.setAiReplyTestOutput('Stop AI Reply mode before reviewing a real pending match.');
+        return;
+      }
+
+      const settings = this.getCurrentAiReplySettings();
+      if (!settings.apiUrl) {
+        this.setAiReplyTestOutput('Configure an AI API URL before reviewing a real match.');
+        return;
+      }
+
+      this.setAiReplyTestOutput('Scanning real matches for the next pending AI reply...');
+
+      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+      const result = await reviewNextPendingAiReply({
+        apiKey,
+        generateReply: generateAiMessageReply,
+        loadMatchesPage: (nextPageToken) => getMatches(false, nextPageToken),
+        loadRawMessages: getRawMessagesForMatch,
+        profileData: this.getStoredProfileData(),
+        settings
+      });
+
+      this.setAiReplyTestOutput(this.formatAiReplyReviewOutput(result));
+      logger(
+        result.status === 'reviewed'
+          ? `🧪 Reviewed AI reply for ${result.matchName || 'match'} without sending`
+          : `🧪 AI reply review finished: ${result.reason}`
+      );
+    } catch (error) {
+      this.setAiReplyTestOutput(`AI reply real-match review failed: ${this.getErrorMessage(error)}`);
+      logger(`⚠️ AI reply real-match review failed: ${this.getErrorMessage(error)}`);
     } finally {
       if (triggerButton) triggerButton.disabled = false;
     }

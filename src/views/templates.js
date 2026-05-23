@@ -980,17 +980,23 @@ const createAiSettings = () =>
           defaultValue: '',
           type: 'text'
         }),
-        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
+        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px; flex-wrap: wrap;' }, [
           createElement('button', {
             id: 'previewAiReplyPrompt',
             text: 'Preview Prompt',
-            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           }),
           createElement('button', {
             id: 'testAiReply',
             text: 'Test Reply',
-            style: `width: 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            attributes: { type: 'button' }
+          }),
+          createElement('button', {
+            id: 'reviewNextAiReply',
+            text: 'Review Real Match',
+            style: `flex: 1 1 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
             attributes: { type: 'button' }
           })
         ]),

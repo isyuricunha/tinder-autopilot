@@ -7,9 +7,12 @@ const {
   createNoSendAiReply,
   extractFirstJsonObject,
   generateAiMessageReply,
+  hasDirectContactValue,
+  hasSpeakerLabelPrefix,
   parseAiReplyResponse,
   shouldIncludeContactInfo,
-  sanitizeAiReply
+  sanitizeAiReply,
+  validateAiReplyCandidate
 } = require('../src/misc/ai-message-reply');
 const {
   AI_REPLY_COMPATIBILITY_MODES,
@@ -33,6 +36,7 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   assert.equal(message.includes('Write only the next reply as OWNER'), true);
   assert.equal(message.includes('Do not invent routine'), true);
   assert.equal(message.includes('Do not use emojis'), true);
+  assert.equal(message.includes('Use CONVERSATION SIGNALS as metadata'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
   assert.equal(message.includes('already shared a phone number'), true);
   assert.equal(message.includes('SHAREABLE ADDRESS INFO field is always supplied'), true);
@@ -77,6 +81,16 @@ test('buildAiReplyUserMessage formats recent conversation turns', () => {
   assert.equal(message.includes('NEXT REPLY SPEAKER: OWNER'), true);
 });
 
+test('buildAiReplyUserMessage includes local conversation signals when useful', () => {
+  const message = buildAiReplyUserMessage({
+    matchName: 'Ana',
+    conversationTurns: [{ role: 'match', text: 'vc é de onde?' }]
+  });
+
+  assert.equal(message.includes('CONVERSATION SIGNALS'), true);
+  assert.equal(message.includes('asks about location'), true);
+});
+
 test('buildAiReplyRequestBody creates an OpenAI-compatible JSON response request', () => {
   const body = buildAiReplyRequestBody({
     model: 'gpt-4o-mini',
@@ -108,6 +122,35 @@ test('buildAiReplyRequestBody supports reasoning and loose JSON compatibility mo
   });
   assert.equal(looseBody.max_tokens, 512);
   assert.equal(looseBody.response_format, undefined);
+});
+
+test('buildAiReplyRequestBody adapts JSON and token fields for Mistral and NVIDIA NIM', () => {
+  const mistralBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    maxTokens: 32768,
+    providerType: AI_PROVIDER_TYPES.mistral,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.medium
+  });
+  assert.equal(mistralBody.max_tokens, 32768);
+  assert.equal(mistralBody.max_completion_tokens, undefined);
+  assert.equal(mistralBody.prompt_mode, 'reasoning');
+  assert.equal(mistralBody.reasoning_effort, 'none');
+  assert.deepEqual(mistralBody.response_format, { type: 'json_object' });
+
+  const mistralHighReasoningBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    providerType: AI_PROVIDER_TYPES.mistral,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.high
+  });
+  assert.equal(mistralHighReasoningBody.reasoning_effort, 'high');
+
+  const nimBody = buildAiReplyRequestBody({
+    maxTokens: 65536,
+    providerType: AI_PROVIDER_TYPES.nvidiaNim
+  });
+  assert.equal(nimBody.max_tokens, 65536);
+  assert.equal(nimBody.max_completion_tokens, undefined);
+  assert.equal(nimBody.response_format, undefined);
 });
 
 test('buildAiReplyRequestBody always includes address info and gates contact info', () => {
@@ -207,6 +250,78 @@ test('parseAiReplyResponse extracts JSON from loose provider output and detects 
     reason: 'AI response stopped by token limit',
     stopReason: 'length'
   });
+});
+
+test('parseAiReplyResponse blocks unsafe AI reply candidates', () => {
+  assert.equal(hasSpeakerLabelPrefix('OWNER: oi'), true);
+  assert.equal(hasDirectContactValue('me chama no @teste'), true);
+  assert.deepEqual(validateAiReplyCandidate('opa'), { isValid: true, reason: '' });
+
+  assert.deepEqual(
+    parseAiReplyResponse({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              shouldSend: true,
+              reply: 'OWNER: oi',
+              reason: 'bad prefix'
+            })
+          }
+        }
+      ]
+    }),
+    {
+      shouldRetry: true,
+      shouldSend: false,
+      reply: '',
+      reason: 'AI reply included a speaker label',
+      stopReason: ''
+    }
+  );
+
+  assert.deepEqual(
+    parseAiReplyResponse({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              shouldSend: true,
+              reply: 'me chama no @teste',
+              reason: 'bad contact'
+            })
+          }
+        }
+      ]
+    }),
+    {
+      shouldRetry: true,
+      shouldSend: false,
+      reply: '',
+      reason: 'AI reply included contact without permission',
+      stopReason: ''
+    }
+  );
+
+  assert.equal(
+    parseAiReplyResponse(
+      {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                shouldSend: true,
+                reply: 'me chama no @teste',
+                reason: 'allowed contact'
+              })
+            }
+          }
+        ]
+      },
+      { allowContactDisclosure: true }
+    ).shouldSend,
+    true
+  );
 });
 
 test('parseAiReplyResponse supports Anthropic message responses', () => {
@@ -399,14 +514,43 @@ test('generateAiMessageReply converts requests for Anthropic provider', async ()
   const body = JSON.parse(calls[0].options.body);
   assert.equal(body.model, 'claude-sonnet');
   assert.equal(body.system.includes('You write Tinder message replies'), true);
-  assert.deepEqual(body.messages, [
-    {
-      role: 'user',
-      content:
-        'MATCH NAME: Ana\nSPEAKER LABELS:\nOWNER = the account owner. You are writing the next reply as OWNER.\nMATCH = Ana, the other Tinder user.\n\nCONVERSATION, oldest to newest, last 10 messages:\nMATCH: tu mora onde?\n\nNEXT REPLY SPEAKER: OWNER'
-    }
-  ]);
+  assert.equal(body.messages[0].role, 'user');
+  assert.equal(body.messages[0].content.includes('MATCH NAME: Ana'), true);
+  assert.equal(body.messages[0].content.includes('CONVERSATION SIGNALS'), true);
+  assert.equal(body.messages[0].content.includes('asks about location'), true);
+  assert.equal(body.messages[0].content.includes('MATCH: tu mora onde?'), true);
   assert.equal(body.response_format, undefined);
+});
+
+test('generateAiMessageReply extracts JSON for providers without native JSON mode', async () => {
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return {
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            finish_reason: 'stop',
+            message: {
+              content: 'Here is the JSON: {"shouldSend":true,"reply":"opa","reason":"ok"}'
+            }
+          }
+        ]
+      })
+    };
+  };
+
+  const result = await generateAiMessageReply({
+    apiUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    conversationTurns: [{ role: 'match', text: 'oi' }],
+    fetchImpl,
+    providerType: AI_PROVIDER_TYPES.nvidiaNim
+  });
+
+  assert.equal(result.shouldSend, true);
+  assert.equal(result.reply, 'opa');
+  assert.equal(JSON.parse(calls[0].options.body).response_format, undefined);
 });
 
 test('generateAiMessageReply returns no-send on missing config and API failures', async () => {

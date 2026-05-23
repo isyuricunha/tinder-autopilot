@@ -65,6 +65,15 @@ const getLatestConversationSignature = (conversationTurns = []) => {
     .join('|');
 };
 
+const getLatestMatchMessageText = (conversationTurns = []) => {
+  for (let index = conversationTurns.length - 1; index >= 0; index -= 1) {
+    const turn = conversationTurns[index];
+    if (turn?.role === 'match' && turn.text) return turn.text;
+  }
+
+  return '';
+};
+
 const buildPendingAiReplyContext = ({
   contextWindow,
   match,
@@ -105,6 +114,87 @@ const buildPendingAiReplyContext = ({
     matchName: getMatchName(match),
     reason: 'Pending reply',
     status: 'pending'
+  };
+};
+
+const reviewNextPendingAiReply = async ({
+  apiKey = '',
+  generateReply = generateAiMessageReply,
+  loadMatchesPage,
+  loadRawMessages,
+  profileData,
+  settings = {}
+} = {}) => {
+  if (typeof loadMatchesPage !== 'function') {
+    return createSkippedAiReplyMatchResult('Match page loader unavailable', {
+      checkedMatches: 0,
+      checkedPages: 0,
+      status: 'failed'
+    });
+  }
+
+  if (typeof loadRawMessages !== 'function') {
+    return createSkippedAiReplyMatchResult('Raw message loader unavailable', {
+      checkedMatches: 0,
+      checkedPages: 0,
+      status: 'failed'
+    });
+  }
+
+  let nextPageToken = true;
+  let checkedMatches = 0;
+  let checkedPages = 0;
+
+  while (nextPageToken) {
+    const response = await loadMatchesPage(nextPageToken);
+    checkedPages += 1;
+    nextPageToken = get(response, 'data.next_page_token');
+    const matches = get(response, 'data.matches', []) || [];
+
+    for (const match of matches) {
+      checkedMatches += 1;
+      const matchId = getMatchId(match);
+      if (!matchId) continue;
+
+      const rawMessages = await loadRawMessages(matchId);
+      const context = buildPendingAiReplyContext({
+        contextWindow: settings.contextWindow,
+        match,
+        profileData,
+        rawMessages
+      });
+
+      if (context.status !== 'pending') continue;
+
+      const aiReply = await generateReply({
+        ...settings,
+        apiKey,
+        conversationTurns: context.conversationTurns,
+        matchName: context.matchName
+      });
+
+      return {
+        aiReply,
+        checkedMatches,
+        checkedPages,
+        conversationTurns: context.conversationTurns,
+        didSend: false,
+        latestMatchMessage: getLatestMatchMessageText(context.conversationTurns),
+        latestMessageSignature: context.latestMessageSignature,
+        matchId: context.matchId,
+        matchName: context.matchName,
+        reason: 'Pending reply reviewed without sending',
+        status: 'reviewed'
+      };
+    }
+  }
+
+  return {
+    checkedMatches,
+    checkedPages,
+    didSend: false,
+    reason: 'No pending conversations found',
+    status: 'empty'
   };
 };
 
@@ -198,8 +288,10 @@ module.exports = {
   buildPendingAiReplyContext,
   getCurrentUserId,
   getLatestConversationSignature,
+  getLatestMatchMessageText,
   getMatchId,
   getMatchName,
   getMatchUserId,
-  processAiReplyMatch
+  processAiReplyMatch,
+  reviewNextPendingAiReply
 };

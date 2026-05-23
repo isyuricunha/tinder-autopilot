@@ -9,6 +9,48 @@ const CHAT_COMPLETIONS_SUFFIX = '/chat/completions';
 const MESSAGES_SUFFIX = '/messages';
 const MODELS_SUFFIX = '/models';
 
+const AI_CHAT_PROVIDER_CAPABILITIES = {
+  [AI_PROVIDER_TYPES.anthropic]: {
+    maxTokensField: 'max_tokens',
+    maxOutputTokens: null,
+    nativeJsonResponseFormat: false,
+    reasoningEffort: 'none'
+  },
+  [AI_PROVIDER_TYPES.mistral]: {
+    maxTokensField: 'max_tokens',
+    maxOutputTokens: null,
+    nativeJsonResponseFormat: true,
+    reasoningEffort: 'mistral'
+  },
+  [AI_PROVIDER_TYPES.nvidiaNim]: {
+    maxTokensField: 'max_tokens',
+    maxOutputTokens: null,
+    nativeJsonResponseFormat: false,
+    reasoningEffort: 'none'
+  },
+  [AI_PROVIDER_TYPES.openAiCompatible]: {
+    maxTokensField: 'max_tokens',
+    maxOutputTokens: null,
+    nativeJsonResponseFormat: true,
+    reasoningEffort: 'openai'
+  }
+};
+
+const getAiChatProviderCapabilities = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
+  AI_CHAT_PROVIDER_CAPABILITIES[normalizeAiProviderType(providerType)] ||
+  AI_CHAT_PROVIDER_CAPABILITIES[DEFAULT_AI_PROVIDER_TYPE];
+
+const clampAiChatMaxTokens = (providerType, maxTokens) => {
+  const capabilities = getAiChatProviderCapabilities(providerType);
+  const safeMaxTokens = Math.max(1, parseInt(maxTokens, 10) || 1);
+  return capabilities.maxOutputTokens
+    ? Math.min(capabilities.maxOutputTokens, safeMaxTokens)
+    : safeMaxTokens;
+};
+
+const supportsNativeJsonResponseFormat = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
+  Boolean(getAiChatProviderCapabilities(providerType).nativeJsonResponseFormat);
+
 const isAnthropicProvider = (providerType) =>
   normalizeAiProviderType(providerType) === AI_PROVIDER_TYPES.anthropic;
 
@@ -193,6 +235,7 @@ const buildAiModelsRequestOptions = ({
 };
 
 module.exports = {
+  AI_CHAT_PROVIDER_CAPABILITIES,
   ANTHROPIC_VERSION,
   asTextContent,
   buildAiChatHeaders,
@@ -200,9 +243,12 @@ module.exports = {
   buildAiModelsApiUrl,
   buildAiModelsRequestOptions,
   buildAnthropicRequestBody,
+  clampAiChatMaxTokens,
+  getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
   isAiChatLengthStopReason,
   isAnthropicProvider,
-  normalizeProviderMessages
+  normalizeProviderMessages,
+  supportsNativeJsonResponseFormat
 };

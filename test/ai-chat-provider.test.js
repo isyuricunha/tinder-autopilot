@@ -1,15 +1,19 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  AI_CHAT_PROVIDER_CAPABILITIES,
   ANTHROPIC_VERSION,
   buildAiChatRequestOptions,
   buildAiModelsApiUrl,
   buildAiModelsRequestOptions,
   buildAnthropicRequestBody,
+  clampAiChatMaxTokens,
+  getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
   isAiChatLengthStopReason,
-  normalizeProviderMessages
+  normalizeProviderMessages,
+  supportsNativeJsonResponseFormat
 } = require('../src/misc/ai-chat-provider');
 const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 
@@ -30,6 +34,20 @@ test('buildAiChatRequestOptions keeps OpenAI-compatible providers unchanged', ()
   assert.equal(options.headers.Authorization, 'Bearer secret');
   assert.equal(options.headers['Content-Type'], 'application/json');
   assert.deepEqual(JSON.parse(options.body), body);
+});
+
+test('AI chat provider capabilities document native JSON and token behavior', () => {
+  assert.equal(
+    AI_CHAT_PROVIDER_CAPABILITIES[AI_PROVIDER_TYPES.mistral].nativeJsonResponseFormat,
+    true
+  );
+  assert.equal(supportsNativeJsonResponseFormat(AI_PROVIDER_TYPES.nvidiaNim), false);
+  assert.equal(
+    getAiChatProviderCapabilities(AI_PROVIDER_TYPES.nvidiaNim).maxOutputTokens,
+    null
+  );
+  assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.nvidiaNim, 99999), 99999);
+  assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.mistral, 99999), 99999);
 });
 
 test('buildAiChatRequestOptions converts OpenAI body to Anthropic Messages API', () => {
