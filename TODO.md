@@ -65,6 +65,7 @@
 - [x] Route profile filtering, AI message replies, and model listing through provider-specific request adapters.
 - [x] Cover provider request conversion, response parsing, settings, and model listing with tests.
 - [x] Align Mistral and NVIDIA NIM chat request behavior with official API docs.
+- [x] Add official OpenAI provider and derive provider endpoints from base URLs.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## Sidebar UX

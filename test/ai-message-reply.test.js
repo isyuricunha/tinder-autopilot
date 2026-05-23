@@ -384,7 +384,7 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
 
   const result = await generateAiMessageReply({
     apiKey: 'secret-key',
-    apiUrl: 'https://example.test/chat',
+    apiUrl: 'https://example.test/v1',
     contextWindow: 2,
     conversationTurns: [
       { role: 'user', text: 'Old user message' },
@@ -408,7 +408,7 @@ test('generateAiMessageReply calls the AI API with recent context only', async (
   assert.equal(result.reply, 'Bom dia! Dormi bem, e voce?');
   assert.equal(result.reason, 'Answers latest question');
   assert.equal(calls.length, 1);
-  assert.equal(calls[0].url, 'https://example.test/chat');
+  assert.equal(calls[0].url, 'https://example.test/v1/chat/completions');
   assert.equal(calls[0].options.headers.Authorization, 'Bearer secret-key');
 
   const body = JSON.parse(calls[0].options.body);
@@ -542,7 +542,7 @@ test('generateAiMessageReply extracts JSON for providers without native JSON mod
   };
 
   const result = await generateAiMessageReply({
-    apiUrl: 'https://integrate.api.nvidia.com/v1/chat/completions',
+    apiUrl: 'https://integrate.api.nvidia.com/v1',
     conversationTurns: [{ role: 'match', text: 'oi' }],
     fetchImpl,
     providerType: AI_PROVIDER_TYPES.nvidiaNim
@@ -550,6 +550,7 @@ test('generateAiMessageReply extracts JSON for providers without native JSON mod
 
   assert.equal(result.shouldSend, true);
   assert.equal(result.reply, 'opa');
+  assert.equal(calls[0].url, 'https://integrate.api.nvidia.com/v1/chat/completions');
   assert.equal(JSON.parse(calls[0].options.body).response_format, undefined);
 });
 

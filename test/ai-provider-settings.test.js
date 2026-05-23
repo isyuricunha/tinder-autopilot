@@ -14,19 +14,20 @@ const {
 } = require('../src/misc/ai-provider-settings');
 
 test('AI provider settings expose safe defaults', () => {
-  assert.equal(DEFAULT_AI_PROVIDER_TYPE, AI_PROVIDER_TYPES.openAiCompatible);
+  assert.equal(DEFAULT_AI_PROVIDER_TYPE, AI_PROVIDER_TYPES.openAi);
   assert.equal(
-    AI_PROVIDER_DEFAULT_API_URLS[AI_PROVIDER_TYPES.openAiCompatible],
-    'https://api.openai.com/v1/chat/completions'
+    AI_PROVIDER_DEFAULT_API_URLS[AI_PROVIDER_TYPES.openAi],
+    'https://api.openai.com/v1'
   );
   assert.equal(
     AI_PROVIDER_DEFAULT_API_URLS[AI_PROVIDER_TYPES.anthropic],
-    'https://api.anthropic.com/v1/messages'
+    'https://api.anthropic.com/v1'
   );
   assert.equal(
     AI_PROVIDER_DEFAULT_API_URLS[AI_PROVIDER_TYPES.nvidiaNim],
-    'https://integrate.api.nvidia.com/v1/chat/completions'
+    'https://integrate.api.nvidia.com/v1'
   );
+  assert.equal(AI_PROVIDER_LABELS[AI_PROVIDER_TYPES.openAi], 'OpenAI');
   assert.equal(AI_PROVIDER_LABELS[AI_PROVIDER_TYPES.openAiCompatible], 'OpenAI-Compatible');
 });
 
@@ -38,15 +39,16 @@ test('normalizeAiProviderType accepts only known providers', () => {
 test('provider default URLs are readable and detectable', () => {
   assert.equal(
     getAiProviderDefaultApiUrl(AI_PROVIDER_TYPES.mistral),
-    'https://api.mistral.ai/v1/chat/completions'
+    'https://api.mistral.ai/v1'
   );
+  assert.equal(isKnownAiProviderDefaultApiUrl('https://api.mistral.ai/v1/'), true);
   assert.equal(isKnownAiProviderDefaultApiUrl('https://api.mistral.ai/v1/chat/completions/'), true);
   assert.equal(isKnownAiProviderDefaultApiUrl('https://example.test/custom/chat'), false);
 });
 
 test('provider labels are readable and normalize unknown values', () => {
   assert.equal(getAiProviderLabel(AI_PROVIDER_TYPES.anthropic), 'Anthropic');
-  assert.equal(getAiProviderLabel('unknown'), 'OpenAI-Compatible');
+  assert.equal(getAiProviderLabel('unknown'), 'OpenAI');
 });
 
 test('readAiProviderSettings reads and normalizes stored provider', () => {

@@ -49,7 +49,7 @@ test('readAiProfileFilterSettings falls back to legacy shared settings', () => {
   };
 
   assert.deepEqual(readAiProfileFilterSettings((key, fallback) => settings[key] ?? fallback), {
-    apiUrl: 'https://api.anthropic.com/v1/messages',
+    apiUrl: 'https://api.anthropic.com/v1',
     filterRules: '',
     model: 'legacy-model',
     reasoningEffort: AI_REASONING_EFFORTS.low,

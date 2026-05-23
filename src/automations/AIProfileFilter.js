@@ -2,7 +2,7 @@ import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
 import { parseAiDecision } from '../misc/ai-response-parser';
-import { buildAiChatRequestOptions } from '../misc/ai-chat-provider';
+import { buildAiChatApiUrl, buildAiChatRequestOptions } from '../misc/ai-chat-provider';
 import { readAiProviderSettings } from '../misc/ai-provider-settings';
 import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
 import {
@@ -98,8 +98,18 @@ class AIProfileFilter {
 
     try {
       const body = this.buildRequestBody(bio, imageBase64, name, profile);
+      const requestUrl = buildAiChatApiUrl({
+        apiUrl: this.apiUrl,
+        providerType: this.providerType
+      });
+
+      if (!requestUrl) {
+        logger('⚠️ AI Filter URL not configured, skipping AI analysis');
+        return { shouldSwipe: 'neutral', reason: 'AI not configured' };
+      }
+
       const response = await fetch(
-        this.apiUrl,
+        requestUrl,
         buildAiChatRequestOptions({
           apiKey: this.apiKey,
           body,

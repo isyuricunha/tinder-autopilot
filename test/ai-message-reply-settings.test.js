@@ -194,7 +194,7 @@ test('readAiReplySettings reads and normalizes stored values', () => {
 test('readAiReplySettings falls back to safe defaults', () => {
   assert.deepEqual(readAiReplySettings(), {
     addressInfo: DEFAULT_AI_REPLY_ADDRESS_INFO,
-    apiUrl: 'https://api.openai.com/v1/chat/completions',
+    apiUrl: 'https://api.openai.com/v1',
     compatibilityMode: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
     contactInfo: DEFAULT_AI_REPLY_CONTACT_INFO,
     continuousIntervalMinutes: DEFAULT_AI_REPLY_CONTINUOUS_INTERVAL_MINUTES,
@@ -204,7 +204,7 @@ test('readAiReplySettings falls back to safe defaults', () => {
     contextWindow: DEFAULT_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: DEFAULT_AI_REPLY_MAX_TOKENS,
     model: DEFAULT_AI_REPLY_MODEL,
-    providerType: AI_PROVIDER_TYPES.openAiCompatible,
+    providerType: AI_PROVIDER_TYPES.openAi,
     reasoningEffort: DEFAULT_AI_REPLY_REASONING_EFFORT,
     replyDelaySeconds: DEFAULT_AI_REPLY_DELAY_SECONDS,
     styleExamples: DEFAULT_AI_REPLY_STYLE_EXAMPLES,

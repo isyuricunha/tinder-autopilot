@@ -9,6 +9,14 @@ const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 
 test('buildAiModelsApiUrl derives OpenAI-compatible model endpoints', () => {
   assert.equal(
+    buildAiModelsApiUrl('https://bifrost.yuricunha.com'),
+    'https://bifrost.yuricunha.com/v1/models'
+  );
+  assert.equal(
+    buildAiModelsApiUrl('https://bifrost.yuricunha.com/v1'),
+    'https://bifrost.yuricunha.com/v1/models'
+  );
+  assert.equal(
     buildAiModelsApiUrl('https://api.openai.com/v1/chat/completions'),
     'https://api.openai.com/v1/models'
   );

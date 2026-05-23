@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   AI_CHAT_PROVIDER_CAPABILITIES,
   ANTHROPIC_VERSION,
+  buildAiChatApiUrl,
   buildAiChatRequestOptions,
   buildAiModelsApiUrl,
   buildAiModelsRequestOptions,
@@ -41,6 +42,10 @@ test('AI chat provider capabilities document native JSON and token behavior', ()
     AI_CHAT_PROVIDER_CAPABILITIES[AI_PROVIDER_TYPES.mistral].nativeJsonResponseFormat,
     true
   );
+  assert.equal(
+    AI_CHAT_PROVIDER_CAPABILITIES[AI_PROVIDER_TYPES.openAi].nativeJsonResponseFormat,
+    true
+  );
   assert.equal(supportsNativeJsonResponseFormat(AI_PROVIDER_TYPES.nvidiaNim), false);
   assert.equal(
     getAiChatProviderCapabilities(AI_PROVIDER_TYPES.nvidiaNim).maxOutputTokens,
@@ -48,6 +53,38 @@ test('AI chat provider capabilities document native JSON and token behavior', ()
   );
   assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.nvidiaNim, 99999), 99999);
   assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.mistral, 99999), 99999);
+});
+
+test('buildAiChatApiUrl derives provider chat endpoints from base URLs', () => {
+  assert.equal(
+    buildAiChatApiUrl({
+      apiUrl: 'https://bifrost.yuricunha.com',
+      providerType: AI_PROVIDER_TYPES.openAiCompatible
+    }),
+    'https://bifrost.yuricunha.com/v1/chat/completions'
+  );
+  assert.equal(
+    buildAiChatApiUrl({
+      apiUrl: 'https://bifrost.yuricunha.com/v1',
+      providerType: AI_PROVIDER_TYPES.openAiCompatible
+    }),
+    'https://bifrost.yuricunha.com/v1/chat/completions'
+  );
+  assert.equal(
+    buildAiChatApiUrl({
+      apiUrl: 'https://api.anthropic.com/v1',
+      providerType: AI_PROVIDER_TYPES.anthropic
+    }),
+    'https://api.anthropic.com/v1/messages'
+  );
+  assert.equal(
+    buildAiChatApiUrl({
+      apiUrl: 'https://api.mistral.ai/v1/chat/completions',
+      providerType: AI_PROVIDER_TYPES.mistral
+    }),
+    'https://api.mistral.ai/v1/chat/completions'
+  );
+  assert.equal(buildAiChatApiUrl({ apiUrl: 'not a url' }), '');
 });
 
 test('buildAiChatRequestOptions converts OpenAI body to Anthropic Messages API', () => {
@@ -123,6 +160,20 @@ test('AI chat response helpers support OpenAI and Anthropic response shapes', ()
 });
 
 test('model list helpers build provider-specific URLs and headers', () => {
+  assert.equal(
+    buildAiModelsApiUrl({
+      apiUrl: 'https://bifrost.yuricunha.com',
+      providerType: AI_PROVIDER_TYPES.openAiCompatible
+    }),
+    'https://bifrost.yuricunha.com/v1/models'
+  );
+  assert.equal(
+    buildAiModelsApiUrl({
+      apiUrl: 'https://bifrost.yuricunha.com/v1',
+      providerType: AI_PROVIDER_TYPES.openAiCompatible
+    }),
+    'https://bifrost.yuricunha.com/v1/models'
+  );
   assert.equal(
     buildAiModelsApiUrl({
       apiUrl: 'https://api.anthropic.com/v1/messages',

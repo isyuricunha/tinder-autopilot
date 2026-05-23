@@ -40,7 +40,8 @@ import {
 import {
   AI_PROVIDER_SETTING_KEY,
   AI_PROVIDER_TYPES,
-  DEFAULT_AI_PROVIDER_TYPE
+  DEFAULT_AI_PROVIDER_TYPE,
+  getAiProviderDefaultApiUrl
 } from '../misc/ai-provider-settings';
 import {
   normalizeSidebarSectionId,
@@ -709,6 +710,7 @@ const createAiSettings = () =>
           storageKey: AI_PROVIDER_SETTING_KEY,
           defaultValue: DEFAULT_AI_PROVIDER_TYPE,
           options: [
+            { value: AI_PROVIDER_TYPES.openAi, text: 'OpenAI' },
             { value: AI_PROVIDER_TYPES.openAiCompatible, text: 'OpenAI-Compatible' },
             { value: AI_PROVIDER_TYPES.mistral, text: 'Mistral AI' },
             { value: AI_PROVIDER_TYPES.anthropic, text: 'Anthropic' },
@@ -716,13 +718,14 @@ const createAiSettings = () =>
           ]
         }),
         createHelpText(
-          'OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
+          'OpenAI, OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
         ),
         createTextbox({
           className: 'aiApiUrl',
-          placeholder: 'https://api.openai.com/v1/chat/completions',
-          helpText: 'Shared AI endpoint used by profile filtering and message replies.',
-          defaultValue: 'https://api.openai.com/v1/chat/completions',
+          placeholder: 'https://bifrost.yuricunha.com/v1',
+          helpText:
+            'Base API URL or full endpoint. The selected API type derives the chat endpoint automatically.',
+          defaultValue: getAiProviderDefaultApiUrl(DEFAULT_AI_PROVIDER_TYPE),
           type: 'text'
         }),
         createTextbox({

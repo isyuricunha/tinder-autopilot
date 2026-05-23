@@ -28,6 +28,12 @@ const AI_CHAT_PROVIDER_CAPABILITIES = {
     nativeJsonResponseFormat: false,
     reasoningEffort: 'none'
   },
+  [AI_PROVIDER_TYPES.openAi]: {
+    maxTokensField: 'max_tokens',
+    maxOutputTokens: null,
+    nativeJsonResponseFormat: true,
+    reasoningEffort: 'openai'
+  },
   [AI_PROVIDER_TYPES.openAiCompatible]: {
     maxTokensField: 'max_tokens',
     maxOutputTokens: null,
@@ -53,6 +59,48 @@ const supportsNativeJsonResponseFormat = (providerType = DEFAULT_AI_PROVIDER_TYP
 
 const isAnthropicProvider = (providerType) =>
   normalizeAiProviderType(providerType) === AI_PROVIDER_TYPES.anthropic;
+
+const getAiProviderChatEndpointSuffix = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
+  isAnthropicProvider(providerType) ? MESSAGES_SUFFIX : CHAT_COMPLETIONS_SUFFIX;
+
+const normalizeAiProviderEndpointUrl = ({
+  apiUrl = '',
+  endpointSuffix = CHAT_COMPLETIONS_SUFFIX
+} = {}) => {
+  const candidateUrl = String(apiUrl || '').trim();
+  if (!candidateUrl) return '';
+
+  try {
+    const url = new URL(candidateUrl);
+    const normalizedPath = url.pathname.replace(/\/+$/, '');
+    const path = normalizedPath === '/' ? '' : normalizedPath;
+    const suffixes = [MODELS_SUFFIX, MESSAGES_SUFFIX, CHAT_COMPLETIONS_SUFFIX];
+
+    if (path.endsWith(endpointSuffix)) {
+      url.pathname = path;
+    } else {
+      const matchingSuffix = suffixes.find((suffix) => path.endsWith(suffix));
+      const basePath = matchingSuffix ? path.slice(0, -matchingSuffix.length) : path;
+      const versionedBasePath = basePath || '/v1';
+      url.pathname = `${versionedBasePath}${endpointSuffix}`;
+    }
+
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch (_error) {
+    return '';
+  }
+};
+
+const buildAiChatApiUrl = ({
+  apiUrl = '',
+  providerType = DEFAULT_AI_PROVIDER_TYPE
+} = {}) =>
+  normalizeAiProviderEndpointUrl({
+    apiUrl,
+    endpointSuffix: getAiProviderChatEndpointSuffix(providerType)
+  });
 
 const asTextContent = (content) => {
   if (typeof content === 'string') return content;
@@ -181,33 +229,10 @@ const isAiChatLengthStopReason = (stopReason) => {
 
 const buildAiModelsApiUrl = (params = {}) => {
   const apiUrl = typeof params === 'string' ? params : params.apiUrl || '';
-  const providerType =
-    typeof params === 'string' ? DEFAULT_AI_PROVIDER_TYPE : params.providerType;
-  const trimmedUrl = String(apiUrl || '').trim();
-  if (!trimmedUrl) return '';
-
-  try {
-    const url = new URL(trimmedUrl);
-    const path = url.pathname.replace(/\/+$/, '');
-    const suffixes = isAnthropicProvider(providerType)
-      ? [MODELS_SUFFIX, MESSAGES_SUFFIX]
-      : [MODELS_SUFFIX, CHAT_COMPLETIONS_SUFFIX];
-
-    if (path.endsWith(MODELS_SUFFIX)) {
-      url.pathname = path;
-    } else {
-      const matchingSuffix = suffixes.find((suffix) => path.endsWith(suffix));
-      url.pathname = matchingSuffix
-        ? path.slice(0, -matchingSuffix.length) + MODELS_SUFFIX
-        : `${path}${MODELS_SUFFIX}`;
-    }
-
-    url.search = '';
-    url.hash = '';
-    return url.toString();
-  } catch (_error) {
-    return '';
-  }
+  return normalizeAiProviderEndpointUrl({
+    apiUrl,
+    endpointSuffix: MODELS_SUFFIX
+  });
 };
 
 const buildAiModelsRequestOptions = ({
@@ -238,6 +263,7 @@ module.exports = {
   AI_CHAT_PROVIDER_CAPABILITIES,
   ANTHROPIC_VERSION,
   asTextContent,
+  buildAiChatApiUrl,
   buildAiChatHeaders,
   buildAiChatRequestOptions,
   buildAiModelsApiUrl,

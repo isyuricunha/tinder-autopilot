@@ -23,6 +23,7 @@ const {
 const { formatAiReplyLocalTime } = require('./ai-reply-current-time');
 const { formatAiReplyConversationSignals } = require('./ai-reply-conversation-intent');
 const {
+  buildAiChatApiUrl,
   buildAiChatRequestOptions,
   clampAiChatMaxTokens,
   getAiChatProviderCapabilities,
@@ -494,6 +495,7 @@ const generateAiMessageReply = async ({
   const requestParams = {
     compatibilityMode,
     addressInfo,
+    apiUrl,
     contactInfo,
     currentLocalTime,
     hardRules,
@@ -511,9 +513,18 @@ const generateAiMessageReply = async ({
   };
 
   const requestAiReply = async (params) => {
+    const requestUrl = buildAiChatApiUrl({
+      apiUrl: params.apiUrl,
+      providerType: params.providerType
+    });
+
+    if (!requestUrl) {
+      return createNoSendAiReply('AI Reply URL not configured');
+    }
+
     const body = buildAiReplyRequestBody(params);
     const response = await fetchImpl(
-      apiUrl,
+      requestUrl,
       buildAiChatRequestOptions({ apiKey, body, providerType: params.providerType })
     );
 
