@@ -54,6 +54,7 @@
 - [x] Split AI reply prompt/runtime/testing controls into clearer sidebar subsections.
 - [x] Increase AI reply conversation context window to 60 messages.
 - [x] Skip AI replies when the owner already shared direct contact in the conversation.
+- [x] Make continuous AI replies scan all match pages before waiting for the next cycle.
 
 ## AI Provider Support
 

@@ -939,8 +939,8 @@ const createAiSettings = () =>
         }),
         createSlider({
           className: AI_REPLY_SETTING_KEYS.continuousMaxSentPerCycle,
-          label: 'Max Replies Per Cycle',
-          helpText: 'Maximum AI replies to send before a continuous cycle pauses.',
+          label: 'Max Replies Before Pause',
+          helpText: 'Continuous mode pauses briefly after this many sent replies, then keeps scanning.',
           min: MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
           max: MAX_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,
           defaultValue: DEFAULT_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE,

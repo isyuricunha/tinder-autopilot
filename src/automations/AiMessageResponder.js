@@ -11,6 +11,10 @@ import { readAiReplySettings } from '../misc/ai-message-reply-settings';
 import { getJsonSetting, getSetting, setJsonSetting } from '../misc/settings-store';
 import { detectAiReplyManualTakeover } from '../misc/ai-reply-manual-takeover';
 import {
+  getContinuousThrottlePauseMs,
+  shouldPauseContinuousScan
+} from '../misc/ai-reply-continuous-cycle';
+import {
   AI_REPLY_CONTINUOUS_STATE_KEY,
   getAiReplyDailyMatchCount,
   incrementAiReplyDailyMatchCount,
@@ -48,6 +52,8 @@ class AiMessageResponder {
 
   cycleSentMessages = 0;
 
+  cycleSentSincePause = 0;
+
   continuousState = normalizeAiReplyContinuousState();
 
   start = () => {
@@ -72,6 +78,7 @@ class AiMessageResponder {
     this.checkedMessages = 0;
     this.sentMessages = 0;
     this.cycleSentMessages = 0;
+    this.cycleSentSincePause = 0;
 
     setToggleControlState(continuous ? this.selector : this.continuousSelector, false);
     this.emitModeChange(continuous ? 'continuous' : 'once');
@@ -245,6 +252,7 @@ class AiMessageResponder {
     if (result.status === 'sent') {
       this.sentMessages += 1;
       this.cycleSentMessages += 1;
+      this.cycleSentSincePause += 1;
       logger(` AI reply sent to ${result.matchName || matchName}`);
       return result;
     }
@@ -272,12 +280,31 @@ class AiMessageResponder {
     await this.waitWhileRunning(delayMs);
   };
 
-  shouldStopCycle = (settings) =>
-    this.isContinuousMode &&
-    this.cycleSentMessages >= settings.continuousMaxSentPerCycle;
+  shouldPauseContinuousScan = (settings) =>
+    shouldPauseContinuousScan({
+      isContinuousMode: this.isContinuousMode,
+      maxSentBeforePause: settings.continuousMaxSentPerCycle,
+      sentSincePause: this.cycleSentSincePause
+    });
+
+  waitAfterContinuousThrottle = async (settings) => {
+    if (!this.shouldPauseContinuousScan(settings)) return;
+
+    const pauseMs = getContinuousThrottlePauseMs({
+      replyDelaySeconds: settings.replyDelaySeconds
+    });
+    logger(
+      `Continuous AI reply throttle reached (${this.cycleSentSincePause}). Waiting ${Math.round(
+        pauseMs / 1000
+      )}s before continuing this scan...`
+    );
+    this.cycleSentSincePause = 0;
+    await this.waitWhileRunning(pauseMs);
+  };
 
   runCycle = async ({ apiKey, profileData, settings }) => {
     this.cycleSentMessages = 0;
+    this.cycleSentSincePause = 0;
     if (!settings.apiUrl) {
       logger('⚠️ AI Reply URL not configured');
       this.stop();
@@ -286,7 +313,7 @@ class AiMessageResponder {
 
     let nextPageToken = true;
 
-    while (nextPageToken && this.isRunning && !this.shouldStopCycle(settings)) {
+    while (nextPageToken && this.isRunning) {
       const response = await getMatches(false, nextPageToken);
       nextPageToken = get(response, 'data.next_page_token');
       const matches = get(response, 'data.matches', []) || [];
@@ -294,13 +321,14 @@ class AiMessageResponder {
       logger(`AI reply loaded ${matches.length} matches`);
 
       for (const match of matches) {
-        if (!this.isRunning || this.shouldStopCycle(settings)) break;
+        if (!this.isRunning) break;
 
         try {
           await randomDelay();
           const result = await this.processMatch({ apiKey, match, profileData, settings });
           if (result?.status === 'sent') {
             await this.waitAfterSentReply(settings);
+            await this.waitAfterContinuousThrottle(settings);
           }
         } catch (error) {
           const matchName = get(match, 'person.name', 'match');
@@ -309,9 +337,7 @@ class AiMessageResponder {
       }
 
       matches.length = 0;
-      if (this.shouldStopCycle(settings)) {
-        logger(`Continuous AI reply cycle limit reached (${this.cycleSentMessages})`);
-      } else if (nextPageToken && this.isRunning) {
+      if (nextPageToken && this.isRunning) {
         logger('AI reply page completed. Waiting before next page...');
         await this.waitWhileRunning(1500);
       }
