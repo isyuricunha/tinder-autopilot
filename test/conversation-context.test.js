@@ -63,7 +63,7 @@ test('conversation helpers limit context and require latest message from match',
     getLastConversationTurns(turns, 2).map((turn) => turn.text),
     ['C', 'D']
   );
-  assert.equal(formatConversationTurns(getLastConversationTurns(turns, 2)), 'USER: C\nMATCH: D');
+  assert.equal(formatConversationTurns(getLastConversationTurns(turns, 2)), 'OWNER: C\nMATCH: D');
 });
 
 test('isConversationPendingReply does not send when latest sender is unknown or user', () => {

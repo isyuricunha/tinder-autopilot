@@ -1,4 +1,9 @@
 const DEFAULT_CONTEXT_WINDOW = 10;
+const DEFAULT_CONVERSATION_LABELS = {
+  user: 'OWNER',
+  match: 'MATCH',
+  unknown: 'UNKNOWN'
+};
 
 const normalizeConversationText = (value) =>
   String(value || '')
@@ -76,16 +81,20 @@ const isConversationPendingReply = (messages = []) => {
   return Boolean(lastMessage && lastMessage.role === 'match');
 };
 
-const formatConversationTurns = (messages = []) =>
+const formatConversationTurns = (
+  messages = [],
+  labels = DEFAULT_CONVERSATION_LABELS
+) =>
   messages
     .map((message) => {
       const label =
-        message.role === 'user' ? 'USER' : message.role === 'match' ? 'MATCH' : 'UNKNOWN';
+        labels[message.role] || labels.unknown || DEFAULT_CONVERSATION_LABELS.unknown;
       return `${label}: ${message.text}`;
     })
     .join('\n');
 
 module.exports = {
+  DEFAULT_CONVERSATION_LABELS,
   DEFAULT_CONTEXT_WINDOW,
   formatConversationTurns,
   getConversationRole,

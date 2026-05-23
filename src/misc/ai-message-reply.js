@@ -166,6 +166,8 @@ const buildAiReplySystemMessage = ({
 
 RULES:
 - Reply as the account owner, never as the match.
+- In the supplied conversation, OWNER is the account owner and MATCH is the other Tinder user.
+- Write only the next reply as OWNER. Never prefix the reply with OWNER, MATCH, or any speaker label.
 - Use the supplied conversation only; do not invent personal facts.
 - Do not invent routine, location, work, tiredness, plans, preferences, or feelings.
 - If the match asks for personal information absent from the supplied context fields, deflect naturally or ask a follow-up instead of inventing.
@@ -227,9 +229,18 @@ const buildAiReplyUserMessage = ({
 } = {}) => {
   const conversation = formatConversationTurns(conversationTurns);
   const matchLine = matchName ? `MATCH NAME: ${matchName}\n` : '';
+  const matchLabel = matchName
+    ? `MATCH = ${matchName}, the other Tinder user.`
+    : 'MATCH = the other Tinder user.';
 
-  return `${matchLine}CONVERSATION, oldest to newest, last ${contextWindow} messages:
-${conversation || '(no messages)'}`;
+  return `${matchLine}SPEAKER LABELS:
+OWNER = the account owner. You are writing the next reply as OWNER.
+${matchLabel}
+
+CONVERSATION, oldest to newest, last ${contextWindow} messages:
+${conversation || '(no messages)'}
+
+NEXT REPLY SPEAKER: OWNER`;
 };
 
 const buildAiReplyRequestBody = ({

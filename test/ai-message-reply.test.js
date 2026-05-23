@@ -29,6 +29,8 @@ test('buildAiReplySystemMessage includes tone and user context instructions', ()
   });
 
   assert.equal(message.includes('Reply as the account owner'), true);
+  assert.equal(message.includes('OWNER is the account owner'), true);
+  assert.equal(message.includes('Write only the next reply as OWNER'), true);
   assert.equal(message.includes('Do not invent routine'), true);
   assert.equal(message.includes('Do not use emojis'), true);
   assert.equal(message.includes('Share contact methods only when'), true);
@@ -67,8 +69,12 @@ test('buildAiReplyUserMessage formats recent conversation turns', () => {
   });
 
   assert.equal(message.includes('MATCH NAME: Ana'), true);
-  assert.equal(message.includes('USER: Bom dia'), true);
+  assert.equal(message.includes('SPEAKER LABELS'), true);
+  assert.equal(message.includes('OWNER = the account owner'), true);
+  assert.equal(message.includes('MATCH = Ana'), true);
+  assert.equal(message.includes('OWNER: Bom dia'), true);
   assert.equal(message.includes('MATCH: Dormiu bem?'), true);
+  assert.equal(message.includes('NEXT REPLY SPEAKER: OWNER'), true);
 });
 
 test('buildAiReplyRequestBody creates an OpenAI-compatible JSON response request', () => {
@@ -397,7 +403,7 @@ test('generateAiMessageReply converts requests for Anthropic provider', async ()
     {
       role: 'user',
       content:
-        'MATCH NAME: Ana\nCONVERSATION, oldest to newest, last 10 messages:\nMATCH: tu mora onde?'
+        'MATCH NAME: Ana\nSPEAKER LABELS:\nOWNER = the account owner. You are writing the next reply as OWNER.\nMATCH = Ana, the other Tinder user.\n\nCONVERSATION, oldest to newest, last 10 messages:\nMATCH: tu mora onde?\n\nNEXT REPLY SPEAKER: OWNER'
     }
   ]);
   assert.equal(body.response_format, undefined);
