@@ -805,6 +805,15 @@ const createAiSettings = () =>
           defaultValue: '',
           type: 'password'
         }),
+        createTextbox({
+          className: 'aiKeyPool',
+          label: 'Provider API Keys',
+          placeholder: 'sk-...\nsk-...\nsk-...',
+          helpText:
+            'Optional round-robin keys for the selected API Type only. Add one key per line. All AI features using this provider share the same rotation. Leave empty to keep using the single API Key.',
+          defaultValue: '',
+          textareaSize: 'large'
+        }),
         createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px;' }, [
           createElement('button', {
             id: 'clearAiApiKey',

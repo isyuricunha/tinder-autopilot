@@ -73,7 +73,9 @@ const fetchAiModelList = async ({
       return NVIDIA_NIM_MODEL_SUGGESTIONS;
     }
 
-    throw new Error(`Model list request failed: ${response.status}`);
+    const error = new Error(`Model list request failed: ${response.status}`);
+    error.statusCode = response.status;
+    throw error;
   }
 
   return normalizeAiModelListResponse(await response.json());

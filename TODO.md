@@ -74,6 +74,14 @@
 - [x] Route AI provider requests through the extension background fetch path to avoid Tinder-page CORS.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
+## AI Provider Key Rotation
+
+- [x] Confirm the current implementation only supports one shared API key.
+- [x] Add a tested provider-level key pool and round-robin selector.
+- [x] Integrate provider-level key rotation into AI profile filtering, AI replies, and model refresh.
+- [x] Add sidebar controls for editing one API key per line for the selected provider.
+- [x] Verify provider-level key rotation with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
+
 ## Sidebar UX
 
 - [x] Confirm there was no existing sidebar collapse or accordion helper.

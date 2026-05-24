@@ -287,7 +287,7 @@ test('processAiReplyMatch does not send when gating fails', async () => {
   const declined = await processAiReplyMatch({
     generateReply: async () => {
       generateCalls += 1;
-      return { shouldSend: false, reply: '', reason: 'No reply needed' };
+      return { shouldSend: false, reply: '', reason: 'No reply needed', statusCode: 429 };
     },
     match,
     profileData,
@@ -303,6 +303,7 @@ test('processAiReplyMatch does not send when gating fails', async () => {
 
   assert.equal(declined.status, 'skipped');
   assert.equal(declined.reason, 'No reply needed');
+  assert.equal(declined.statusCode, 429);
   assert.equal(generateCalls, 1);
   assert.equal(sendCalls, 0);
 });

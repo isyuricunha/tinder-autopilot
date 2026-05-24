@@ -1,6 +1,5 @@
 import get from 'lodash/get';
 import { getMatches, getRawMessagesForMatch, sendMessageToMatch } from '../misc/api';
-import { getExtensionStorageValue } from '../misc/extension-storage';
 import { logger, randomDelay } from '../misc/helper';
 import { generateAiMessageReply } from '../misc/ai-message-reply';
 import {
@@ -22,9 +21,12 @@ import {
   normalizeAiReplyContinuousState,
   shouldSkipAiReplyContinuousSignature
 } from '../misc/ai-reply-continuous-state';
+import {
+  markSelectedAiApiKeyResult,
+  selectAiApiKeyForRequest
+} from '../misc/ai-key-pool-storage';
 import { setToggleState as setToggleControlState } from '../views/toggle-control';
 
-const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 const TRANSIENT_AI_REPLY_FAILURE_REASONS = [
   'AI API error',
   'AI reply failed',
@@ -209,7 +211,15 @@ class AiMessageResponder {
     this.saveContinuousState();
   };
 
-  processMatch = async ({ apiKey, match, profileData, settings }) => {
+  recordAiKeyResult = async ({ result, selectedKey }) => {
+    if (!selectedKey) return;
+    await markSelectedAiApiKeyResult({
+      selectedKey,
+      status: result?.statusCode || 200
+    });
+  };
+
+  processMatch = async ({ match, profileData, settings }) => {
     const matchName = get(match, 'person.name', 'match');
     const matchId = get(match, 'id', '');
 
@@ -234,8 +244,17 @@ class AiMessageResponder {
       if (guardResult) return guardResult;
     }
 
+    if (pendingContext.status !== 'pending') {
+      logger(` AI reply skipped ${pendingContext.matchName || matchName}: ${pendingContext.reason}`);
+      return pendingContext;
+    }
+
+    const keySelection = await selectAiApiKeyForRequest({
+      providerType: settings.providerType
+    });
+
     const result = await processAiReplyMatch({
-      apiKey,
+      apiKey: keySelection.apiKey,
       generateReply: generateAiMessageReply,
       loadRawMessages: getRawMessagesForMatch,
       match,
@@ -243,6 +262,10 @@ class AiMessageResponder {
       rawMessages,
       sendMessage: sendMessageToMatch,
       settings
+    });
+    await this.recordAiKeyResult({
+      result,
+      selectedKey: keySelection.selectedKey
     });
 
     if (this.isContinuousMode && pendingContext.status === 'pending') {
@@ -302,7 +325,7 @@ class AiMessageResponder {
     await this.waitWhileRunning(pauseMs);
   };
 
-  runCycle = async ({ apiKey, profileData, settings }) => {
+  runCycle = async ({ profileData, settings }) => {
     this.cycleSentMessages = 0;
     this.cycleSentSincePause = 0;
     if (!settings.apiUrl) {
@@ -325,7 +348,7 @@ class AiMessageResponder {
 
         try {
           await randomDelay();
-          const result = await this.processMatch({ apiKey, match, profileData, settings });
+          const result = await this.processMatch({ match, profileData, settings });
           if (result?.status === 'sent') {
             await this.waitAfterSentReply(settings);
             await this.waitAfterContinuousThrottle(settings);
@@ -351,9 +374,8 @@ class AiMessageResponder {
 
     while (this.isRunning) {
       const settings = readAiReplySettings(getSetting);
-      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
       const profileData = this.getProfileData();
-      const cycleResult = await this.runCycle({ apiKey, profileData, settings });
+      const cycleResult = await this.runCycle({ profileData, settings });
 
       if (!this.isContinuousMode || !this.isRunning) break;
 

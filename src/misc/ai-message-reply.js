@@ -524,10 +524,11 @@ const parseAiReplyResponse = (
   };
 };
 
-const createNoSendAiReply = (reason) => ({
+const createNoSendAiReply = (reason, extra = {}) => ({
   shouldSend: false,
   reply: '',
-  reason
+  reason,
+  ...extra
 });
 
 const generateAiMessageReply = async ({
@@ -598,7 +599,9 @@ const generateAiMessageReply = async ({
     );
 
     if (!response.ok) {
-      return createNoSendAiReply(`AI API error: ${response.status}`);
+      return createNoSendAiReply(`AI API error: ${response.status}`, {
+        statusCode: response.status
+      });
     }
 
     const data = await response.json();

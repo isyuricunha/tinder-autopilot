@@ -227,7 +227,8 @@ const processAiReplyMatch = async ({
   if (!replyResult.shouldSend || !replyResult.reply) {
     return createSkippedAiReplyMatchResult(replyResult.reason || 'AI declined to send', {
       matchId: context.matchId,
-      matchName: context.matchName
+      matchName: context.matchName,
+      statusCode: replyResult.statusCode
     });
   }
 

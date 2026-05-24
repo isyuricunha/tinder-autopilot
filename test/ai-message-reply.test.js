@@ -657,7 +657,8 @@ test('generateAiMessageReply returns no-send on missing config and API failures'
     {
       shouldSend: false,
       reply: '',
-      reason: 'AI API error: 500'
+      reason: 'AI API error: 500',
+      statusCode: 500
     }
   );
 });

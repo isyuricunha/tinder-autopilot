@@ -1,10 +1,13 @@
 import { logger } from '../misc/helper';
-import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
 import { fetchWithBackgroundFallback } from '../misc/background-fetch';
 import { parseAiDecision } from '../misc/ai-response-parser';
 import { buildAiChatApiUrl, buildAiChatRequestOptions } from '../misc/ai-chat-provider';
 import { readAiProviderSettings } from '../misc/ai-provider-settings';
+import {
+  markSelectedAiApiKeyResult,
+  selectAiApiKeyForRequest
+} from '../misc/ai-key-pool-storage';
 import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
 import {
   DEFAULT_AI_PROFILE_MODEL,
@@ -12,8 +15,6 @@ import {
   readAiProfileFilterSettings
 } from '../misc/ai-profile-filter-settings';
 import { getCheckboxValue } from '../views/toggle-control';
-
-const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 
 /**
  * AIProfileFilter - LLM-powered profile filtering for Tinder Autopilot.
@@ -84,7 +85,6 @@ class AIProfileFilter {
    * @returns {Promise<{shouldSwipe: boolean, reason: string}>}
    */
   async analyze({ bio, name, profile, imageBase64 }) {
-    this.apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
     this.apiUrl = this.loadApiUrl();
     this.model = this.loadModel();
     this.providerType = this.loadProviderType();
@@ -97,7 +97,14 @@ class AIProfileFilter {
       return { shouldSwipe: 'neutral', reason: 'AI not configured' };
     }
 
+    let keySelection = null;
+
     try {
+      keySelection = await selectAiApiKeyForRequest({
+        providerType: this.providerType
+      });
+      this.apiKey = keySelection.apiKey || '';
+
       const body = this.buildRequestBody(bio, imageBase64, name, profile);
       const requestUrl = buildAiChatApiUrl({
         apiUrl: this.apiUrl,
@@ -119,14 +126,28 @@ class AIProfileFilter {
       );
 
       if (!response.ok) {
+        await markSelectedAiApiKeyResult({
+          selectedKey: keySelection.selectedKey,
+          status: response.status
+        });
         const errorText = await response.text();
         logger(`⚠️ AI API error: ${response.status} ${errorText}`);
         return { shouldSwipe: 'neutral', reason: 'API error' };
       }
 
+      await markSelectedAiApiKeyResult({
+        selectedKey: keySelection.selectedKey,
+        status: response.status
+      });
       const data = await response.json();
       return this.parseResponse(data);
     } catch (error) {
+      if (keySelection?.selectedKey) {
+        await markSelectedAiApiKeyResult({
+          selectedKey: keySelection.selectedKey,
+          status: error.statusCode
+        });
+      }
       logger(`⚠️ AI Filter failed: ${error.message}`);
       return { shouldSwipe: 'neutral', reason: `Error: ${error.message}` };
     }

@@ -48,6 +48,18 @@ import {
 } from '../misc/ai-provider-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
 import { normalizeAiApiKeyInput, shouldSaveAiApiKeyInput } from '../misc/ai-api-key-utils';
+import {
+  AI_API_KEY_STORAGE_KEY,
+  formatAiKeyPoolText,
+  normalizeAiKeyPool,
+  parseAiKeyPoolText
+} from '../misc/ai-key-pool';
+import {
+  loadAiKeyPool,
+  markSelectedAiApiKeyResult,
+  saveAiKeyPool,
+  selectAiApiKeyForRequest
+} from '../misc/ai-key-pool-storage';
 import { fetchAiModelList } from '../misc/ai-model-list';
 import {
   buildAiReplyRequestBody,
@@ -98,7 +110,6 @@ import {
 } from './toggle-control';
 import { SIDEBAR_THEME } from './sidebar-theme';
 
-const AI_API_KEY_STORAGE_KEY = 'TinderAutopilot/aiApiKey';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
 
 class Sidebar {
@@ -456,6 +467,9 @@ class Sidebar {
         const providerType = normalizeAiProviderType(e.target.value);
         setSetting(AI_PROVIDER_SETTING_KEY, providerType);
         const apiUrl = this.syncAiProviderUrlControl(providerType, { preferStoredUrl: true });
+        this.syncAiKeyPoolControl(providerType).catch((error) => {
+          logger(`⚠️ Failed to load provider key pool: ${error.message}`);
+        });
 
         this.updateAiConnectionStatus({
           message: `API type: ${getAiProviderLabel(providerType)}. Endpoint: ${apiUrl}. Refresh models to update suggestions.`,
@@ -479,6 +493,28 @@ class Sidebar {
           })
           .catch((error) => {
             logger(`⚠️ Failed to save AI API Key: ${error.message}`);
+          });
+      });
+    }
+
+    const aiKeyPoolField = document.getElementById('aiKeyPool');
+    if (aiKeyPoolField) {
+      this.addTrackedListener(aiKeyPoolField, 'blur', () => {
+        const providerType = this.getSelectedAiProviderType();
+        this.saveAiKeyPoolControl(providerType)
+          .then((providerKeyPool) => {
+            logger(`💾 Saved ${providerKeyPool.length} ${getAiProviderLabel(providerType)} key(s)`);
+            this.updateAiConnectionStatus({
+              message: `${getAiProviderLabel(providerType)} key pool saved with ${providerKeyPool.length} key(s).`,
+              status: 'success'
+            });
+          })
+          .catch((error) => {
+            logger(`⚠️ Failed to save provider key pool: ${error.message}`);
+            this.updateAiConnectionStatus({
+              message: `Key pool save failed: ${this.getErrorMessage(error)}`,
+              status: 'error'
+            });
           });
       });
     }
@@ -677,6 +713,10 @@ class Sidebar {
     if (aiApiUrlField) {
       this.syncAiProviderUrlControl(aiProviderTypeField?.value, { preferStoredUrl: true });
     }
+
+    this.syncAiKeyPoolControl(aiProviderTypeField?.value).catch((error) => {
+      logger(`⚠️ Failed to load provider key pool: ${error.message}`);
+    });
 
     const aiApiKeyField = document.getElementById('aiApiKey');
     if (aiApiKeyField) {
@@ -953,8 +993,54 @@ class Sidebar {
     return apiUrl;
   };
 
+  syncAiKeyPoolControl = async (providerType = this.getSelectedAiProviderType()) => {
+    const aiKeyPoolField = document.getElementById('aiKeyPool');
+    if (!aiKeyPoolField) return [];
+
+    const normalizedProviderType = normalizeAiProviderType(providerType);
+    const keyPool = await loadAiKeyPool();
+    const providerKeys = normalizeAiKeyPool(keyPool).filter(
+      (entry) => entry.providerType === normalizedProviderType
+    );
+
+    aiKeyPoolField.value = formatAiKeyPoolText({
+      keyPool,
+      providerType: normalizedProviderType
+    });
+    aiKeyPoolField.title = `Round-robin keys for ${getAiProviderLabel(normalizedProviderType)} only.`;
+
+    return providerKeys;
+  };
+
+  saveAiKeyPoolControl = async (providerType = this.getSelectedAiProviderType()) => {
+    const aiKeyPoolField = document.getElementById('aiKeyPool');
+    if (!aiKeyPoolField) return [];
+
+    const normalizedProviderType = normalizeAiProviderType(providerType);
+    const existingKeyPool = await loadAiKeyPool();
+    const providerKeyPool = parseAiKeyPoolText({
+      providerType: normalizedProviderType,
+      text: aiKeyPoolField.value
+    });
+    const nextKeyPool = [
+      ...normalizeAiKeyPool(existingKeyPool).filter(
+        (entry) => entry.providerType !== normalizedProviderType
+      ),
+      ...providerKeyPool
+    ];
+
+    await saveAiKeyPool(nextKeyPool);
+    aiKeyPoolField.value = formatAiKeyPoolText({
+      keyPool: nextKeyPool,
+      providerType: normalizedProviderType
+    });
+
+    return providerKeyPool;
+  };
+
   refreshAiModelOptions = async (triggerButton = null) => {
     if (triggerButton) triggerButton.disabled = true;
+    let keySelection = null;
 
     try {
       const providerType = this.getSelectedAiProviderType();
@@ -964,8 +1050,18 @@ class Sidebar {
         message: `Loading model suggestions from ${providerLabel}...`,
         status: 'loading'
       });
-      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
-      const models = await fetchAiModelList({ apiKey, apiUrl, providerType });
+      keySelection = await selectAiApiKeyForRequest({
+        providerType
+      });
+      const models = await fetchAiModelList({
+        apiKey: keySelection.apiKey,
+        apiUrl,
+        providerType
+      });
+      await markSelectedAiApiKeyResult({
+        selectedKey: keySelection.selectedKey,
+        status: 200
+      });
 
       if (!models.length) {
         this.updateAiConnectionStatus({
@@ -984,6 +1080,12 @@ class Sidebar {
       logger(`✅ Loaded ${models.length} AI model options`);
       return models;
     } catch (error) {
+      if (keySelection?.selectedKey) {
+        await markSelectedAiApiKeyResult({
+          selectedKey: keySelection.selectedKey,
+          status: error.statusCode
+        });
+      }
       this.updateAiConnectionStatus({
         message: `Model refresh failed: ${this.getErrorMessage(error)}`,
         status: 'error'
@@ -1150,12 +1252,18 @@ class Sidebar {
         return;
       }
 
-      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+      const keySelection = await selectAiApiKeyForRequest({
+        providerType: settings.providerType
+      });
       const result = await generateAiMessageReply({
         ...settings,
-        apiKey,
+        apiKey: keySelection.apiKey,
         conversationTurns,
         matchName
+      });
+      await markSelectedAiApiKeyResult({
+        selectedKey: keySelection.selectedKey,
+        status: result.statusCode || 200
       });
 
       this.setAiReplyTestOutput(JSON.stringify(result, null, 2));
@@ -1185,15 +1293,23 @@ class Sidebar {
 
       this.setAiReplyTestOutput('Scanning real matches for the next pending AI reply...');
 
-      const apiKey = (await getExtensionStorageValue(AI_API_KEY_STORAGE_KEY)) || '';
+      const keySelection = await selectAiApiKeyForRequest({
+        providerType: settings.providerType
+      });
       const result = await reviewNextPendingAiReply({
-        apiKey,
+        apiKey: keySelection.apiKey,
         generateReply: generateAiMessageReply,
         loadMatchesPage: (nextPageToken) => getMatches(false, nextPageToken),
         loadRawMessages: getRawMessagesForMatch,
         profileData: this.getStoredProfileData(),
         settings
       });
+      if (result.status === 'reviewed') {
+        await markSelectedAiApiKeyResult({
+          selectedKey: keySelection.selectedKey,
+          status: result.aiReply?.statusCode || 200
+        });
+      }
 
       this.setAiReplyTestOutput(this.formatAiReplyReviewOutput(result));
       logger(
