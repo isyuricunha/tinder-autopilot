@@ -1,6 +1,7 @@
 import { logger } from '../misc/helper';
 import { getExtensionStorageValue } from '../misc/extension-storage';
 import { getSetting } from '../misc/settings-store';
+import { fetchWithBackgroundFallback } from '../misc/background-fetch';
 import { parseAiDecision } from '../misc/ai-response-parser';
 import { buildAiChatApiUrl, buildAiChatRequestOptions } from '../misc/ai-chat-provider';
 import { readAiProviderSettings } from '../misc/ai-provider-settings';
@@ -108,7 +109,7 @@ class AIProfileFilter {
         return { shouldSwipe: 'neutral', reason: 'AI not configured' };
       }
 
-      const response = await fetch(
+      const response = await fetchWithBackgroundFallback(
         requestUrl,
         buildAiChatRequestOptions({
           apiKey: this.apiKey,

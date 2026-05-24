@@ -19,7 +19,10 @@
   "permissions": [
     "storage",
     "https://api.gotinder.com/*",
-    "https://*.gotinder.com/*"
+    "https://*.gotinder.com/*",
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "content_scripts": [
     {

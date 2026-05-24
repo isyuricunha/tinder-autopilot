@@ -37,6 +37,7 @@ const {
   DEFAULT_AI_PROVIDER_TYPE,
   normalizeAiProviderType
 } = require('./ai-provider-settings');
+const { fetchWithBackgroundFallback } = require('./background-fetch');
 
 const sanitizeAiReply = (value, maxLength = 500) =>
   String(value || '')
@@ -537,7 +538,7 @@ const generateAiMessageReply = async ({
   contactInfo = DEFAULT_AI_REPLY_CONTACT_INFO,
   contextWindow = DEFAULT_CONTEXT_WINDOW,
   conversationTurns = [],
-  fetchImpl = globalThis.fetch,
+  fetchImpl = fetchWithBackgroundFallback,
   hardRules = DEFAULT_AI_REPLY_HARD_RULES,
   matchName = '',
   maxTokens = DEFAULT_AI_REPLY_MAX_TOKENS,

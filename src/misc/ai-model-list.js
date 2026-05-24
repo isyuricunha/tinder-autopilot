@@ -7,6 +7,7 @@ const {
   DEFAULT_AI_PROVIDER_TYPE,
   normalizeAiProviderType
 } = require('./ai-provider-settings');
+const { fetchWithBackgroundFallback } = require('./background-fetch');
 
 const NVIDIA_NIM_MODEL_SUGGESTIONS = [
   'meta/llama-3.1-70b-instruct',
@@ -47,7 +48,7 @@ const normalizeAiModelListResponse = (data = {}) => {
 const fetchAiModelList = async ({
   apiKey = '',
   apiUrl = '',
-  fetchImpl = globalThis.fetch,
+  fetchImpl = fetchWithBackgroundFallback,
   providerType = DEFAULT_AI_PROVIDER_TYPE
 } = {}) => {
   if (typeof fetchImpl !== 'function') {

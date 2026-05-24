@@ -15,7 +15,13 @@
     "service_worker": "bg.js"
   },
   "permissions": ["storage"],
-  "host_permissions": ["https://api.gotinder.com/*", "https://*.gotinder.com/*"],
+  "host_permissions": [
+    "https://api.gotinder.com/*",
+    "https://*.gotinder.com/*",
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
   "content_scripts": [
     {
       "js": ["main.js"],

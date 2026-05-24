@@ -71,6 +71,7 @@
 - [x] Restrict custom API URLs to OpenAI-Compatible while keeping official providers fixed.
 - [x] Harden hosted NVIDIA NIM requests and model suggestions for stricter endpoints.
 - [x] Map opt-in AI reply reasoning fields per provider documentation.
+- [x] Route AI provider requests through the extension background fetch path to avoid Tinder-page CORS.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## Sidebar UX
