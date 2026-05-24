@@ -20,6 +20,8 @@ const ACTION_CONFIG = {
 };
 
 const HIDDEN_DIALOG_CLASS_MARKERS = ['V(h)', 'TranslateY(100%)'];
+const AUTOPILOT_SIDEBAR_ID = 'infoBanner';
+const AUTOPILOT_CLASS_MARKER = 'tinderAutopilot';
 
 const normalizeDomText = (value) =>
   String(value || '')
@@ -82,10 +84,23 @@ const hasHiddenActionAncestor = (element) => {
   return false;
 };
 
+const hasAutopilotActionAncestor = (element) => {
+  let current = element;
+
+  while (current?.getAttribute) {
+    if (current.getAttribute('id') === AUTOPILOT_SIDEBAR_ID) return true;
+    if (getClassText(current).includes(AUTOPILOT_CLASS_MARKER)) return true;
+    current = current.parentElement;
+  }
+
+  return false;
+};
+
 const isActionButton = (button, action) => {
   const config = ACTION_CONFIG[action];
   if (!config || !isVisibleElement(button)) return false;
   if (hasHiddenActionAncestor(button)) return false;
+  if (hasAutopilotActionAncestor(button)) return false;
 
   const text = getControlText(button);
   const classText = getClassText(button).toLowerCase();

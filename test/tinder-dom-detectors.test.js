@@ -151,6 +151,28 @@ test('ignores action buttons inside hidden Tinder panels', () => {
   assert.equal(findLikeButton(root), null);
 });
 
+test('ignores Autopilot sidebar controls when finding Tinder action buttons', () => {
+  const autopilotLike = new FakeElement('button', { class: 'tinderAutopilot' }, 'Auto like');
+  const tinderLike = new FakeElement('button', {}, 'Like');
+  const root = {
+    querySelectorAll: (selector) =>
+      selector === 'button, [role="button"]' ? [autopilotLike, tinderLike] : []
+  };
+
+  assert.equal(findLikeButton(root), tinderLike);
+});
+
+test('ignores controls inside the Autopilot sidebar container', () => {
+  const sidebar = new FakeElement('div', { id: 'infoBanner' });
+  const autopilotLike = new FakeElement('button', {}, 'Auto like');
+  autopilotLike.parentElement = sidebar;
+  const root = {
+    querySelectorAll: (selector) => (selector === 'button, [role="button"]' ? [autopilotLike] : [])
+  };
+
+  assert.equal(findLikeButton(root), null);
+});
+
 test('classifies visible super like upsell and ignores hidden Tinder sheets', () => {
   const superLikeDialog = loadFixture('tinder-html/tinder-modal-super-like.html');
   const hiddenExploreDialog = loadFixture('tinder-html/tinder-explore-page-open-profile.html');

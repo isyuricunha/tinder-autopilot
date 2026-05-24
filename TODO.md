@@ -19,6 +19,8 @@
 - [x] Keep Auto Like inside nested Explorer sections without clicking Back to Explore.
 - [x] Stabilize Auto Like profile identity before retrying dislike fallbacks.
 - [x] Add scoped Like fallback for Explorer profiles that do not advance after click.
+- [x] Prevent Tinder action detectors from clicking Autopilot sidebar controls.
+- [x] Abort Like fallback handling if Auto Like is stopped mid-action.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies

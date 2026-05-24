@@ -405,6 +405,12 @@ class Swiper {
     clearProfileActionFailure(this.profileActionFailures, profileId);
   };
 
+  abortSwipeActionIfStopped = (phase) => {
+    if (this.isRunning) return false;
+    logger(`⏹️ ${phase} aborted because autopilot is stopped`);
+    return true;
+  };
+
   recordProfileActionFailure = (profileId, reason) => {
     const failureCount = incrementProfileActionFailure(this.profileActionFailures, profileId);
     logger(`⚠️ ${reason} (${failureCount}/${this.maxProfileActionFailures})`);
@@ -418,6 +424,8 @@ class Swiper {
   pressConfirmedLike = async (profileId) => {
     const beforeProfileId = profileId || this.getCurrentProfileId();
     const likeButton = await this.waitForLikeButton();
+
+    if (this.abortSwipeActionIfStopped('Like action')) return false;
 
     if (!likeButton) {
       this.recordProfileActionFailure(beforeProfileId, 'Like button was not ready after closing profile');
@@ -435,6 +443,8 @@ class Swiper {
       return this.finishLikeAction(beforeProfileId, 'delayed DOM update');
     }
 
+    if (this.abortSwipeActionIfStopped('Like fallback')) return false;
+
     if (this.canRetryActionForProfile(beforeProfileId)) {
       logger('⌨️ Trying keyboard shortcut for like (ArrowRight) as fallback...');
       this.pressKey('ArrowRight', 39);
@@ -447,8 +457,11 @@ class Swiper {
         return this.finishLikeAction(beforeProfileId, 'delayed keyboard ArrowRight update');
       }
     } else {
+      if (this.abortSwipeActionIfStopped('Like fallback')) return false;
       return this.stopFallbackForChangedTarget(beforeProfileId, 'like keyboard fallback');
     }
+
+    if (this.abortSwipeActionIfStopped('Like failure handling')) return false;
 
     logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
     this.recordProfileActionFailure(beforeProfileId, 'Like action did not advance profile');
