@@ -8,6 +8,7 @@ const ANTHROPIC_VERSION = '2023-06-01';
 const CHAT_COMPLETIONS_SUFFIX = '/chat/completions';
 const MESSAGES_SUFFIX = '/messages';
 const MODELS_SUFFIX = '/models';
+const NVIDIA_NIM_HOSTED_MAX_OUTPUT_TOKENS = 2048;
 
 const AI_CHAT_PROVIDER_CAPABILITIES = {
   [AI_PROVIDER_TYPES.anthropic]: {
@@ -24,7 +25,7 @@ const AI_CHAT_PROVIDER_CAPABILITIES = {
   },
   [AI_PROVIDER_TYPES.nvidiaNim]: {
     maxTokensField: 'max_tokens',
-    maxOutputTokens: null,
+    maxOutputTokens: NVIDIA_NIM_HOSTED_MAX_OUTPUT_TOKENS,
     nativeJsonResponseFormat: false,
     reasoningEffort: 'none'
   },
@@ -165,6 +166,28 @@ const buildAnthropicRequestBody = (body = {}) => {
   return anthropicBody;
 };
 
+const buildProviderChatRequestBody = (
+  body = {},
+  providerType = DEFAULT_AI_PROVIDER_TYPE
+) => {
+  const providerBody = { ...body };
+  const normalizedProviderType = normalizeAiProviderType(providerType);
+
+  if (!supportsNativeJsonResponseFormat(normalizedProviderType)) {
+    delete providerBody.response_format;
+  }
+
+  ['max_tokens', 'max_completion_tokens'].forEach((fieldName) => {
+    if (providerBody[fieldName] === undefined) return;
+    providerBody[fieldName] = clampAiChatMaxTokens(
+      normalizedProviderType,
+      providerBody[fieldName]
+    );
+  });
+
+  return providerBody;
+};
+
 const buildAiChatHeaders = ({
   apiKey = '',
   providerType = DEFAULT_AI_PROVIDER_TYPE
@@ -191,7 +214,7 @@ const buildAiChatRequestOptions = ({
   const normalizedProviderType = normalizeAiProviderType(providerType);
   const providerBody = isAnthropicProvider(normalizedProviderType)
     ? buildAnthropicRequestBody(body)
-    : body;
+    : buildProviderChatRequestBody(body, normalizedProviderType);
 
   return {
     method: 'POST',
@@ -269,6 +292,7 @@ module.exports = {
   buildAiModelsApiUrl,
   buildAiModelsRequestOptions,
   buildAnthropicRequestBody,
+  buildProviderChatRequestBody,
   clampAiChatMaxTokens,
   getAiChatProviderCapabilities,
   getAiChatResponseContent,

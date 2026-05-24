@@ -1,6 +1,6 @@
 const {
-  getAiProviderDefaultApiUrl,
-  readAiProviderSettings
+  readAiProviderSettings,
+  resolveAiProviderApiUrl
 } = require('./ai-provider-settings');
 
 const DEFAULT_AI_REPLY_TONE =
@@ -162,7 +162,7 @@ const readTextSettingWithLegacy = ({
 const readAiReplySettings = (readSetting) => {
   const apiUrl = readSettingValue(readSetting, AI_REPLY_SETTING_KEYS.apiUrl, '').trim();
   const { providerType } = readAiProviderSettings(readSetting);
-  const effectiveApiUrl = apiUrl || getAiProviderDefaultApiUrl(providerType);
+  const effectiveApiUrl = resolveAiProviderApiUrl({ apiUrl, providerType });
   const model = readTextSettingWithLegacy({
     readSetting,
     key: AI_REPLY_SETTING_KEYS.model,

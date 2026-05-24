@@ -39,10 +39,11 @@ import {
 import {
   AI_PROVIDER_SETTING_KEY,
   DEFAULT_AI_PROVIDER_TYPE,
+  canEditAiProviderApiUrl,
   getAiProviderLabel,
-  getAiProviderDefaultApiUrl,
-  isKnownAiProviderDefaultApiUrl,
   normalizeAiProviderType,
+  resolveAiProviderControlApiUrl,
+  resolveAiProviderApiUrl,
   readAiProviderSettings
 } from '../misc/ai-provider-settings';
 import { waitUntilElementExists, logger, debugLog, warnLog } from '../misc/helper';
@@ -423,9 +424,16 @@ class Sidebar {
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
       this.addTrackedListener(aiApiUrlField, 'blur', (e) => {
-        const value = e.target.value.trim();
-        setSetting('aiApiUrl', value);
-        logger(`💾 Saved AI API URL`);
+        const providerType = this.getSelectedAiProviderType();
+        const value = this.syncAiProviderUrlControl(providerType);
+        if (canEditAiProviderApiUrl(providerType)) {
+          setSetting('aiApiUrl', value);
+          logger(`💾 Saved AI API URL`);
+          return;
+        }
+
+        e.target.value = value;
+        logger(`ℹ️ ${getAiProviderLabel(providerType)} uses a fixed API URL`);
       });
     }
 
@@ -434,16 +442,10 @@ class Sidebar {
       this.addTrackedListener(aiProviderTypeField, 'change', (e) => {
         const providerType = normalizeAiProviderType(e.target.value);
         setSetting(AI_PROVIDER_SETTING_KEY, providerType);
-
-        const currentUrl = String(aiApiUrlField?.value || '').trim();
-        if (aiApiUrlField && (!currentUrl || isKnownAiProviderDefaultApiUrl(currentUrl))) {
-          const defaultUrl = getAiProviderDefaultApiUrl(providerType);
-          aiApiUrlField.value = defaultUrl;
-          setSetting('aiApiUrl', defaultUrl);
-        }
+        const apiUrl = this.syncAiProviderUrlControl(providerType, { preferStoredUrl: true });
 
         this.updateAiConnectionStatus({
-          message: `API type: ${getAiProviderLabel(providerType)}. Refresh models to update suggestions.`,
+          message: `API type: ${getAiProviderLabel(providerType)}. Endpoint: ${apiUrl}. Refresh models to update suggestions.`,
           status: 'idle'
         });
         logger(`💾 Saved AI API Type`);
@@ -659,12 +661,7 @@ class Sidebar {
 
     const aiApiUrlField = document.getElementById('aiApiUrl');
     if (aiApiUrlField) {
-      const storedUrl = getSetting('aiApiUrl');
-      if (storedUrl) {
-        aiApiUrlField.value = storedUrl;
-      } else {
-        aiApiUrlField.value = getAiProviderDefaultApiUrl(aiProviderTypeField?.value);
-      }
+      this.syncAiProviderUrlControl(aiProviderTypeField?.value, { preferStoredUrl: true });
     }
 
     const aiApiKeyField = document.getElementById('aiApiKey');
@@ -852,16 +849,47 @@ class Sidebar {
     return true;
   };
 
+  getSelectedAiProviderType = () => {
+    const providerTypeField = document.getElementById(AI_PROVIDER_SETTING_KEY);
+    return normalizeAiProviderType(
+      providerTypeField?.value || getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
+    );
+  };
+
+  syncAiProviderUrlControl = (
+    providerType = this.getSelectedAiProviderType(),
+    { preferStoredUrl = false } = {}
+  ) => {
+    const apiUrlField = document.getElementById('aiApiUrl');
+    const normalizedProviderType = normalizeAiProviderType(providerType);
+    const isEditable = canEditAiProviderApiUrl(normalizedProviderType);
+    const apiUrl = resolveAiProviderControlApiUrl({
+      fieldApiUrl: apiUrlField?.value,
+      preferStoredUrl,
+      providerType: normalizedProviderType,
+      storedApiUrl: getSetting('aiApiUrl', '')
+    });
+
+    if (!apiUrlField) return apiUrl;
+
+    apiUrlField.value = apiUrl;
+    apiUrlField.readOnly = !isEditable;
+    apiUrlField.setAttribute('aria-readonly', String(!isEditable));
+    apiUrlField.style.opacity = isEditable ? '1' : '0.65';
+    apiUrlField.style.cursor = isEditable ? 'text' : 'not-allowed';
+    apiUrlField.title = isEditable
+      ? 'Custom base URL for OpenAI-compatible APIs.'
+      : `${getAiProviderLabel(normalizedProviderType)} uses the fixed official endpoint.`;
+
+    return apiUrl;
+  };
+
   refreshAiModelOptions = async (triggerButton = null) => {
     if (triggerButton) triggerButton.disabled = true;
 
     try {
-      const apiUrlField = document.getElementById('aiApiUrl');
-      const apiUrl = (apiUrlField?.value || getSetting('aiApiUrl', '')).trim();
-      const providerTypeField = document.getElementById(AI_PROVIDER_SETTING_KEY);
-      const providerType = normalizeAiProviderType(
-        providerTypeField?.value || getSetting(AI_PROVIDER_SETTING_KEY, DEFAULT_AI_PROVIDER_TYPE)
-      );
+      const providerType = this.getSelectedAiProviderType();
+      const apiUrl = this.syncAiProviderUrlControl(providerType);
       const providerLabel = getAiProviderLabel(providerType);
       this.updateAiConnectionStatus({
         message: `Loading model suggestions from ${providerLabel}...`,
@@ -914,6 +942,13 @@ class Sidebar {
       `${AI_REPLY_SETTING_KEYS.maxTokens}Input`,
       this.getFieldValue(AI_REPLY_SETTING_KEYS.maxTokens, storedSettings.maxTokens)
     );
+    const providerType = normalizeAiProviderType(
+      this.getFieldValue(AI_PROVIDER_SETTING_KEY, storedProviderSettings.providerType)
+    );
+    const apiUrl = resolveAiProviderApiUrl({
+      apiUrl: this.getFieldValue(AI_REPLY_SETTING_KEYS.apiUrl, storedSettings.apiUrl),
+      providerType
+    });
 
     return {
       ...storedSettings,
@@ -921,7 +956,7 @@ class Sidebar {
         AI_REPLY_SETTING_KEYS.addressInfo,
         storedSettings.addressInfo
       ),
-      apiUrl: this.getFieldValue(AI_REPLY_SETTING_KEYS.apiUrl, storedSettings.apiUrl),
+      apiUrl,
       compatibilityMode: normalizeAiReplyCompatibilityMode(
         this.getFieldValue(
           AI_REPLY_SETTING_KEYS.compatibilityMode,
@@ -954,9 +989,7 @@ class Sidebar {
       hardRules: this.getFieldValue(AI_REPLY_SETTING_KEYS.hardRules, storedSettings.hardRules),
       maxTokens: normalizeAiReplyMaxTokens(maxTokensValue),
       model: this.getFieldValue(AI_REPLY_SETTING_KEYS.model, storedSettings.model),
-      providerType: normalizeAiProviderType(
-        this.getFieldValue(AI_PROVIDER_SETTING_KEY, storedProviderSettings.providerType)
-      ),
+      providerType,
       reasoningEffort: normalizeAiReplyReasoningEffort(
         this.getFieldValue(AI_REPLY_SETTING_KEYS.reasoningEffort, storedSettings.reasoningEffort)
       ),

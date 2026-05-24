@@ -148,7 +148,7 @@ test('buildAiReplyRequestBody adapts JSON and token fields for Mistral and NVIDI
     maxTokens: 65536,
     providerType: AI_PROVIDER_TYPES.nvidiaNim
   });
-  assert.equal(nimBody.max_tokens, 65536);
+  assert.equal(nimBody.max_tokens, 2048);
   assert.equal(nimBody.max_completion_tokens, undefined);
   assert.equal(nimBody.response_format, undefined);
 });

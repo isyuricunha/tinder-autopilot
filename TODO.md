@@ -66,6 +66,8 @@
 - [x] Cover provider request conversion, response parsing, settings, and model listing with tests.
 - [x] Align Mistral and NVIDIA NIM chat request behavior with official API docs.
 - [x] Add official OpenAI provider and derive provider endpoints from base URLs.
+- [x] Restrict custom API URLs to OpenAI-Compatible while keeping official providers fixed.
+- [x] Harden hosted NVIDIA NIM requests and model suggestions for stricter endpoints.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## Sidebar UX

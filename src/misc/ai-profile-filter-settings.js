@@ -1,6 +1,6 @@
 const {
-  getAiProviderDefaultApiUrl,
-  readAiProviderSettings
+  readAiProviderSettings,
+  resolveAiProviderApiUrl
 } = require('./ai-provider-settings');
 
 const DEFAULT_AI_PROFILE_MODEL = 'gpt-4o-mini';
@@ -59,7 +59,7 @@ const readAiProfileFilterSettings = (readSetting) => {
   });
 
   return {
-    apiUrl: apiUrl || getAiProviderDefaultApiUrl(providerType),
+    apiUrl: resolveAiProviderApiUrl({ apiUrl, providerType }),
     filterRules: String(readSettingValue(readSetting, AI_PROFILE_SETTING_KEYS.filterRules, '') || '').trim(),
     model: readTextSettingWithLegacy({
       readSetting,

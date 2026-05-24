@@ -724,7 +724,7 @@ const createAiSettings = () =>
           className: 'aiApiUrl',
           placeholder: 'https://bifrost.yuricunha.com/v1',
           helpText:
-            'Base API URL or full endpoint. The selected API type derives the chat endpoint automatically.',
+            'Editable only for OpenAI-Compatible. Official providers use fixed endpoints and derive the chat endpoint automatically.',
           defaultValue: getAiProviderDefaultApiUrl(DEFAULT_AI_PROVIDER_TYPE),
           type: 'text'
         }),

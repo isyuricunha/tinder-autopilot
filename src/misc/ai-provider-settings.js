@@ -64,6 +64,23 @@ const getAiProviderDefaultApiUrl = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
   AI_PROVIDER_DEFAULT_API_URLS[normalizeAiProviderType(providerType)] ||
   AI_PROVIDER_DEFAULT_API_URLS[DEFAULT_AI_PROVIDER_TYPE];
 
+const canEditAiProviderApiUrl = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
+  normalizeAiProviderType(providerType) === AI_PROVIDER_TYPES.openAiCompatible;
+
+const resolveAiProviderApiUrl = ({
+  apiUrl = '',
+  providerType = DEFAULT_AI_PROVIDER_TYPE
+} = {}) => {
+  const normalizedProviderType = normalizeAiProviderType(providerType);
+  const trimmedApiUrl = String(apiUrl || '').trim();
+
+  if (canEditAiProviderApiUrl(normalizedProviderType)) {
+    return trimmedApiUrl || getAiProviderDefaultApiUrl(normalizedProviderType);
+  }
+
+  return getAiProviderDefaultApiUrl(normalizedProviderType);
+};
+
 const isKnownAiProviderDefaultApiUrl = (apiUrl = '') => {
   const normalizedUrl = String(apiUrl || '').trim().replace(/\/+$/, '');
   if (!normalizedUrl) return false;
@@ -71,6 +88,26 @@ const isKnownAiProviderDefaultApiUrl = (apiUrl = '') => {
   return Object.values(AI_PROVIDER_KNOWN_API_URLS)
     .flat()
     .some((knownUrl) => knownUrl.replace(/\/+$/, '') === normalizedUrl);
+};
+
+const resolveAiProviderControlApiUrl = ({
+  fieldApiUrl = '',
+  preferStoredUrl = false,
+  providerType = DEFAULT_AI_PROVIDER_TYPE,
+  storedApiUrl = ''
+} = {}) => {
+  const normalizedProviderType = normalizeAiProviderType(providerType);
+  const trimmedFieldUrl = String(fieldApiUrl || '').trim();
+  const trimmedStoredUrl = String(storedApiUrl || '').trim();
+  const candidateApiUrl =
+    canEditAiProviderApiUrl(normalizedProviderType) && preferStoredUrl
+      ? trimmedStoredUrl || (isKnownAiProviderDefaultApiUrl(trimmedFieldUrl) ? '' : trimmedFieldUrl)
+      : trimmedFieldUrl || trimmedStoredUrl;
+
+  return resolveAiProviderApiUrl({
+    apiUrl: candidateApiUrl,
+    providerType: normalizedProviderType
+  });
 };
 
 const readSettingValue = (readSetting, key, defaultValue = '') =>
@@ -89,9 +126,12 @@ module.exports = {
   AI_PROVIDER_SETTING_KEY,
   AI_PROVIDER_TYPES,
   DEFAULT_AI_PROVIDER_TYPE,
+  canEditAiProviderApiUrl,
   getAiProviderLabel,
   getAiProviderDefaultApiUrl,
   isKnownAiProviderDefaultApiUrl,
   normalizeAiProviderType,
+  resolveAiProviderControlApiUrl,
+  resolveAiProviderApiUrl,
   readAiProviderSettings
 };

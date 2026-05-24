@@ -151,7 +151,7 @@ test('normalizeAiReplyReasoningEffort accepts only known efforts', () => {
 
 test('readAiReplySettings reads and normalizes stored values', () => {
   const settings = {
-    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.anthropic,
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.openAiCompatible,
     [AI_REPLY_SETTING_KEYS.apiUrl]: ' https://example.test/chat ',
     [AI_REPLY_SETTING_KEYS.compatibilityMode]: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
     [AI_REPLY_SETTING_KEYS.contextWindow]: '99',
@@ -182,13 +182,25 @@ test('readAiReplySettings reads and normalizes stored values', () => {
     contextWindow: MAX_AI_REPLY_CONTEXT_WINDOW,
     maxTokens: MAX_AI_REPLY_MAX_TOKENS,
     model: 'custom-model',
-    providerType: AI_PROVIDER_TYPES.anthropic,
+    providerType: AI_PROVIDER_TYPES.openAiCompatible,
     reasoningEffort: AI_REPLY_REASONING_EFFORTS.high,
     replyDelaySeconds: MAX_AI_REPLY_DELAY_SECONDS,
     styleExamples: 'Match: oi -> Owner: opa',
     tone: 'concise',
     userContext: 'works late'
   });
+});
+
+test('readAiReplySettings ignores custom URLs for official providers', () => {
+  const settings = {
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.nvidiaNim,
+    [AI_REPLY_SETTING_KEYS.apiUrl]: ' https://bifrost.yuricunha.com/v1 '
+  };
+
+  const result = readAiReplySettings((key, fallback) => settings[key] ?? fallback);
+
+  assert.equal(result.apiUrl, 'https://integrate.api.nvidia.com/v1');
+  assert.equal(result.providerType, AI_PROVIDER_TYPES.nvidiaNim);
 });
 
 test('readAiReplySettings falls back to safe defaults', () => {

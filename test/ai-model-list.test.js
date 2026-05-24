@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  NVIDIA_NIM_MODEL_SUGGESTIONS,
   buildAiModelsApiUrl,
   fetchAiModelList,
   normalizeAiModelListResponse
@@ -90,6 +91,30 @@ test('fetchAiModelList supports Anthropic model list headers', async () => {
   assert.equal(calls[0].url, 'https://api.anthropic.com/v1/models');
   assert.equal(calls[0].options.headers['x-api-key'], 'secret');
   assert.equal(calls[0].options.headers.Authorization, undefined);
+});
+
+test('fetchAiModelList falls back to curated NVIDIA NIM suggestions when models endpoint is unavailable', async () => {
+  const models = await fetchAiModelList({
+    apiKey: 'secret',
+    apiUrl: 'https://integrate.api.nvidia.com/v1',
+    fetchImpl: async () => ({ ok: false, status: 404 }),
+    providerType: AI_PROVIDER_TYPES.nvidiaNim
+  });
+
+  assert.equal(models.includes('openai/gpt-oss-120b'), true);
+  assert.deepEqual(models, NVIDIA_NIM_MODEL_SUGGESTIONS);
+});
+
+test('fetchAiModelList does not hide NVIDIA NIM authentication failures', async () => {
+  await assert.rejects(
+    () =>
+      fetchAiModelList({
+        apiUrl: 'https://integrate.api.nvidia.com/v1',
+        fetchImpl: async () => ({ ok: false, status: 401 }),
+        providerType: AI_PROVIDER_TYPES.nvidiaNim
+      }),
+    /Model list request failed: 401/
+  );
 });
 
 test('fetchAiModelList rejects missing fetch, missing URL, and API errors', async () => {

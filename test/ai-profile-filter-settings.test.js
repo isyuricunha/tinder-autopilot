@@ -25,6 +25,7 @@ test('normalizeAiReasoningEffort accepts only known values', () => {
 
 test('readAiProfileFilterSettings reads dedicated settings', () => {
   const settings = {
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.openAiCompatible,
     [AI_PROFILE_SETTING_KEYS.apiUrl]: ' https://example.test/chat ',
     [AI_PROFILE_SETTING_KEYS.filterRules]: ' only verified profiles ',
     [AI_PROFILE_SETTING_KEYS.model]: ' profile-model ',
@@ -39,6 +40,18 @@ test('readAiProfileFilterSettings reads dedicated settings', () => {
     reasoningEffort: AI_REASONING_EFFORTS.high,
     useVision: true
   });
+});
+
+test('readAiProfileFilterSettings ignores custom URLs for official providers', () => {
+  const settings = {
+    [AI_PROVIDER_SETTING_KEY]: AI_PROVIDER_TYPES.mistral,
+    [AI_PROFILE_SETTING_KEYS.apiUrl]: ' https://proxy.test/v1 '
+  };
+
+  assert.equal(
+    readAiProfileFilterSettings((key, fallback) => settings[key] ?? fallback).apiUrl,
+    'https://api.mistral.ai/v1'
+  );
 });
 
 test('readAiProfileFilterSettings falls back to legacy shared settings', () => {
