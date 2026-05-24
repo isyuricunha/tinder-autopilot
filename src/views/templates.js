@@ -51,12 +51,13 @@ import {
 import { SIDEBAR_THEME } from './sidebar-theme';
 import { onToggle, onToggleInner, offToggle, offToggleInner } from './toggle-styles';
 
-const DEFAULT_MESSAGE =
-  'Hey {name}, this is an automated message to remind you of your upcoming "Netflix and Chill" appointment in the next week. To confirm your appointment text YES DADDY. To unsubscribe, please text WRONG HOLE. Standard text and bill rates do apply. Thanks for choosing Slide N Yo DMs';
+const DEFAULT_MESSAGE = 'Hey {name}, how are you?';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
 const SECTION_TITLE_STYLE = `color: ${SIDEBAR_THEME.text}; padding: 16px 20px 12px 20px; letter-spacing: 0; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 3px solid ${SIDEBAR_THEME.accent}; background: ${SIDEBAR_THEME.accentSofter}; border-radius: 0 8px 8px 0;`;
+const FIELD_LABEL_STYLE = `display: block; color: ${SIDEBAR_THEME.text}; font-size: 13px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3;`;
+const OPERATIONAL_STATUS_CHIP_STYLE = `min-width: 0; padding: 10px 8px; background: ${SIDEBAR_THEME.surface}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);`;
 const TEXTAREA_SIZE_STYLES = {
   default: 'min-height: 60px; max-height: 120px;',
   large: 'min-height: 120px; max-height: 280px;',
@@ -159,12 +160,6 @@ const createTopBanner = () =>
     ]
   );
 
-const createTitle = (title) =>
-  createElement('h2', {
-    text: title,
-    style: SECTION_TITLE_STYLE
-  });
-
 const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) => {
   const sectionId = normalizeSidebarSectionId(id);
   const contentId = `sidebar-section-${sectionId}`;
@@ -219,6 +214,7 @@ const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) 
 
 const createTextbox = ({
   className,
+  label = '',
   placeholder,
   helpText,
   defaultValue,
@@ -229,6 +225,12 @@ const createTextbox = ({
   const fieldStyle = `width: calc(100% - 32px); display: block; border: 1px solid ${SIDEBAR_THEME.border}; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; padding: 12px; border-radius: 8px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-shadow: none;`;
   const inputAttributes = { placeholder, ...attributes };
   if (defaultValue !== undefined) inputAttributes.value = defaultValue;
+  const labelElement = label
+    ? createElement('span', {
+        text: label,
+        style: FIELD_LABEL_STYLE
+      })
+    : null;
   const field =
     type === 'password' || type === 'text'
       ? createElement('input', {
@@ -253,11 +255,9 @@ const createTextbox = ({
     createCard([
       createElement(
         'label',
-        { style: 'display: block; padding: 12px; cursor: pointer;' },
+        { style: 'display: block; padding: 12px; cursor: text;' },
         [
-          createElement('div', {
-            style: 'display: flex; justify-content: space-between; align-items: center;'
-          }),
+          labelElement,
           createElement('div', { style: 'position: relative; width: 100%;' }, [field])
         ]
       )
@@ -267,11 +267,6 @@ const createTextbox = ({
 };
 
 const createCheckbox = (className, label, helpText = '') => {
-  const input = createElement('input', {
-    style:
-      'position: absolute; width: 100%; height: 100%; opacity: 0; pointer-events: none; cursor: pointer;',
-    attributes: { name: className, type: 'checkbox' }
-  });
   const toggleTrack = createElement('div', { style: offToggle }, [
     createElement('div', { style: offToggleInner })
   ]);
@@ -279,46 +274,43 @@ const createCheckbox = (className, label, helpText = '') => {
   return createFragment([
     createCard([
       createElement(
-        'label',
-        { style: 'display: block; padding: 16px; cursor: pointer;' },
+        'button',
+        {
+          className,
+          style: 'width: 100%; display: block; padding: 16px; margin: 0; background: transparent; border: 0; text-align: left; color: inherit; font: inherit; cursor: pointer;',
+          attributes: {
+            type: 'button',
+            title: 'Click to toggle',
+            'aria-pressed': 'false',
+            'data-enabled': 'false'
+          }
+        },
         [
           createElement(
-            'a',
+            'div',
             {
-              className,
-              style: 'display: block; text-decoration: none; color: inherit;',
-              attributes: {
-                href: '#',
-                title: 'Click to toggle',
-                'aria-pressed': 'false',
-                'data-enabled': 'false'
-              }
+              style:
+                'display: flex; justify-content: space-between; align-items: center; gap: 12px;'
             },
             [
               createElement(
                 'div',
                 {
-                  style:
-                    'display: flex; justify-content: space-between; align-items: center; gap: 12px;'
+                  style: `flex: 1; overflow: hidden; padding: 0; color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; line-height: 1.3;`
                 },
+                [createElement('span', { text: label })]
+              ),
+              createElement(
+                'div',
+                { style: 'position: relative; flex-shrink: 0;' },
                 [
                   createElement(
                     'div',
                     {
-                      style: `flex: 1; overflow: hidden; padding: 0; color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; line-height: 1.3;`
+                      className: 'toggleSwitch',
+                      style: 'cursor: pointer; pointer-events: none;'
                     },
-                    [createElement('span', { text: label })]
-                  ),
-                  createElement(
-                    'div',
-                    { style: 'position: relative; flex-shrink: 0;' },
-                    [
-                      createElement(
-                        'div',
-                        { className: 'toggleSwitch', style: 'cursor: pointer; pointer-events: none;' },
-                        [input, toggleTrack]
-                      )
-                    ]
+                    [toggleTrack]
                   )
                 ]
               )
@@ -594,6 +586,51 @@ const createCounterLogs = () =>
     })
   ]);
 
+const createOperationalStatusChip = ({ id, label, value }) =>
+  createElement(
+    'div',
+    {
+      style: OPERATIONAL_STATUS_CHIP_STYLE,
+      attributes: { 'data-operational-status-chip': id }
+    },
+    [
+      createElement('span', {
+        text: label,
+        style: `display: block; color: ${SIDEBAR_THEME.textSubtle}; font-size: 10px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: 0; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+      }),
+      createElement('strong', {
+        id,
+        text: value,
+        style: `display: block; color: ${SIDEBAR_THEME.text}; font-size: 12px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+      })
+    ]
+  );
+
+const createOperationalStatus = () =>
+  createElement(
+    'div',
+    {
+      style: 'margin: 0 12px 12px 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;'
+    },
+    [
+      createOperationalStatusChip({
+        id: 'autoLikeOperationalStatus',
+        label: 'Auto Like',
+        value: 'Off'
+      }),
+      createOperationalStatusChip({
+        id: 'aiReplyOperationalStatus',
+        label: 'AI Reply',
+        value: 'Off'
+      }),
+      createOperationalStatusChip({
+        id: 'aiProviderOperationalStatus',
+        label: 'Provider',
+        value: 'OpenAI'
+      })
+    ]
+  );
+
 const getDefaultMessage = () => {
   const storedMessage = getJsonSetting('MessengerDefault');
   if (storedMessage) return storedMessage;
@@ -629,6 +666,7 @@ const createAutopilot = () =>
         createCheckbox('tinderAutopilotBioFilter', 'Enable Bio Filtering', 'Skip profiles based on bio content.'),
         createTextbox({
           className: 'bioBlacklist',
+          label: 'Banned Words',
           placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
           helpText: 'Profiles containing these words will be skipped automatically.',
           defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
@@ -640,6 +678,7 @@ const createAutopilot = () =>
         ),
         createTextbox({
           className: 'genderFilter',
+          label: 'Blocked Genders',
           placeholder: 'Enter genders to avoid (comma separated): trans woman, trans man',
           helpText: 'Profiles with these gender identities will be skipped. Leave empty to disable.',
           defaultValue: ''
@@ -750,6 +789,7 @@ const createAiSettings = () =>
         ),
         createTextbox({
           className: 'aiApiUrl',
+          label: 'API Base URL',
           placeholder: 'https://bifrost.yuricunha.com/v1',
           helpText:
             'Editable only for OpenAI-Compatible. Official providers use fixed endpoints and derive the chat endpoint automatically.',
@@ -758,6 +798,7 @@ const createAiSettings = () =>
         }),
         createTextbox({
           className: 'aiApiKey',
+          label: 'API Key',
           placeholder: 'sk-... or your API key',
           helpText:
             'Stored in extension local storage. The field is shared by profile filtering and message replies.',
@@ -801,6 +842,7 @@ const createAiSettings = () =>
         ),
         createTextbox({
           className: 'aiProfileModel',
+          label: 'Profile Filter Model',
           placeholder: 'gpt-4o-mini',
           helpText: 'Model used only for profile filtering.',
           defaultValue: DEFAULT_AI_PROFILE_MODEL,
@@ -809,6 +851,7 @@ const createAiSettings = () =>
         }),
         createTextbox({
           className: 'aiFilterRules',
+          label: 'Profile Filter Rules',
           placeholder: 'Ignore profiles: trans, man, male, couples, onlyfans, commercial...',
           helpText: 'Describe your swipe preferences. The AI will use these rules.',
           defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.',
@@ -835,9 +878,9 @@ const createAiSettings = () =>
       title: 'AI Message Replies',
       defaultOpen: true,
       children: [
-        createAiReplyModeSelector(),
         createTextbox({
           className: AI_REPLY_SETTING_KEYS.model,
+          label: 'Reply Model',
           placeholder: 'gpt-4o-mini',
           helpText: 'Model used only for AI message replies.',
           defaultValue: DEFAULT_AI_REPLY_MODEL,
@@ -877,6 +920,7 @@ const createAiSettings = () =>
       defaultOpen: false,
       children: [
         createTextbox({
+          label: 'Conversation Style',
           helpText:
             'Conversation style only. Do not include contacts, location, owner facts, or examples here.',
           placeholder: 'Example: short, dry humor, direct, mirrors energy, no emojis...',
@@ -884,6 +928,7 @@ const createAiSettings = () =>
           defaultValue: DEFAULT_AI_REPLY_TONE
         }),
         createTextbox({
+          label: 'Owner Profile',
           helpText:
             'Owner profile and stable facts the AI may use when relevant. Do not put contact/location details here.',
           placeholder: 'Name, age, work, study, hobbies, relationship goals, personality...',
@@ -892,6 +937,7 @@ const createAiSettings = () =>
           textareaSize: 'large'
         }),
         createTextbox({
+          label: 'Style Examples',
           helpText:
             'Real reply examples. Used for style, rhythm, callbacks, and brevity only; not treated as facts.',
           placeholder: 'Match: ...\nOwner: ...',
@@ -900,6 +946,7 @@ const createAiSettings = () =>
           textareaSize: 'large'
         }),
         createTextbox({
+          label: 'Shareable Contact Info',
           helpText:
             'Contact methods the AI may share only when the match asks or shares theirs first.',
           placeholder: 'Examples: WhatsApp +55..., Telegram @user, Instagram @user...',
@@ -907,6 +954,7 @@ const createAiSettings = () =>
           defaultValue: DEFAULT_AI_REPLY_CONTACT_INFO
         }),
         createTextbox({
+          label: 'Shareable Location Info',
           helpText:
             'Always sent to the AI. The prompt tells it to share this only when the match asks about location.',
           placeholder: 'Examples: city/state, neighborhood, region, meeting area, address...',
@@ -914,6 +962,7 @@ const createAiSettings = () =>
           defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO
         }),
         createTextbox({
+          label: 'Hard Rules',
           helpText:
             'Extra strict rules for AI replies. These cannot override contact/location disclosure or JSON rules.',
           placeholder: 'Examples: never use emojis; never ask two questions; avoid compliment-bombing...',
@@ -998,6 +1047,7 @@ const createAiSettings = () =>
       defaultOpen: false,
       children: [
         createTextbox({
+          label: 'Test Conversation',
           helpText:
             'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
           placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
@@ -1006,6 +1056,7 @@ const createAiSettings = () =>
           textareaSize: 'large'
         }),
         createTextbox({
+          label: 'Test Match Name',
           helpText: 'Optional match name used only for the preview/test prompt.',
           placeholder: 'Ana',
           className: 'aiReplyTestMatchName',
@@ -1033,6 +1084,7 @@ const createAiSettings = () =>
           })
         ]),
         createTextbox({
+          label: 'Test Output',
           helpText: 'Preview or test output. This is never sent automatically.',
           placeholder: 'Preview/test output appears here.',
           className: 'aiReplyTestOutput',
@@ -1053,7 +1105,9 @@ const createMassMessage = () =>
       children: [
         createCheckbox('tinderAutopilotMessage', 'Auto message'),
         createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
+        createAiReplyModeSelector(),
         createTextbox({
+          label: 'Auto Message Template',
           helpText: 'The message to send to matches.',
           placeholder: 'Your message to send',
           className: 'messageToSend',
@@ -1064,7 +1118,23 @@ const createMassMessage = () =>
   ]);
 
 const createLoggerHeader = () =>
-  createElement('div', { style: 'margin-top: 16px;' }, [createTitle('Activity')]);
+  createElement('div', { style: 'margin-top: 16px;' }, [
+    createElement(
+      'div',
+      {
+        style: `${SECTION_TITLE_STYLE} display: flex; justify-content: space-between; align-items: center; gap: 12px;`
+      },
+      [
+        createElement('span', { text: 'Activity' }),
+        createElement('button', {
+          id: 'clearActivityLog',
+          text: 'Clear',
+          style: `padding: 6px 10px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.textMuted}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`,
+          attributes: { type: 'button' }
+        })
+      ]
+    )
+  ]);
 
 const createInfoBanner = () =>
   createElement('div', {
@@ -1080,6 +1150,7 @@ export {
   createElement,
   createTopBanner,
   createCounterLogs,
+  createOperationalStatus,
   createAutopilot,
   createAiSettings,
   createMassMessage,

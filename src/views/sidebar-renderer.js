@@ -6,6 +6,7 @@ import {
   createInfoBanner,
   createLoggerHeader,
   createMassMessage,
+  createOperationalStatus,
   createTopBanner
 } from './templates';
 import { SIDEBAR_THEME } from './sidebar-theme';
@@ -57,6 +58,7 @@ const renderSidebarContent = (container) => {
       createTopBanner(),
       createCounterLogs(),
       createResetCountersButton(),
+      createOperationalStatus(),
       createAutopilot(),
       createMassMessage(),
       createLoggerHeader(),

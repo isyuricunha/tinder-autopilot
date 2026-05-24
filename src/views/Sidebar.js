@@ -87,6 +87,11 @@ import {
   normalizeAiReplyMode
 } from './ai-reply-mode-state';
 import {
+  getAiReplyOperationalStatus,
+  getAutoLikeOperationalStatus,
+  getProviderOperationalStatus
+} from './sidebar-operational-status';
+import {
   getCheckboxValue,
   toggleCheckbox,
   setToggleState as setToggleControlState
@@ -267,6 +272,13 @@ class Sidebar {
       });
     }
 
+    const clearActivityLogButton = document.getElementById('clearActivityLog');
+    if (clearActivityLogButton) {
+      this.addTrackedListener(clearActivityLogButton, 'click', () => {
+        this.clearActivityLog();
+      });
+    }
+
     // Auto unmatch
     waitUntilElementExists('img[alt="No Reason"]', () => {
       document.querySelector('ul li:last-of-type button').click();
@@ -307,6 +319,7 @@ class Sidebar {
       )}. Refresh models to load suggestions.`,
       status: 'idle'
     });
+    this.updateOperationalStatus();
 
     // Set initial slider states based on toggle positions
     setTimeout(() => {
@@ -448,6 +461,7 @@ class Sidebar {
           message: `API type: ${getAiProviderLabel(providerType)}. Endpoint: ${apiUrl}. Refresh models to update suggestions.`,
           status: 'idle'
         });
+        this.updateOperationalStatus();
         logger(`💾 Saved AI API Type`);
       });
     }
@@ -794,6 +808,61 @@ class Sidebar {
 
   initializeCounters = () => {
     renderCounters();
+  };
+
+  clearActivityLog = () => {
+    const activityLog = document.querySelector('.txt');
+    if (!activityLog) return false;
+
+    while (activityLog.firstChild) {
+      activityLog.removeChild(activityLog.firstChild);
+    }
+
+    return true;
+  };
+
+  updateOperationalStatusChip = ({ id, status }) => {
+    const valueElement = document.getElementById(id);
+    if (!valueElement) return false;
+
+    const chipElement = valueElement.closest('[data-operational-status-chip]');
+    const isSuccess = status.tone === 'success';
+    valueElement.textContent = status.text;
+    valueElement.style.color = isSuccess ? SIDEBAR_THEME.success : SIDEBAR_THEME.text;
+
+    if (chipElement) {
+      chipElement.style.background = isSuccess
+        ? SIDEBAR_THEME.successSoft
+        : SIDEBAR_THEME.surface;
+      chipElement.style.borderColor = isSuccess
+        ? SIDEBAR_THEME.successBorder
+        : SIDEBAR_THEME.border;
+    }
+
+    return true;
+  };
+
+  updateOperationalStatus = (mode = this.getCurrentAiReplyMode()) => {
+    const providerLabel = getAiProviderLabel(this.getSelectedAiProviderType());
+    const statuses = [
+      {
+        id: 'autoLikeOperationalStatus',
+        status: getAutoLikeOperationalStatus(getCheckboxValue('.tinderAutopilot'))
+      },
+      {
+        id: 'aiReplyOperationalStatus',
+        status: getAiReplyOperationalStatus(mode)
+      },
+      {
+        id: 'aiProviderOperationalStatus',
+        status: getProviderOperationalStatus(providerLabel)
+      }
+    ];
+
+    return statuses.reduce(
+      (didUpdate, statusConfig) => this.updateOperationalStatusChip(statusConfig) || didUpdate,
+      false
+    );
   };
 
   getErrorMessage = (error) => (error instanceof Error ? error.message : String(error));
@@ -1160,6 +1229,7 @@ class Sidebar {
     });
 
     this.updateAiReplyRuntimeControls(selectedMode);
+    this.updateOperationalStatus(selectedMode);
     return true;
   };
 
@@ -1236,6 +1306,8 @@ class Sidebar {
       if (shouldPersistToggleState(selector)) {
         setSetting(`toggleState/${selector}`, nextState);
       }
+
+      this.updateOperationalStatus();
 
       // Update dependent sliders with a small delay to ensure toggle state is updated
       setTimeout(() => {

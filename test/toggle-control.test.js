@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { getCheckboxValue, setToggleState, toggleCheckbox } = require('../src/views/toggle-control');
 
-const createToggleFixture = () => {
+const createToggleFixture = ({ includeInput = true } = {}) => {
   const input = { checked: false };
   const toggleElement = { style: { cssText: '' } };
   const innerElement = { style: { cssText: '' } };
@@ -11,7 +11,7 @@ const createToggleFixture = () => {
     dataset: {},
     querySelector(selector) {
       const elements = {
-        '.toggleSwitch input': input,
+        '.toggleSwitch input': includeInput ? input : null,
         '.toggleSwitch > div': toggleElement,
         '.toggleSwitch > div > div': innerElement
       };
@@ -48,5 +48,15 @@ test('toggle-control toggles from current state', () => {
   createToggleFixture();
 
   assert.equal(toggleCheckbox('.toggle'), true);
+  assert.equal(toggleCheckbox('.toggle'), false);
+});
+
+test('toggle-control supports button-only toggles without hidden inputs', () => {
+  const { root } = createToggleFixture({ includeInput: false });
+
+  assert.equal(setToggleState('.toggle', true), true);
+  assert.equal(root.dataset.enabled, 'true');
+  assert.equal(root.getAttribute('aria-pressed'), 'true');
+  assert.equal(getCheckboxValue('.toggle'), true);
   assert.equal(toggleCheckbox('.toggle'), false);
 });

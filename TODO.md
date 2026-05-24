@@ -78,6 +78,12 @@
 
 - [x] Confirm there was no existing sidebar collapse or accordion helper.
 - [x] Reorder the sidebar so operational messaging controls and Activity appear before the large AI settings area.
+- [x] Move AI reply mode into the operational Messaging Settings section.
+- [x] Replace the unsafe auto-message fallback with a neutral default template.
+- [x] Add visible labels to sidebar text inputs and textareas.
+- [x] Add compact operational status chips for Auto Like, AI Reply, and provider.
+- [x] Add a clear action for the Activity log.
+- [x] Use button semantics for sidebar toggle controls.
 - [x] Add persistent collapsible sidebar sections for secondary filters, AI prompt context, runtime, and testing controls.
 - [x] Improve AI reply mode labels and give large AI prompt/test fields more editing room.
 - [x] Add inline AI connection status for provider changes and model refresh results.
