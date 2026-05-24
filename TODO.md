@@ -47,6 +47,8 @@
 - [x] Add manual model fields with optional OpenAI-compatible model refresh suggestions.
 - [x] Split AI reply prompt inputs into style, owner profile, examples, contact, location, and hard rules.
 - [x] Add synchronized manual max-token input next to the AI reply max-token slider.
+- [x] Add common AI reply max-token presets while keeping 2k as the conservative default.
+- [x] Respect manual AI reply token budgets across providers instead of hard-capping NVIDIA NIM.
 - [x] Add AI reply prompt preview and test generation without sending Tinder messages.
 - [x] Add pure settings, local-time context, manual-takeover detection, and checkpoint state helpers for continuous AI replies.
 - [x] Wire continuous AI replies into the responder and sidebar without changing one-shot AI replies.
@@ -68,6 +70,7 @@
 - [x] Add official OpenAI provider and derive provider endpoints from base URLs.
 - [x] Restrict custom API URLs to OpenAI-Compatible while keeping official providers fixed.
 - [x] Harden hosted NVIDIA NIM requests and model suggestions for stricter endpoints.
+- [x] Map opt-in AI reply reasoning fields per provider documentation.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## Sidebar UX

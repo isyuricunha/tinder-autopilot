@@ -156,6 +156,38 @@ const shouldIncludeContactInfo = (conversationTurns = []) => {
 const mapMistralReasoningEffort = (reasoningEffort) =>
   reasoningEffort === AI_REPLY_REASONING_EFFORTS.high ? 'high' : 'none';
 
+const mapAnthropicReasoningEffort = (reasoningEffort) =>
+  Object.values(AI_REPLY_REASONING_EFFORTS).includes(reasoningEffort)
+    ? reasoningEffort
+    : DEFAULT_AI_REPLY_REASONING_EFFORT;
+
+const isAnthropicAdaptiveThinkingModel = (model = '') =>
+  /(?:claude-mythos|claude-(?:opus|sonnet)-4-(?:6|7))/i.test(String(model || ''));
+
+const isAnthropicManualThinkingModel = (model = '') =>
+  /claude-(?:opus|sonnet)-(?:3-7|4-5)/i.test(String(model || ''));
+
+const isNvidiaNimReasoningEffortModel = (model = '') =>
+  /gpt-oss-(?:20|120)b/i.test(String(model || ''));
+
+const getAnthropicManualThinkingBudget = ({
+  maxTokens,
+  reasoningEffort
+}) => {
+  if (maxTokens < 2048) return 0;
+
+  const effortRatio = {
+    [AI_REPLY_REASONING_EFFORTS.low]: 0.25,
+    [AI_REPLY_REASONING_EFFORTS.medium]: 0.5,
+    [AI_REPLY_REASONING_EFFORTS.high]: 0.75
+  }[reasoningEffort] || 0.25;
+  const visibleOutputReserve = Math.min(1024, Math.max(512, Math.floor(maxTokens * 0.25)));
+  const maxBudget = Math.max(1024, maxTokens - visibleOutputReserve);
+  const requestedBudget = Math.max(1024, Math.floor(maxTokens * effortRatio));
+
+  return Math.min(maxBudget, requestedBudget);
+};
+
 const applyProviderTokenAndReasoningFields = ({
   body,
   compatibilityMode,
@@ -184,6 +216,42 @@ const applyProviderTokenAndReasoningFields = ({
   ) {
     body.prompt_mode = 'reasoning';
     body.reasoning_effort = mapMistralReasoningEffort(reasoningEffort);
+  }
+
+  if (
+    compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&
+    normalizedProviderType === AI_PROVIDER_TYPES.nvidiaNim &&
+    isNvidiaNimReasoningEffortModel(body.model)
+  ) {
+    body.reasoning_effort = reasoningEffort;
+  }
+
+  if (
+    compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&
+    normalizedProviderType === AI_PROVIDER_TYPES.anthropic &&
+    isAnthropicAdaptiveThinkingModel(body.model)
+  ) {
+    body.thinking = { type: 'adaptive', display: 'omitted' };
+    body.output_config = { effort: mapAnthropicReasoningEffort(reasoningEffort) };
+    return;
+  }
+
+  if (
+    compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&
+    normalizedProviderType === AI_PROVIDER_TYPES.anthropic &&
+    isAnthropicManualThinkingModel(body.model)
+  ) {
+    const budgetTokens = getAnthropicManualThinkingBudget({
+      maxTokens: safeMaxTokens,
+      reasoningEffort
+    });
+    if (budgetTokens) {
+      body.thinking = {
+        type: 'enabled',
+        budget_tokens: budgetTokens,
+        display: 'omitted'
+      };
+    }
   }
 };
 
@@ -569,6 +637,11 @@ module.exports = {
   getAiReplyStopReason,
   hasDirectContactValue,
   hasSpeakerLabelPrefix,
+  getAnthropicManualThinkingBudget,
+  isAnthropicAdaptiveThinkingModel,
+  isAnthropicManualThinkingModel,
+  isNvidiaNimReasoningEffortModel,
+  mapAnthropicReasoningEffort,
   mapMistralReasoningEffort,
   parseAiReplyResponse,
   shouldIncludeContactInfo,

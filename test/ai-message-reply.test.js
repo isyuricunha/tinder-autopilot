@@ -148,9 +148,79 @@ test('buildAiReplyRequestBody adapts JSON and token fields for Mistral and NVIDI
     maxTokens: 65536,
     providerType: AI_PROVIDER_TYPES.nvidiaNim
   });
-  assert.equal(nimBody.max_tokens, 2048);
+  assert.equal(nimBody.max_tokens, 65536);
   assert.equal(nimBody.max_completion_tokens, undefined);
   assert.equal(nimBody.response_format, undefined);
+
+  const nimReasoningBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    maxTokens: 32768,
+    model: 'openai/gpt-oss-120b',
+    providerType: AI_PROVIDER_TYPES.nvidiaNim,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.high
+  });
+  assert.equal(nimReasoningBody.max_tokens, 32768);
+  assert.equal(nimReasoningBody.reasoning_effort, AI_REPLY_REASONING_EFFORTS.high);
+
+  const nimNonReasoningModelBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    model: 'nvidia/nemotron-3-nano',
+    providerType: AI_PROVIDER_TYPES.nvidiaNim,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.high
+  });
+  assert.equal(nimNonReasoningModelBody.reasoning_effort, undefined);
+});
+
+test('buildAiReplyRequestBody enables Anthropic adaptive thinking only for compatible models', () => {
+  const anthropicReasoningBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    maxTokens: 16384,
+    model: 'claude-opus-4-7',
+    providerType: AI_PROVIDER_TYPES.anthropic,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.medium
+  });
+
+  assert.equal(anthropicReasoningBody.max_tokens, 16384);
+  assert.deepEqual(anthropicReasoningBody.thinking, {
+    type: 'adaptive',
+    display: 'omitted'
+  });
+  assert.deepEqual(anthropicReasoningBody.output_config, { effort: 'medium' });
+  assert.equal(anthropicReasoningBody.response_format, undefined);
+
+  const unknownAnthropicBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    model: 'claude-sonnet',
+    providerType: AI_PROVIDER_TYPES.anthropic
+  });
+  assert.equal(unknownAnthropicBody.thinking, undefined);
+  assert.equal(unknownAnthropicBody.output_config, undefined);
+});
+
+test('buildAiReplyRequestBody enables Anthropic manual thinking for older compatible models', () => {
+  const anthropicManualBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    maxTokens: 8192,
+    model: 'claude-sonnet-4-5-20250929',
+    providerType: AI_PROVIDER_TYPES.anthropic,
+    reasoningEffort: AI_REPLY_REASONING_EFFORTS.high
+  });
+
+  assert.equal(anthropicManualBody.max_tokens, 8192);
+  assert.deepEqual(anthropicManualBody.thinking, {
+    type: 'enabled',
+    budget_tokens: 6144,
+    display: 'omitted'
+  });
+  assert.equal(anthropicManualBody.output_config, undefined);
+
+  const lowBudgetBody = buildAiReplyRequestBody({
+    compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson,
+    maxTokens: 1024,
+    model: 'claude-sonnet-3-7-20250219',
+    providerType: AI_PROVIDER_TYPES.anthropic
+  });
+  assert.equal(lowBudgetBody.thinking, undefined);
 });
 
 test('buildAiReplyRequestBody always includes address info and gates contact info', () => {

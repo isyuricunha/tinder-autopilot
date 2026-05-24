@@ -8,14 +8,13 @@ const ANTHROPIC_VERSION = '2023-06-01';
 const CHAT_COMPLETIONS_SUFFIX = '/chat/completions';
 const MESSAGES_SUFFIX = '/messages';
 const MODELS_SUFFIX = '/models';
-const NVIDIA_NIM_HOSTED_MAX_OUTPUT_TOKENS = 2048;
 
 const AI_CHAT_PROVIDER_CAPABILITIES = {
   [AI_PROVIDER_TYPES.anthropic]: {
     maxTokensField: 'max_tokens',
     maxOutputTokens: null,
     nativeJsonResponseFormat: false,
-    reasoningEffort: 'none'
+    reasoningEffort: 'anthropic'
   },
   [AI_PROVIDER_TYPES.mistral]: {
     maxTokensField: 'max_tokens',
@@ -25,9 +24,9 @@ const AI_CHAT_PROVIDER_CAPABILITIES = {
   },
   [AI_PROVIDER_TYPES.nvidiaNim]: {
     maxTokensField: 'max_tokens',
-    maxOutputTokens: NVIDIA_NIM_HOSTED_MAX_OUTPUT_TOKENS,
+    maxOutputTokens: null,
     nativeJsonResponseFormat: false,
-    reasoningEffort: 'none'
+    reasoningEffort: 'nvidia-nim'
   },
   [AI_PROVIDER_TYPES.openAi]: {
     maxTokensField: 'max_tokens',
@@ -161,6 +160,14 @@ const buildAnthropicRequestBody = (body = {}) => {
 
   if (body.temperature !== undefined) {
     anthropicBody.temperature = body.temperature;
+  }
+
+  if (body.thinking) {
+    anthropicBody.thinking = body.thinking;
+  }
+
+  if (body.output_config) {
+    anthropicBody.output_config = body.output_config;
   }
 
   return anthropicBody;

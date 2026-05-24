@@ -50,13 +50,13 @@ test('AI chat provider capabilities document native JSON and token behavior', ()
   assert.equal(supportsNativeJsonResponseFormat(AI_PROVIDER_TYPES.nvidiaNim), false);
   assert.equal(
     getAiChatProviderCapabilities(AI_PROVIDER_TYPES.nvidiaNim).maxOutputTokens,
-    2048
+    null
   );
-  assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.nvidiaNim, 99999), 2048);
+  assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.nvidiaNim, 99999), 99999);
   assert.equal(clampAiChatMaxTokens(AI_PROVIDER_TYPES.mistral, 99999), 99999);
 });
 
-test('buildProviderChatRequestBody strips unsupported JSON mode and clamps NIM tokens', () => {
+test('buildProviderChatRequestBody strips unsupported JSON mode without clamping NIM tokens', () => {
   const body = buildProviderChatRequestBody(
     {
       model: 'openai/gpt-oss-120b',
@@ -67,7 +67,7 @@ test('buildProviderChatRequestBody strips unsupported JSON mode and clamps NIM t
     AI_PROVIDER_TYPES.nvidiaNim
   );
 
-  assert.equal(body.max_tokens, 2048);
+  assert.equal(body.max_tokens, 65536);
   assert.equal(body.response_format, undefined);
 
   const mistralBody = buildProviderChatRequestBody(
@@ -125,6 +125,8 @@ test('buildAiChatRequestOptions converts OpenAI body to Anthropic Messages API',
       response_format: { type: 'json_object' },
       max_completion_tokens: 512,
       reasoning_effort: 'high',
+      thinking: { type: 'adaptive', display: 'omitted' },
+      output_config: { effort: 'high' },
       temperature: 0.2
     },
     providerType: AI_PROVIDER_TYPES.anthropic
@@ -140,6 +142,8 @@ test('buildAiChatRequestOptions converts OpenAI body to Anthropic Messages API',
   assert.deepEqual(body.messages, [{ role: 'user', content: 'MATCH: oi' }]);
   assert.equal(body.max_tokens, 512);
   assert.equal(body.temperature, 0.2);
+  assert.deepEqual(body.thinking, { type: 'adaptive', display: 'omitted' });
+  assert.deepEqual(body.output_config, { effort: 'high' });
   assert.equal(body.response_format, undefined);
   assert.equal(body.reasoning_effort, undefined);
 });

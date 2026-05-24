@@ -62,6 +62,14 @@ const TEXTAREA_SIZE_STYLES = {
   large: 'min-height: 120px; max-height: 280px;',
   output: 'min-height: 140px; max-height: 320px;'
 };
+const AI_REPLY_TOKEN_PRESETS = [
+  { label: '2k', value: 2048 },
+  { label: '4k', value: 4096 },
+  { label: '8k', value: 8192 },
+  { label: '16k', value: 16384 },
+  { label: '32k', value: 32768 },
+  { label: '65k', value: 65536 }
+];
 
 const appendChildren = (element, children) => {
   children.flat().forEach((child) => {
@@ -371,6 +379,7 @@ const createSlider = ({
   unit = '',
   parentToggle = null,
   manualInput = false,
+  presets = [],
   attributes = {}
 }) => {
   const valueDisplay = createElement('span', {
@@ -417,6 +426,24 @@ const createSlider = ({
         valueDisplay
       ])
     : valueDisplay;
+  const presetControls =
+    Array.isArray(presets) && presets.length
+      ? createElement(
+          'div',
+          {
+            style: 'display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 16px 16px;'
+          },
+          presets.map(({ label: presetLabel, value }) => {
+            const button = createElement('button', {
+              text: presetLabel,
+              style: `flex: 1 1 44px; min-width: 44px; padding: 7px 8px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.textMuted}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`,
+              attributes: { type: 'button', 'data-slider-preset': String(value) }
+            });
+            button.addEventListener('click', () => syncValue(value));
+            return button;
+          })
+        )
+      : null;
 
   return createFragment([
     createElement(
@@ -456,7 +483,8 @@ const createSlider = ({
                   createSliderStyle(className)
                 ])
               ]
-            )
+            ),
+            presetControls
           ]
         )
       ]
@@ -839,7 +867,7 @@ const createAiSettings = () =>
           ]
         }),
         createHelpText(
-          'Reply Reasoning Effort is sent only when JSON / Reasoning Mode is Reasoning / Thinking.'
+          'Sent only in Reasoning / Thinking mode. OpenAI/OpenAI-Compatible use reasoning_effort, Mistral uses high/none, NVIDIA NIM sends it for GPT-OSS NIM models, and Anthropic uses adaptive or manual thinking on compatible Claude models.'
         )
       ]
     }),
@@ -913,13 +941,14 @@ const createAiSettings = () =>
           className: 'aiReplyMaxTokens',
           label: 'Max Tokens',
           helpText:
-            'Maximum AI reply completion budget. Common manual values: 4k, 8k, 16k, 32k, 65k tokens.',
+            'Maximum AI reply completion budget. Default is conservative at 2k; use presets or manual input for larger compatible models.',
           min: MIN_AI_REPLY_MAX_TOKENS,
           max: MAX_AI_REPLY_MAX_TOKENS,
           defaultValue: DEFAULT_AI_REPLY_MAX_TOKENS,
           step: 512,
           unit: ' tokens',
-          manualInput: true
+          manualInput: true,
+          presets: AI_REPLY_TOKEN_PRESETS
         }),
         createSlider({
           className: 'aiReplyDelaySeconds',
