@@ -2,6 +2,10 @@ import { logger } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import { fetchWithBackgroundFallback } from '../misc/background-fetch';
 import { parseAiDecision } from '../misc/ai-response-parser';
+import {
+  createAiProfileFilterFailure,
+  summarizeAiProfileFilterHttpError
+} from '../misc/ai-profile-filter-result';
 import { buildAiChatApiUrl, buildAiChatRequestOptions } from '../misc/ai-chat-provider';
 import { readAiProviderSettings } from '../misc/ai-provider-settings';
 import {
@@ -94,7 +98,7 @@ class AIProfileFilter {
 
     if (!this.apiUrl) {
       logger('⚠️ AI Filter URL not configured, skipping AI analysis');
-      return { shouldSwipe: 'neutral', reason: 'AI not configured' };
+      return createAiProfileFilterFailure('AI not configured');
     }
 
     let keySelection = null;
@@ -113,7 +117,7 @@ class AIProfileFilter {
 
       if (!requestUrl) {
         logger('⚠️ AI Filter URL not configured, skipping AI analysis');
-        return { shouldSwipe: 'neutral', reason: 'AI not configured' };
+        return createAiProfileFilterFailure('AI not configured');
       }
 
       const response = await fetchWithBackgroundFallback(
@@ -131,8 +135,12 @@ class AIProfileFilter {
           status: response.status
         });
         const errorText = await response.text();
-        logger(`⚠️ AI API error: ${response.status} ${errorText}`);
-        return { shouldSwipe: 'neutral', reason: 'API error' };
+        const errorSummary = summarizeAiProfileFilterHttpError({
+          body: errorText,
+          status: response.status
+        });
+        logger(`⚠️ AI API error: ${errorSummary}`);
+        return createAiProfileFilterFailure(`API error: ${errorSummary}`);
       }
 
       await markSelectedAiApiKeyResult({
@@ -149,7 +157,7 @@ class AIProfileFilter {
         });
       }
       logger(`⚠️ AI Filter failed: ${error.message}`);
-      return { shouldSwipe: 'neutral', reason: `Error: ${error.message}` };
+      return createAiProfileFilterFailure(`Error: ${error.message}`);
     }
   }
 

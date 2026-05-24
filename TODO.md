@@ -21,6 +21,7 @@
 - [x] Add scoped Like fallback for Explorer profiles that do not advance after click.
 - [x] Prevent Tinder action detectors from clicking Autopilot sidebar controls.
 - [x] Abort Like fallback handling if Auto Like is stopped mid-action.
+- [x] Stop Auto Like when AI Filter is unavailable instead of falling back to likes.
 - [x] Run live browser verification after rebuilding and reloading the extension.
 
 ## AI Pending Message Replies
@@ -74,6 +75,7 @@
 - [x] Harden hosted NVIDIA NIM requests and model suggestions for stricter endpoints.
 - [x] Map opt-in AI reply reasoning fields per provider documentation.
 - [x] Route AI provider requests through the extension background fetch path to avoid Tinder-page CORS.
+- [x] Summarize provider HTTP errors before writing them to the Activity log.
 - [x] Verify provider support with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
 ## AI Provider Key Rotation

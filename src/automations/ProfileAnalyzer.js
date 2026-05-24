@@ -7,6 +7,8 @@ import {
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
+import { isAiProfileFilterFailure } from '../misc/ai-profile-filter-result';
+import { PROFILE_CHECK_ACTIONS } from '../misc/profile-check-result';
 import { getActiveProfileCard } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
 import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
@@ -829,8 +831,11 @@ class ProfileAnalyzer {
           });
 
           if (aiResult.shouldSwipe === 'neutral') {
-            // IA failed — do not change the traditional filter decision
-            logger(`🤖 AI Filter failed/neutral, relying on traditional filter result`);
+            if (isAiProfileFilterFailure(aiResult)) {
+              logger(`🛑 AI Filter unavailable: ${aiResult.reason}`);
+              return PROFILE_CHECK_ACTIONS.stop;
+            }
+            logger('🤖 AI Filter returned neutral, relying on traditional filter result');
           } else if (!aiResult.shouldSwipe) {
             // IA explicitly says NO
             shouldSkip = true;
@@ -841,6 +846,7 @@ class ProfileAnalyzer {
           }
         } catch (error) {
           logger(`⚠️ AI Filter analysis failed: ${error.message}`);
+          return PROFILE_CHECK_ACTIONS.stop;
         }
       }
 

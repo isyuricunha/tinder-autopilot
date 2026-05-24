@@ -27,6 +27,10 @@ import {
   incrementProfileActionFailure,
   shouldStopAfterProfileActionFailures
 } from '../misc/swipe-action-state';
+import {
+  shouldSkipProfileCheckAction,
+  shouldStopProfileCheckAction
+} from '../misc/profile-check-result';
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
@@ -628,7 +632,15 @@ class Swiper {
     }
 
     // Check if profile should be skipped based on bio (opens modal, checks, closes)
-    const shouldSkip = await this.profileAnalyzer.checkProfileWithModal();
+    const profileCheckAction = await this.profileAnalyzer.checkProfileWithModal();
+
+    if (shouldStopProfileCheckAction(profileCheckAction)) {
+      logger('🛑 Stopping autopilot because AI Filter is unavailable');
+      this.isRunning = false;
+      return false;
+    }
+
+    const shouldSkip = shouldSkipProfileCheckAction(profileCheckAction);
 
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
