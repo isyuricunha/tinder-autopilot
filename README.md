@@ -49,7 +49,7 @@
 | **Auto Like** | Automatic right-swipes with adjustable interval (1–10s) |
 | **Super Like Automation** | Up to 5/day with strategies (random, verified, photos, distance) |
 | **Profile Filtering** | Skip by bio keywords, gender identity, age range, max distance, min photos |
-| **Auto Messaging** | Send templated messages with conservative run, daily, check, and delay limits |
+| **Auto Messaging** | Send templated messages to all matches or new ones only |
 | **Hide Unanswered** | Show only chats needing your reply |
 | **Anonymous Mode** | Blur profile images and UI for screenshots |
 | **Instagram Helper** | Open IG media in new tab from profile modals |
@@ -224,10 +224,6 @@ separately in extension local storage via `chrome.storage.local`.
 | Auto Message | `.tinderAutopilotMessage` | Start/stop messaging |
 | New Matches Only | `.tinderAutopilotMessageNewOnly` | Filter to new matches |
 | Message Template | `MessengerDefault` | Template with `{name}` token |
-| Max Auto Messages / Run | `autoMessageMaxSendsPerRun` | Default 5, hard range 1–100 |
-| Max Auto Messages / Day | `autoMessageMaxSendsPerDay` | Default 20, hard range 1–300 |
-| Max Matches Checked / Run | `autoMessageMaxChecksPerRun` | Default 30, hard range 1–500 |
-| Delay After Sent Auto Message | `autoMessageSendDelaySeconds` | Default 90s, hard range 10–3600s |
 
 ---
 
@@ -265,12 +261,10 @@ Profile filtering and analysis.
 
 ### [`Messenger`](src/automations/Messenger.js:7)
 
-Conservative messaging queue.
+Batch messaging system.
 
 - Pages through matches with [`getMatches()`](src/misc/api.js:52)
-- Processes conversations sequentially instead of sending parallel batches
-- Enforces per-run, per-day, per-check, and post-send delay limits
-- Stops on Tinder rate-limit, authentication, or verification signals
+- Batches requests to prevent memory issues
 - Deduplicates using normalized message comparison
 
 ### [`HideUnanswered`](src/automations/HideUnanswered.js:3)
