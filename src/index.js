@@ -1,5 +1,5 @@
-import get from 'lodash/get';
 import { logger } from './misc/helper';
+import { get } from './misc/object-utils';
 import Sidebar from './views/Sidebar';
 import { getMyProfile } from './misc/api';
 import Instagram from './automations/Instagram';

@@ -14,10 +14,10 @@
     "start": "webpack --mode development --watch",
     "build": "webpack --mode production",
     "lint": "eslint src/**/*.js",
-    "test": "node --test test/**/*.test.js"
-  },
-  "dependencies": {
-    "lodash": "^4.18.1"
+    "lint:firefox": "web-ext lint --source-dir dist-firefox",
+    "package:firefox": "pnpm run build && node scripts/package-firefox.js",
+    "test": "node --test test/**/*.test.js",
+    "verify:firefox": "pnpm test && pnpm run lint && pnpm run build && pnpm run lint:firefox"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
@@ -40,6 +40,7 @@
     "invariant": "^2.2.4",
     "prettier": "^3.8.3",
     "release-it": "^20.0.1",
+    "web-ext": "10.3.0",
     "webpack": "^5.106.2",
     "webpack-cli": "^7.0.2"
   },

@@ -54,16 +54,23 @@ test('Firefox manifest stays installable without Chrome-only update metadata', (
   });
   assert.equal(firefoxManifest.update_url, undefined);
   assert.equal(firefoxManifest.browser_specific_settings.gecko.id, '@tinder-autopilot.isyuricunha');
+  assert.equal(firefoxManifest.browser_specific_settings.gecko.strict_min_version, '140.0');
+  assert.equal(firefoxManifest.browser_specific_settings.gecko_android.strict_min_version, '142.0');
   assert.deepEqual(
     firefoxManifest.browser_specific_settings.gecko.data_collection_permissions.required,
-    ['none']
-  );
-  assert.ok(
-    firefoxManifest.browser_specific_settings.gecko.data_collection_permissions.optional.includes(
-      'personalCommunications'
-    )
+    ['personalCommunications', 'websiteContent']
   );
   assert.ok(firefoxManifest.permissions.includes('storage'));
   assert.ok(firefoxManifest.permissions.includes('https://api.gotinder.com/*'));
   assert.deepEqual(firefoxManifest.content_scripts, chromeManifest.content_scripts);
+});
+
+test('package scripts expose the Firefox publication workflow', () => {
+  assert.equal(packageJson.scripts['lint:firefox'], 'web-ext lint --source-dir dist-firefox');
+  assert.equal(packageJson.scripts['package:firefox'], 'pnpm run build && node scripts/package-firefox.js');
+  assert.equal(
+    packageJson.scripts['verify:firefox'],
+    'pnpm test && pnpm run lint && pnpm run build && pnpm run lint:firefox'
+  );
+  assert.equal(packageJson.devDependencies['web-ext'], '10.3.0');
 });

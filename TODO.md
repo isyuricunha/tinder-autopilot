@@ -10,6 +10,16 @@
 - [x] Document the Chrome and Firefox build output folders.
 - [x] Verify the final Firefox build with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
 
+## Firefox Publishing Readiness
+
+- [x] Commit the Firefox build output milestone.
+- [x] Check official Mozilla and Firefox publishing documentation.
+- [x] Add `web-ext` lint/build tooling for AMO packages.
+- [x] Add Firefox extension and reviewer source package generation.
+- [x] Document why Chrome Web Store publication is out of scope for MV2.
+- [x] Verify AMO package generation with `pnpm run verify:firefox` and `pnpm run package:firefox`.
+- [x] Commit the Firefox publishing readiness milestone.
+
 ## Auto Like Flow Review
 
 - [x] Confirm there was no existing DOM detector module for Tinder action controls.

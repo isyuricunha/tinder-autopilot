@@ -26,9 +26,12 @@ const createExtensionConfig = ({ name, outputPath, manifestPath }) => ({
   output: {
     path: outputPath,
     chunkLoading: false,
-    wasmLoading: false
+    wasmLoading: false,
+    environment: {
+      globalThis: true
+    }
   },
-  target: ['web', 'es5']
+  target: ['web', 'es2020']
 });
 
 module.exports = [

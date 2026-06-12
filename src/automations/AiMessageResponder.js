@@ -1,6 +1,6 @@
-import get from 'lodash/get';
 import { getMatches, getRawMessagesForMatch, sendMessageToMatch } from '../misc/api';
 import { logger, randomDelay } from '../misc/helper';
+import { get } from '../misc/object-utils';
 import { generateAiMessageReply } from '../misc/ai-message-reply';
 import {
   buildPendingAiReplyContext,
