@@ -116,3 +116,15 @@
 - [x] Apply the Cursor-like theme across sidebar templates, toggles, activity log, and injected CSS.
 - [x] Remove the unreliable Matched counter from the sidebar and counter store.
 - [x] Verify sidebar UX changes with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
+
+## Auto Message Safety Limits
+
+- [x] Research current public Tinder policy and rate-limit signals before changing Auto Message behavior.
+- [x] Confirm the existing Auto Message flow used parallel batches with very short delays.
+- [x] Add conservative Auto Message run, daily, check, and send-delay settings.
+- [x] Persist local daily Auto Message sent counts by date.
+- [x] Stop Auto Message on Tinder rate-limit, authentication, or verification signals.
+- [x] Process Auto Message conversations sequentially instead of parallel batches.
+- [x] Expose Auto Message safety controls in the sidebar.
+- [x] Allow advanced users to raise local Auto Message caps while preserving safety-signal stops.
+- [x] Document Auto Message safety limits in the README.
