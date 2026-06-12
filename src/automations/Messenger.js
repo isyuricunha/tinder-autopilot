@@ -2,19 +2,11 @@ import get from 'lodash/get';
 import keyBy from 'lodash/keyBy';
 import { sendMessageToMatch, getMessagesForMatch, getMatches } from '../misc/api';
 import { randomDelay, logger } from '../misc/helper';
-import { readAutoMessageSettings } from '../misc/auto-message-settings';
-import { getAutoMessageSafetyStopReason } from '../misc/auto-message-safety';
-import { getJsonSetting, getSetting, setJsonSetting } from '../misc/settings-store';
 import { getCheckboxValue, setToggleState as setToggleControlState } from '../views/toggle-control';
 import { normalizeMessageForComparison, hasMessageBeenSent } from '../misc/message-normalizer';
 import {
-  AUTO_MESSAGE_DAILY_STATE_KEY,
   clearMessengerMatchQueue,
   createMessengerSessionState,
-  getAutoMessageDailySentCount,
-  getLocalDateKey,
-  incrementAutoMessageDailySentCount,
-  normalizeAutoMessageDailyState,
   normalizeMessengerMatchQueue
 } from './messenger-state';
 
@@ -31,8 +23,6 @@ class Messenger {
 
   checkedMessage = 0;
 
-  sentMessages = 0;
-
   loopMatches = async () => {
     const response = await getMatches(getCheckboxValue(this.newSelector), this.nextPageToken);
     this.nextPageToken = get(response, 'data.next_page_token');
@@ -40,38 +30,18 @@ class Messenger {
     this.allMatches.push.apply(this.allMatches, get(response, 'data.matches', []));
   };
 
-  loadDailyState = () => {
-    try {
-      return normalizeAutoMessageDailyState(getJsonSetting(AUTO_MESSAGE_DAILY_STATE_KEY, {}));
-    } catch {
-      return normalizeAutoMessageDailyState();
-    }
-  };
-
-  saveDailyState = (state) => {
-    setJsonSetting(AUTO_MESSAGE_DAILY_STATE_KEY, normalizeAutoMessageDailyState(state));
-  };
-
   start = () => {
     const state = createMessengerSessionState();
 
     this.allMatches = state.allMatches;
     this.checkedMessage = state.checkedMessage;
-    this.sentMessages = 0;
     this.isRunningMessage = state.isRunningMessage;
     this.nextPageToken = state.nextPageToken;
 
     logger('Starting messages');
 
     this.runMessage().catch((error) => {
-      const safetyStopReason = getAutoMessageSafetyStopReason(error);
-      if (safetyStopReason) {
-        logger(
-          ` Auto Message stopped: ${safetyStopReason}. Resolve Tinder manually before restarting.`
-        );
-      } else {
-        logger(` Error running messenger: ${error.message}`);
-      }
+      logger(` Error running messenger: ${error.message}`);
       this.stop();
     });
   };
@@ -82,149 +52,113 @@ class Messenger {
     setToggleControlState(this.selector, false);
   };
 
-  waitWhileRunning = async (delayMs) => {
-    const endTime = Date.now() + Math.max(0, delayMs);
-    while (this.isRunningMessage && Date.now() < endTime) {
-      const nextDelay = Math.min(1000, endTime - Date.now());
-      await new Promise((resolve) => setTimeout(resolve, nextDelay));
-    }
-  };
-
-  waitAfterSentMessage = async (settings) => {
-    const delayMs = Math.max(0, Number(settings.sendDelaySeconds || 0)) * 1000;
-    if (!delayMs || !this.isRunningMessage) return;
-    logger(`Waiting ${settings.sendDelaySeconds}s before the next Auto Message send...`);
-    await this.waitWhileRunning(delayMs);
-  };
-
   runMessage = async () => {
-    const settings = readAutoMessageSettings(getSetting);
-    logger(
-      `Auto Message limits: ${settings.maxSendsPerRun}/run, ${settings.maxSendsPerDay}/day, ${settings.maxChecksPerRun} checks/run, ${settings.sendDelaySeconds}s send delay`
-    );
-
     await this.loopMatches();
-    while (this.nextPageToken && this.allMatches.length < settings.maxChecksPerRun) {
+    while (this.nextPageToken) {
       const matches = normalizeMessengerMatchQueue(this.allMatches);
       logger(`Currently have ${matches.length} matches`);
       await this.loopMatches();
     }
 
     const matches = normalizeMessengerMatchQueue(this.allMatches);
-    logger(`Retrieved match history: ${matches.length}`);
+    logger(`Retrieved all match history: ${matches.length}`);
 
     // To start with old matches we can reverse the array
     // this.allMatches = this.allMatches.reverse();
 
     logger(`Looking for matches we have not sent yet to`);
-    await this.sendMessagesTo(matches.slice().reverse(), settings);
+    await this.sendMessagesTo(matches.slice().reverse());
   };
 
   normalizeMessageForComparison = normalizeMessageForComparison;
 
   hasMessageBeenSent = hasMessageBeenSent;
 
-  sendMessagesTo = async (r = [], settings = readAutoMessageSettings(getSetting)) => {
-    const matchList = keyBy(
-      normalizeMessengerMatchQueue(r).slice(0, settings.maxChecksPerRun),
-      'id'
-    );
+  sendMessagesTo = async (r = []) => {
+    const matchList = keyBy(normalizeMessengerMatchQueue(r), 'id');
 
     // Release the reversed allMatches array after creating the lookup to free memory
     this.allMatches = clearMessengerMatchQueue();
 
+    const batchSize = 10; // Process in smaller batches to prevent memory issues
     const matchIds = Object.keys(matchList);
-    const dateKey = getLocalDateKey();
-    let dailyState = this.loadDailyState();
-    let dailySentCount = getAutoMessageDailySentCount(dailyState, dateKey);
 
-    if (dailySentCount >= settings.maxSendsPerDay) {
-      logger(`Auto Message daily limit reached (${dailySentCount}/${settings.maxSendsPerDay})`);
-      this.stop();
-      return;
-    }
+    logger(`Processing ${matchIds.length} matches in batches of ${batchSize}`);
 
-    logger(`Processing up to ${matchIds.length} matches one by one`);
-
-    for (const matchID of matchIds) {
-      if (!this.isRunningMessage) break;
-      if (this.checkedMessage >= settings.maxChecksPerRun) {
-        logger(`Auto Message check limit reached (${settings.maxChecksPerRun})`);
-        break;
-      }
-      if (this.sentMessages >= settings.maxSendsPerRun) {
-        logger(`Auto Message run limit reached (${settings.maxSendsPerRun})`);
-        break;
-      }
-      if (dailySentCount >= settings.maxSendsPerDay) {
-        logger(`Auto Message daily limit reached (${dailySentCount}/${settings.maxSendsPerDay})`);
-        break;
-      }
-
-      await randomDelay();
+    for (let i = 0; i < matchIds.length; i += batchSize) {
       if (!this.isRunningMessage) break;
 
-      const match = matchList[matchID];
-      const tinderMatchID = get(match, 'id', '');
-      const messageTemplate = get(document.getElementById('messageToSend'), 'value', '');
-      const matchName = get(match, 'person.name', '');
+      const batch = matchIds.slice(i, i + batchSize);
+      const batchPromises = [];
 
-      if (!tinderMatchID) {
-        logger(` Skipping match - missing id`);
-        continue;
-      }
+      for (const matchID of batch) {
+        await randomDelay(100, 300); // Shorter delay between requests
+        if (!this.isRunningMessage) break;
 
-      if (!messageTemplate.trim() || !matchName) {
-        logger(` Skipping match - missing template or name`);
-        continue;
-      }
+        const match = matchList[matchID];
+        const tinderMatchID = get(match, 'id', '');
+        const messageTemplate = get(document.getElementById('messageToSend'), 'value', '');
+        const matchName = get(match, 'person.name', '');
 
-      const messageToSend = messageTemplate.replace('{name}', matchName.toLowerCase());
+        if (!tinderMatchID) {
+          logger(` Skipping match - missing id`);
+          continue;
+        }
 
-      try {
-        const messageList = await getMessagesForMatch(tinderMatchID);
-        this.checkedMessage += 1;
-        logger(
-          `Checked ${this.checkedMessage}/${Math.min(matchIds.length, settings.maxChecksPerRun)}`
+        if (!messageTemplate.trim() || !matchName) {
+          logger(` Skipping match - missing template or name`);
+          continue;
+        }
+
+        const messageToSend = messageTemplate.replace('{name}', matchName.toLowerCase());
+
+        batchPromises.push(
+          getMessagesForMatch(tinderMatchID)
+            .then((messageList) => {
+              this.checkedMessage += 1;
+              logger(`Checked ${this.checkedMessage}/${matchIds.length}`);
+
+              const alreadySent = this.hasMessageBeenSent(messageList, messageTemplate, matchName);
+              return !alreadySent;
+            })
+            .then((shouldSend) => {
+              if (shouldSend) {
+                return sendMessageToMatch(tinderMatchID, { message: messageToSend }).then((b) => {
+                  if (get(b, 'sent_date')) {
+                    logger(` Message sent to ${matchName}`);
+                  } else {
+                    logger(` Failed to send message to ${matchName}`);
+                  }
+                  return b;
+                });
+              } else {
+                logger(` Skipped ${matchName} - message already sent`);
+                return null;
+              }
+            })
+            .catch((error) => {
+              logger(` Error processing ${matchName}: ${error.message}`);
+              return null;
+            })
         );
+      }
 
-        if (!this.hasMessageBeenSent(messageList, messageTemplate, matchName)) {
-          const sendResponse = await sendMessageToMatch(tinderMatchID, { message: messageToSend });
-          if (get(sendResponse, 'sent_date')) {
-            this.sentMessages += 1;
-            dailyState = incrementAutoMessageDailySentCount(dailyState, { dateKey });
-            this.saveDailyState(dailyState);
-            dailySentCount = getAutoMessageDailySentCount(dailyState, dateKey);
-            logger(
-              ` Message sent to ${matchName} (${this.sentMessages}/${settings.maxSendsPerRun} run, ${dailySentCount}/${settings.maxSendsPerDay} day)`
-            );
-            if (
-              this.isRunningMessage &&
-              this.sentMessages < settings.maxSendsPerRun &&
-              dailySentCount < settings.maxSendsPerDay
-            ) {
-              await this.waitAfterSentMessage(settings);
-            }
-          } else {
-            logger(` Failed to send message to ${matchName}`);
-          }
-        } else {
-          logger(` Skipped ${matchName} - message already sent`);
+      // Wait for current batch to complete before processing next
+      if (batchPromises.length > 0) {
+        await Promise.allSettled(batchPromises);
+
+        // Memory cleanup between batches - clear references to allow GC
+        batchPromises.length = 0;
+
+        // Memory cleanup between batches
+        if (i + batchSize < matchIds.length) {
+          logger(`Batch ${Math.floor(i / batchSize) + 1} completed. Waiting before next batch...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second pause between batches
         }
-      } catch (error) {
-        const safetyStopReason = getAutoMessageSafetyStopReason(error);
-        if (safetyStopReason) {
-          logger(
-            ` Auto Message stopped: ${safetyStopReason}. Resolve Tinder manually before restarting.`
-          );
-          this.stop();
-          return;
-        }
-        logger(` Error processing ${matchName}: ${error.message}`);
       }
     }
 
-    logger(` Auto Message processed. Checked ${this.checkedMessage}, sent ${this.sentMessages}`);
+    logger(' All matches processed');
     this.stop();
   };
 }

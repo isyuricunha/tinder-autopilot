@@ -31,17 +31,6 @@ import {
   readAiReplySettings
 } from '../misc/ai-message-reply-settings';
 import {
-  AUTO_MESSAGE_SETTING_KEYS,
-  DEFAULT_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-  DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-  DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-  DEFAULT_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-  normalizeAutoMessageMaxChecksPerRun,
-  normalizeAutoMessageMaxSendsPerDay,
-  normalizeAutoMessageMaxSendsPerRun,
-  normalizeAutoMessageSendDelaySeconds
-} from '../misc/auto-message-settings';
-import {
   AI_PROFILE_SETTING_KEYS,
   DEFAULT_AI_PROFILE_MODEL,
   DEFAULT_AI_PROFILE_REASONING_EFFORT,
@@ -635,30 +624,6 @@ class Sidebar {
       { id: 'maxAge', defaultValue: 35, unit: ' years' },
       { id: 'maxDistance', defaultValue: 50, unit: ' km' },
       { id: 'minPhotoCount', defaultValue: 3, unit: ' photos' },
-      {
-        id: AUTO_MESSAGE_SETTING_KEYS.maxSendsPerRun,
-        defaultValue: DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-        unit: ' sends',
-        normalize: normalizeAutoMessageMaxSendsPerRun
-      },
-      {
-        id: AUTO_MESSAGE_SETTING_KEYS.maxSendsPerDay,
-        defaultValue: DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-        unit: ' sends',
-        normalize: normalizeAutoMessageMaxSendsPerDay
-      },
-      {
-        id: AUTO_MESSAGE_SETTING_KEYS.maxChecksPerRun,
-        defaultValue: DEFAULT_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-        unit: ' checks',
-        normalize: normalizeAutoMessageMaxChecksPerRun
-      },
-      {
-        id: AUTO_MESSAGE_SETTING_KEYS.sendDelaySeconds,
-        defaultValue: DEFAULT_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-        unit: ' sec',
-        normalize: normalizeAutoMessageSendDelaySeconds
-      },
       {
         id: 'aiReplyContextWindow',
         defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,

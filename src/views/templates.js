@@ -32,21 +32,6 @@ import {
   MIN_AI_REPLY_CONTINUOUS_MAX_SENT_PER_CYCLE
 } from '../misc/ai-message-reply-settings';
 import {
-  AUTO_MESSAGE_SETTING_KEYS,
-  DEFAULT_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-  DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-  DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-  DEFAULT_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-  MAX_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-  MAX_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-  MAX_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-  MAX_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-  MIN_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-  MIN_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-  MIN_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-  MIN_AUTO_MESSAGE_SEND_DELAY_SECONDS
-} from '../misc/auto-message-settings';
-import {
   AI_PROFILE_SETTING_KEYS,
   AI_REASONING_EFFORTS,
   DEFAULT_AI_PROFILE_MODEL,
@@ -1136,42 +1121,6 @@ const createMassMessage = () =>
           placeholder: 'Your message to send',
           className: 'messageToSend',
           defaultValue: getDefaultMessage()
-        }),
-        createSlider({
-          className: AUTO_MESSAGE_SETTING_KEYS.maxSendsPerRun,
-          label: 'Max Auto Messages / Run',
-          helpText: 'Stops each Auto Message run after this many sent messages.',
-          min: MIN_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-          max: MAX_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-          defaultValue: DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_RUN,
-          unit: ' sends'
-        }),
-        createSlider({
-          className: AUTO_MESSAGE_SETTING_KEYS.maxSendsPerDay,
-          label: 'Max Auto Messages / Day',
-          helpText: 'Daily cap stored locally to avoid repeated bulk-send sessions.',
-          min: MIN_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-          max: MAX_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-          defaultValue: DEFAULT_AUTO_MESSAGE_MAX_SENDS_PER_DAY,
-          unit: ' sends'
-        }),
-        createSlider({
-          className: AUTO_MESSAGE_SETTING_KEYS.maxChecksPerRun,
-          label: 'Max Matches Checked / Run',
-          helpText: 'Limits how many conversations Auto Message checks before stopping.',
-          min: MIN_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-          max: MAX_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-          defaultValue: DEFAULT_AUTO_MESSAGE_MAX_CHECKS_PER_RUN,
-          unit: ' checks'
-        }),
-        createSlider({
-          className: AUTO_MESSAGE_SETTING_KEYS.sendDelaySeconds,
-          label: 'Delay After Sent Auto Message',
-          helpText: 'Wait time after each Auto Message that is actually sent.',
-          min: MIN_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-          max: MAX_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-          defaultValue: DEFAULT_AUTO_MESSAGE_SEND_DELAY_SECONDS,
-          unit: ' sec'
         })
       ]
     })
