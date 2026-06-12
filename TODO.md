@@ -1,5 +1,15 @@
 # Project To-Do
 
+## Firefox Build Output
+
+- [x] Confirm the existing production build only emits the Chrome MV2 extension into `dist/`.
+- [x] Validate the baseline state with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
+- [x] Add a Firefox-specific manifest without Chrome-only update metadata.
+- [x] Make `pnpm build` emit both Chrome and Firefox extension outputs.
+- [x] Add regression coverage for browser-specific manifests and required build files.
+- [x] Document the Chrome and Firefox build output folders.
+- [x] Verify the final Firefox build with `pnpm test`, `pnpm run lint`, and `pnpm run build`.
+
 ## Auto Like Flow Review
 
 - [x] Confirm there was no existing DOM detector module for Tinder action controls.

@@ -30,10 +30,11 @@
 
 ## About
 
-**Tinder Autopilot** is a Chrome extension that automates swipes, messaging, and inbox management on Tinder. This is a maintained continuation of the original project by [Geczy](https://github.com/isyuricunha/tinder-autopilot), modernized for current Tinder UI and workflows.
+**Tinder Autopilot** is a browser extension for Chrome and Firefox that automates swipes, messaging, and inbox management on Tinder. This is a maintained continuation of the original project by [Geczy](https://github.com/isyuricunha/tinder-autopilot), modernized for current Tinder UI and workflows.
 
 - **Repository**: <https://github.com/isyuricunha/tinder-autopilot>
-- **Manifest Version**: MV2 ([`chrome/manifest.json`](chrome/manifest.json))
+- **Chrome Manifest**: MV2 ([`chrome/manifest.json`](chrome/manifest.json))
+- **Firefox Manifest**: MV2 ([`chrome/manifest.firefox.json`](chrome/manifest.firefox.json))
 - **MV3 Reference**: [`chrome/manifest.v3.json`](chrome/manifest.v3.json)
 - **Current Version**: 3.0.0
 
@@ -81,7 +82,7 @@ pnpm start
 pnpm build
 ```
 
-Then load the `dist/` folder as an unpacked extension in Chrome.
+Then load `dist/` in Chrome or `dist-firefox/` in Firefox.
 
 ---
 
@@ -105,7 +106,14 @@ pnpm build
 4. Select the `dist/` folder from your project directory
 5. The extension should now appear in your extensions list
 
-### Step 3: Use on Tinder
+### Step 3: Load in Firefox
+
+1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+2. Click **"Load Temporary Add-on..."**
+3. Select `dist-firefox/manifest.json`
+4. The extension should now appear under Temporary Extensions
+
+### Step 4: Use on Tinder
 
 1. Open [Tinder](https://tinder.com/) in your browser
 2. Log in to your account
@@ -119,7 +127,8 @@ pnpm build
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  chrome/manifest.json  - Extension configuration (MV2)      │
+│  chrome/manifest.json  - Chrome extension configuration     │
+│  chrome/manifest.firefox.json - Firefox extension config    │
 ├─────────────────────────────────────────────────────────────┤
 │  src/                                                        │
 │  ├── index.js          - Content script entry point        │
@@ -301,7 +310,7 @@ API wrapper using background script.
 
 ## API Usage
 
-The extension calls Tinder endpoints via the background script. Required permissions are declared in [`chrome/manifest.json`](chrome/manifest.json:19):
+The extension calls Tinder endpoints via the background script. Required permissions are declared in the Chrome and Firefox manifests:
 
 ```json
 {
@@ -331,7 +340,7 @@ Tokens are read from `localStorage` (on `tinder.com`):
 | Command | Description |
 |---------|-------------|
 | `pnpm start` | Webpack dev watch |
-| `pnpm build` | Production bundle |
+| `pnpm build` | Production bundles for Chrome and Firefox |
 | `pnpm lint` | ESLint check |
 | `pnpm test` | Node.js unit tests |
 | `pnpm major` | Major version release |
@@ -344,6 +353,7 @@ Tokens are read from `localStorage` (on `tinder.com`):
 tinder-autopilot/
 ├── chrome/
 │   ├── manifest.json      # Extension manifest (MV2)
+│   ├── manifest.firefox.json # Firefox extension manifest (MV2)
 │   ├── manifest.v3.json   # MV3 reference manifest
 │   └── icons/             # Extension icons
 ├── src/
@@ -354,7 +364,8 @@ tinder-autopilot/
 │   └── styles/            # CSS
 ├── tinder-html/           # Test HTML snapshots
 ├── test/                  # Node.js unit tests
-├── dist/                  # Build output (load in Chrome)
+├── dist/                  # Chrome build output
+├── dist-firefox/          # Firefox build output
 ├── package.json
 └── webpack.config.js
 ```
@@ -369,11 +380,12 @@ tinder-autopilot/
 
 ### Manifest V3 Status
 
-The production build still copies `chrome/manifest.json` and runs as MV2. The
-repository includes `chrome/manifest.v3.json` as a migration reference using a
-service worker background script and `host_permissions`. Before switching the
-build to MV3, verify the background message proxy under service-worker lifetime
-rules and test the unpacked extension on `chrome://extensions/`.
+The production build emits Chrome and Firefox MV2 bundles. The repository also
+includes `chrome/manifest.v3.json` as a migration reference using a service
+worker background script and `host_permissions`. Before switching the build to
+MV3, verify the background message proxy under service-worker lifetime rules and
+test the unpacked extension on `chrome://extensions/` and
+`about:debugging#/runtime/this-firefox`.
 
 ---
 
@@ -381,7 +393,7 @@ rules and test the unpacked extension on `chrome://extensions/`.
 
 ### Sidebar not visible
 
-- Ensure you loaded `dist/` as unpacked extension
+- Ensure you loaded `dist/` in Chrome or `dist-firefox/manifest.json` in Firefox
 - Verify you're on `tinder.com`
 
 ### API calls failing
