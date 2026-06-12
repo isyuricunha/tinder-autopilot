@@ -1,6 +1,7 @@
+import get from 'lodash/get';
+import keyBy from 'lodash/keyBy';
 import { sendMessageToMatch, getMessagesForMatch, getMatches } from '../misc/api';
 import { randomDelay, logger } from '../misc/helper';
-import { get, keyBy } from '../misc/object-utils';
 import { getCheckboxValue, setToggleState as setToggleControlState } from '../views/toggle-control';
 import { normalizeMessageForComparison, hasMessageBeenSent } from '../misc/message-normalizer';
 import {

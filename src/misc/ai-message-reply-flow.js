@@ -1,4 +1,4 @@
-const { get } = require('./object-utils');
+const get = require('lodash/get');
 const {
   getLastConversationTurns,
   isConversationPendingReply,

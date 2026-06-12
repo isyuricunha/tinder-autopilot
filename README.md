@@ -380,27 +380,12 @@ tinder-autopilot/
 
 ### Manifest V3 Status
 
-The production build emits a Firefox MV2 bundle for publication and a Chrome MV2
-bundle for local unpacked testing only. Chrome Web Store publication is not
-targeted because the Chrome Web Store no longer accepts Manifest V2 extensions.
-The repository also includes `chrome/manifest.v3.json` as a migration reference
-using a service worker background script and `host_permissions`. Before
-switching the build to MV3, verify the background message proxy under
-service-worker lifetime rules and test the unpacked extension on
-`chrome://extensions/` and `about:debugging#/runtime/this-firefox`.
-
-### Firefox Publishing
-
-Firefox publication uses the AMO-ready scripts documented in
-[`docs/firefox-publishing.md`](docs/firefox-publishing.md):
-
-```bash
-pnpm run verify:firefox
-pnpm run package:firefox
-```
-
-`pnpm run package:firefox` creates the Firefox upload ZIP and a matching source
-ZIP for Mozilla reviewers in `zips/`.
+The production build emits Chrome and Firefox MV2 bundles. The repository also
+includes `chrome/manifest.v3.json` as a migration reference using a service
+worker background script and `host_permissions`. Before switching the build to
+MV3, verify the background message proxy under service-worker lifetime rules and
+test the unpacked extension on `chrome://extensions/` and
+`about:debugging#/runtime/this-firefox`.
 
 ---
 

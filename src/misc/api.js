@@ -1,5 +1,5 @@
+import get from 'lodash/get';
 import { buildRequestOptions } from './api-request-options';
-import { get } from './object-utils';
 import { getRawStorageValue, getJsonSetting } from './settings-store';
 import { buildTinderApiDefaultOptions } from './tinder-api-options';
 import { buildMatchMessagesUrl, buildSendMessageUrl } from './tinder-api-urls';

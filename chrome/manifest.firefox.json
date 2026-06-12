@@ -14,13 +14,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "@tinder-autopilot.isyuricunha",
-      "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["personalCommunications", "websiteContent"]
+        "required": ["none"],
+        "optional": ["personalCommunications", "websiteContent"]
       }
-    },
-    "gecko_android": {
-      "strict_min_version": "142.0"
     }
   },
   "background": {
