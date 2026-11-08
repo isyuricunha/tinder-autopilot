@@ -1,4 +1,5 @@
 import { isDebugEnabled } from './settings-store';
+import { appendActivityEntry } from '../views/sidebar-activity-log';
 
 const generateRandomNumber = (min = 800, max = 1500) => {
   return Math.random() * (max - min) + min;
@@ -23,31 +24,8 @@ const errorLog = (...values) => writeConsole('error', values);
 
 const logger = (v, level = 'info') => {
   writeConsole(level, [v]);
-  const now = new Date();
-  const txt = document.querySelector('#infoBanner .txt');
-  if (!txt) return;
-
-  const message = document.createElement('p');
-  message.className =
-    'settings__bottomSubtitle Px(12px)--s Px(17px)--ml Lts(0) Fw($regular) C($c-secondary) Fz($xs) Ta(s)';
-
-  const timestamp = document.createElement('span');
-  timestamp.textContent = `${`0${now.getHours()}`.slice(-2)}:${`0${now.getMinutes()}`.slice(
-    -2
-  )}:${`0${now.getSeconds()}`.slice(-2)}. `;
-
-  message.appendChild(timestamp);
-  message.appendChild(document.createTextNode(String(v)));
-  txt.prepend(message);
-
-  // Remove old logs to prevent memory leak
-  const paragraphs = txt.querySelectorAll('p');
-  if (paragraphs.length > 50) {
-    // Remove oldest paragraphs (they're at the end since we prepend)
-    for (let i = paragraphs.length - 1; i >= 50; i--) {
-      paragraphs[i].remove();
-    }
-  }
+  const log = document.querySelector('#infoBanner .ta-activity-log');
+  if (log) appendActivityEntry(log, v);
 };
 
 const waitUntilElementExists = (selector, callback, timeout = 30000) => {

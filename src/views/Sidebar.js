@@ -185,19 +185,6 @@ class Sidebar {
         border-color: ${SIDEBAR_THEME.accentBorder} !important;
       }
       
-      /* Activity log styling */
-      #infoBanner .txt p {
-        margin: 4px 0 !important;
-        padding: 8px 12px !important;
-        border-radius: 8px !important;
-        background: ${SIDEBAR_THEME.accentSofter} !important;
-        border-left: 3px solid ${SIDEBAR_THEME.accent} !important;
-      }
-      #infoBanner .txt span {
-        color: ${SIDEBAR_THEME.accentHover} !important;
-        font-weight: 600 !important;
-      }
-      
       /* Textarea focus effects */
       #infoBanner :is(textarea, input, select):focus {
         outline: none !important;
@@ -857,7 +844,7 @@ class Sidebar {
   };
 
   clearActivityLog = () => {
-    const activityLog = document.querySelector('#infoBanner .txt');
+    const activityLog = document.querySelector('#infoBanner .ta-activity-log');
     if (!activityLog) return false;
 
     while (activityLog.firstChild) {

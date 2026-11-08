@@ -41,15 +41,24 @@ const trackSwipePhase = (cycle, phase, now) => {
   cycle.phaseStartedAt = now;
 };
 
+const formatActivityDuration = (elapsed) => {
+  const ms = Math.max(0, elapsed);
+  if (ms < 1000) return `${ms} ms`;
+  if (ms < 60000) return `${Math.round(ms / 100) / 10} s`;
+  return formatSwipeDuration(ms);
+};
+
 const summarizeSwipeCycle = (cycle, now) => {
   trackSwipePhase(cycle, null, now);
-  const timings = Array.from(cycle.durations, ([phase, elapsed]) =>
-    `${phase} ${elapsed < 1000 ? `${elapsed}ms` : formatSwipeDuration(elapsed)}`
-  ).join(' · ');
-  const reason = cycle.reason.trim().replace(/\s+/g, ' ');
-  const detail = reason ? ` · ${reason}` : '';
-  const timingDetails = timings ? ` (${timings})` : '';
-  return `${cycle.outcome} · ${formatSwipeDuration(now - cycle.startedAt)}${detail}${timingDetails}`;
+  return {
+    outcome: cycle.outcome,
+    duration: formatActivityDuration(now - cycle.startedAt),
+    reason: cycle.reason.trim().replace(/\s+/g, ' '),
+    timings: Array.from(cycle.durations, ([phase, elapsed]) => ({
+      phase,
+      duration: formatActivityDuration(elapsed)
+    }))
+  };
 };
 
 module.exports = {

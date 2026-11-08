@@ -37,7 +37,10 @@ const createActivity = () => [
   createActivityHeading('Swipe totals', 'resetCounters', 'Reset totals'),
   createCounterLogs(),
   createActivityHeading('Activity log', 'clearActivityLog', 'Clear log'),
-  createElement('div', { className: 'txt ta-activity-log' })
+  createElement('ol', {
+    className: 'ta-activity-log',
+    attributes: { role: 'list', 'aria-label': 'Recent activity' }
+  })
 ];
 
 const createSidebarNavigation = () => {

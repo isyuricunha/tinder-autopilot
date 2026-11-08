@@ -36,7 +36,7 @@ test('Auto Like shows elapsed time for its current phase and reports automatic p
   });
 });
 
-test('a cycle summary combines time from repeated phases and keeps the decision on one line', () => {
+test('a cycle summary keeps its decision and aggregated phase timings separate', () => {
   const cycle = createSwipeCycle(0);
   trackSwipePhase(cycle, SWIPE_PHASES.closingProfile, 0);
   trackSwipePhase(cycle, SWIPE_PHASES.waitingForAi, 300);
@@ -44,10 +44,16 @@ test('a cycle summary combines time from repeated phases and keeps the decision 
   trackSwipePhase(cycle, SWIPE_PHASES.confirmingSwipe, 2500);
   cycle.outcome = 'Skipped';
   cycle.reason = 'AI:  Matched rule\nfrom bio';
-  assert.equal(
-    summarizeSwipeCycle(cycle, 3000),
-    'Skipped · 3s · AI: Matched rule from bio (Closing profile 700ms · Waiting for AI 1s · Confirming swipe 500ms)'
-  );
+  assert.deepEqual(summarizeSwipeCycle(cycle, 3000), {
+    outcome: 'Skipped',
+    duration: '3 s',
+    reason: 'AI: Matched rule from bio',
+    timings: [
+      { phase: SWIPE_PHASES.closingProfile, duration: '700 ms' },
+      { phase: SWIPE_PHASES.waitingForAi, duration: '1.8 s' },
+      { phase: SWIPE_PHASES.confirmingSwipe, duration: '500 ms' }
+    ]
+  });
 });
 
 test('operational status summarizes AI reply mode', () => {

@@ -199,17 +199,117 @@ const SIDEBAR_LAYOUT_STYLES = `
 
   #infoBanner .ta-activity-log {
     margin: 8px 12px;
-    padding: 8px 10px;
+    padding: 6px;
     border: 1px solid ${theme.border};
     border-radius: 9px;
     background: ${theme.surface};
-    font: 12px/1.5 ui-monospace, Consolas, monospace;
+    list-style: none;
+    display: grid;
+    gap: 6px;
+    font: 13px/1.45 system-ui, sans-serif;
     overflow-wrap: anywhere;
   }
 
   #infoBanner .ta-activity-log:empty::before {
     content: 'No activity yet.';
+    padding: 4px 6px;
     color: ${theme.textMuted};
+  }
+
+  #infoBanner .ta-activity-entry {
+    min-width: 0;
+    padding: 6px 8px;
+    color: ${theme.textMuted};
+  }
+
+  #infoBanner .ta-activity-swipe {
+    padding: 8px;
+    border: 1px solid ${theme.border};
+    border-radius: 7px;
+    background: ${theme.backgroundElevated};
+  }
+
+  #infoBanner .ta-activity-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  #infoBanner .ta-activity-time {
+    margin-inline-start: auto;
+    color: ${theme.textMuted};
+    white-space: nowrap;
+  }
+
+  #infoBanner :is(.ta-activity-time, .ta-activity-duration, .ta-activity-timings dd) {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #infoBanner .ta-activity-outcome {
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: ${theme.surfaceMuted};
+    color: ${theme.text};
+    font-size: 12px;
+  }
+
+  #infoBanner [data-outcome="Liked"] .ta-activity-outcome {
+    background: ${theme.successSoft};
+    color: ${theme.success};
+  }
+
+  #infoBanner [data-outcome="Super Liked"] .ta-activity-outcome {
+    background: ${theme.accentSoft};
+    color: ${theme.accentHover};
+  }
+
+  #infoBanner [data-outcome="Paused"] .ta-activity-outcome {
+    background: ${theme.warningSoft};
+    color: ${theme.warning};
+  }
+
+  #infoBanner .ta-activity-reason {
+    margin: 5px 0 0;
+    color: ${theme.text};
+  }
+
+  #infoBanner .ta-activity-details {
+    margin-top: 3px;
+  }
+
+  #infoBanner .ta-activity-details summary {
+    display: list-item;
+    width: fit-content;
+    padding: 2px 0;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  #infoBanner .ta-activity-details summary:hover {
+    color: ${theme.text};
+  }
+
+  #infoBanner .ta-activity-details summary:focus-visible {
+    outline: 2px solid ${theme.accentHover};
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  #infoBanner .ta-activity-timings {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    margin: 5px 0 0;
+    padding-top: 6px;
+    border-top: 1px solid ${theme.border};
+    font-size: 12px;
+  }
+
+  #infoBanner .ta-activity-timings dd {
+    margin: 0;
+    text-align: right;
+    white-space: nowrap;
   }
 `;
 
