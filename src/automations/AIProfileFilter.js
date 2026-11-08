@@ -133,6 +133,12 @@ class AIProfileFilter {
         )
       });
     } catch (error) {
+      if (/^Extension context invalidated\.?$/i.test(error.message)) {
+        return createAiProfileFilterFailure(
+          'Extension session expired. Refresh the Tinder tab before restarting Auto Like.'
+        );
+      }
+
       if (keySelection?.selectedKey) {
         await markSelectedAiApiKeyResult({
           selectedKey: keySelection.selectedKey,
@@ -145,7 +151,11 @@ class AIProfileFilter {
   }
 
   async requestDecision(requestUrl, body, keySelection) {
-    const options = buildAiChatRequestOptions({ apiKey: this.apiKey, body, providerType: this.providerType });
+    const options = buildAiChatRequestOptions({
+      apiKey: this.apiKey,
+      body,
+      providerType: this.providerType
+    });
     let response;
     try {
       response = await fetchWithBackgroundFallback(requestUrl, options);
