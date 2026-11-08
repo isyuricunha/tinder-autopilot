@@ -1,3 +1,4 @@
+import { PROFILE_LIMIT_DEFAULTS } from '../misc/profile-filter-utils';
 import Messenger from '../automations/Messenger';
 import AiMessageResponder from '../automations/AiMessageResponder';
 import Swiper from '../automations/Swiper';
@@ -625,10 +626,10 @@ class Sidebar {
 
   initializeSliders = () => {
     const sliders = [
-      { id: 'minAge', defaultValue: 18, unit: ' years' },
-      { id: 'maxAge', defaultValue: 35, unit: ' years' },
-      { id: 'maxDistance', defaultValue: 50, unit: ' km' },
-      { id: 'minPhotoCount', defaultValue: 3, unit: ' photos' },
+      { id: 'minAge', defaultValue: PROFILE_LIMIT_DEFAULTS.minAge, unit: ' years' },
+      { id: 'maxAge', defaultValue: PROFILE_LIMIT_DEFAULTS.maxAge, unit: ' years' },
+      { id: 'maxDistance', defaultValue: PROFILE_LIMIT_DEFAULTS.maxDistance, unit: ' km' },
+      { id: 'minPhotoCount', defaultValue: PROFILE_LIMIT_DEFAULTS.minPhotoCount, unit: ' photos' },
       {
         id: 'aiReplyContextWindow',
         defaultValue: DEFAULT_AI_REPLY_CONTEXT_WINDOW,

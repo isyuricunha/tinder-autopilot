@@ -1,3 +1,5 @@
+const { distanceInKilometers } = require('./profile-filter-utils');
+
 const shouldUseSuperLike = ({
   isEnabled = false,
   canSuperLike = false,
@@ -16,8 +18,10 @@ const shouldUseSuperLike = ({
       return Boolean(isVerified);
     case 'photos':
       return photoCount >= 5;
-    case 'distance':
-      return Boolean(distance && distance.value <= 10);
+    case 'distance': {
+      const kilometers = distanceInKilometers(distance);
+      return kilometers !== null && kilometers <= 10;
+    }
     default:
       return false;
   }

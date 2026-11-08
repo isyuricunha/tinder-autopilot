@@ -132,8 +132,10 @@ const shouldIncludeContactInfo = (conversationTurns = []) => {
   const latestText = getLatestMatchMessageText(conversationTurns);
   const contactChannel =
     /\b(?:whats|whatsapp|wpp|zap|telegram|insta|instagram|sms|telefone|numero|contato|phone|number)\b/i;
-  const request = /\b(?:passa|manda|envia|qual|tem|bora|vamos|partiu|chama|chamar|trocar|troca|add|send|share|what(?:'s| is)|can i|do you have)\b/i;
-  return hasDirectContactValue(latestText) || (contactChannel.test(latestText) && request.test(latestText));
+  const request = /\b(?:passa|manda|envia|qual|tem|bora|vamos|partiu|chama|chamar|trocar|troca)\b/i
+    .test(latestText) || /\b(?:add|send|share|what(?:'s| is)|can i|do you have)\b/i.test(latestText);
+  return hasDirectContactValue(latestText) ||
+    (contactChannel.test(latestText) && request);
 };
 
 const mapMistralReasoningEffort = (reasoningEffort) =>

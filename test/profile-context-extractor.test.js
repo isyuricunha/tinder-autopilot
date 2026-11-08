@@ -54,6 +54,9 @@ class FakeElement {
   matchesSingleSelector(selector) {
     if (!selector) return false;
     if (selector === '[aria-label]') return Boolean(this.getAttribute('aria-label'));
+    if (selector.startsWith('[itemprop="')) {
+      return this.getAttribute('itemprop') === selector.slice(11, -2);
+    }
     if (selector === '[aria-label^="Photo "]') {
       return (this.getAttribute('aria-label') || '').startsWith('Photo ');
     }
@@ -215,4 +218,43 @@ test('parseProfileDistance reads Tinder distance labels', () => {
     unit: 'miles'
   });
   assert.equal(parseProfileDistance('No distance'), null);
+  assert.deepEqual(parseProfileDistance('12,5 quilômetros de distância'), {
+    value: 12.5,
+    unit: 'quilômetros'
+  });
+  assert.equal(parseProfileDistance('Adoro correr 10 km'), null);
+});
+
+test('extracts localized profile fields without borrowing from hidden sections', () => {
+  const root = element('main', '', {}, [
+    element('h1', '', { 'aria-label': 'Joana, 24 anos' }),
+    element('div', '', { 'aria-label': '1 de 3' }),
+    element('div', '', { 'aria-hidden': 'true' }, [
+      card('Sobre mim', [element('div', 'Unrelated bio')])
+    ]),
+    section('Essenciais', [textItem('Mulher'), textItem('12,5 km de distância')])
+  ]);
+
+  const profile = extractProfileContext(root);
+  assert.equal(profile.name, 'Joana');
+  assert.equal(profile.age, 24);
+  assert.equal(profile.gender, 'Mulher');
+  assert.equal(profile.photoCount, 3);
+  assert.equal(profile.bio, '');
+  assert.equal(profile.distance, '12,5 km de distância');
+});
+
+test('reads the compact card distance and leaves unknown photo totals unset', () => {
+  const root = element('main', '', {}, [
+    element('span', 'Joana', { itemprop: 'name' }),
+    element('span', '24', { itemprop: 'age' }),
+    element('div', '14 kilometers away', { class: 'Us(t) NetWidth(100%,24px)' }),
+    element('div', '', { 'aria-label': 'Profile Photo 1' })
+  ]);
+
+  const profile = extractProfileContext(root);
+  assert.equal(profile.name, 'Joana');
+  assert.equal(profile.age, 24);
+  assert.equal(profile.distance, '14 kilometers away');
+  assert.equal(profile.photoCount, null);
 });

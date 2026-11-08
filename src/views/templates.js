@@ -1,3 +1,4 @@
+import { PROFILE_LIMIT_DEFAULTS } from '../misc/profile-filter-utils';
 import { getJsonSetting, getSetting, setJsonSetting, setSetting } from '../misc/settings-store';
 import {
   AI_REPLY_COMPATIBILITY_MODES,
@@ -641,9 +642,9 @@ const createSwipeSettings = () =>
         createTextbox({
           className: 'bioBlacklist',
           label: 'Banned Words',
-          placeholder: 'Enter words to avoid (comma separated): trans, onlyfans, premium',
+          placeholder: 'Enter terms separated by commas or new lines',
           helpText: 'Profiles containing these words will be skipped automatically.',
-          defaultValue: 'trans, onlyfans, premium, cashapp, venmo'
+          defaultValue: ''
         }),
         createCheckbox(
           'tinderAutopilotGenderFilter',
@@ -675,7 +676,7 @@ const createSwipeSettings = () =>
           helpText: 'Skip profiles below this age.',
           min: 18,
           max: 50,
-          defaultValue: 18,
+          defaultValue: PROFILE_LIMIT_DEFAULTS.minAge,
           unit: ' years',
           parentToggle: 'tinderAutopilotAdvancedFilter'
         }),
@@ -685,7 +686,7 @@ const createSwipeSettings = () =>
           helpText: 'Skip profiles above this age.',
           min: 18,
           max: 99,
-          defaultValue: 35,
+          defaultValue: PROFILE_LIMIT_DEFAULTS.maxAge,
           unit: ' years',
           parentToggle: 'tinderAutopilotAdvancedFilter'
         }),
@@ -695,7 +696,7 @@ const createSwipeSettings = () =>
           helpText: 'Skip profiles farther than this distance.',
           min: 1,
           max: 100,
-          defaultValue: 50,
+          defaultValue: PROFILE_LIMIT_DEFAULTS.maxDistance,
           unit: ' km',
           parentToggle: 'tinderAutopilotAdvancedFilter'
         }),
@@ -705,7 +706,7 @@ const createSwipeSettings = () =>
           helpText: 'Skip profiles with fewer photos.',
           min: 1,
           max: 9,
-          defaultValue: 3,
+          defaultValue: PROFILE_LIMIT_DEFAULTS.minPhotoCount,
           unit: ' photos',
           parentToggle: 'tinderAutopilotAdvancedFilter'
         })

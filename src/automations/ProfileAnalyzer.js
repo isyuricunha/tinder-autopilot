@@ -1,16 +1,18 @@
-import { debugLog, errorLog, logger, warnLog } from '../misc/helper';
+import { debugLog, errorLog, logger } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import {
+  PROFILE_LIMIT_DEFAULTS,
   isGenderBlocked,
+  normalizeBioFilterText,
   parseFilterList,
-  shouldSkipAdvancedProfile
+  getAdvancedProfileRejectionReason
 } from '../misc/profile-filter-utils';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
 import { isAiProfileFilterFailure } from '../misc/ai-profile-filter-result';
 import { PROFILE_CHECK_ACTIONS } from '../misc/profile-check-result';
 import { SWIPE_PHASES } from '../misc/swipe-progress';
-import { getActiveProfileCard, getActiveProfileSurface } from '../misc/profile-identity';
+import { getActiveProfileCard, getExpandedProfileContent } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
 import {
   findProfileCloseControl,
@@ -23,69 +25,35 @@ import AIProfileFilter from './AIProfileFilter';
 class ProfileAnalyzer {
   constructor() {
     this.bioBlacklist = this.loadBioBlacklist();
-    this.genderFilter = this.loadGenderFilter();
-    this.ageRange = this.loadAgeRange();
-    this.maxDistance = this.loadMaxDistance();
-    this.minPhotoCount = this.loadMinPhotoCount();
     this.aiFilter = new AIProfileFilter();
   }
 
   loadBioBlacklist() {
-    try {
-      const stored = getSetting('bioBlacklist');
-      if (stored) {
-        const words = parseFilterList(stored);
-        debugLog(`Loaded ${words.length} bio filter terms`);
-        return words;
-      }
-    } catch (e) {
-      warnLog('Failed to load bio blacklist', e);
-    }
-    const defaults = ['trans', 'onlyfans', 'premium', 'cashapp', 'venmo'];
-    return defaults;
+    return parseFilterList(getSetting('bioBlacklist'));
   }
 
   loadGenderFilter() {
-    try {
-      const stored = getSetting('genderFilter');
-      if (stored) {
-        return parseFilterList(stored);
-      }
-    } catch (e) {
-      warnLog('Failed to load gender filter', e);
-    }
-    return []; // Empty means no filtering
+    return parseFilterList(getSetting('genderFilter'));
   }
 
   loadAgeRange() {
-    try {
-      const minAge = getSetting('minAge', '18');
-      const maxAge = getSetting('maxAge', '99');
-      return { min: parseInt(minAge), max: parseInt(maxAge) };
-    } catch (e) {
-      warnLog('Failed to load age range', e);
-      return { min: 18, max: 99 };
-    }
+    return {
+      min: this.readLimit('minAge'),
+      max: this.readLimit('maxAge')
+    };
+  }
+
+  readLimit(key) {
+    const value = parseInt(getSetting(key), 10);
+    return Number.isFinite(value) && value > 0 ? value : PROFILE_LIMIT_DEFAULTS[key];
   }
 
   loadMaxDistance() {
-    try {
-      const stored = getSetting('maxDistance');
-      return stored ? parseInt(stored) : 999; // 999 = no limit
-    } catch (e) {
-      warnLog('Failed to load max distance', e);
-      return 999;
-    }
+    return this.readLimit('maxDistance');
   }
 
   loadMinPhotoCount() {
-    try {
-      const stored = getSetting('minPhotoCount');
-      return stored ? parseInt(stored) : 1; // Minimum 1 photo by default
-    } catch (e) {
-      warnLog('Failed to load min photo count', e);
-      return 1;
-    }
+    return this.readLimit('minPhotoCount');
   }
 
   isBioFilterEnabled() {
@@ -406,7 +374,7 @@ class ProfileAnalyzer {
     const startTime = Date.now();
 
     while (Date.now() - startTime < maxWait) {
-      if (this.isProfileModalOpen()) {
+      if (getExpandedProfileContent(document)) {
         // Wait a bit more for content to load
         await new Promise((resolve) => setTimeout(resolve, 300));
         return true;
@@ -417,242 +385,9 @@ class ProfileAnalyzer {
     return false;
   }
 
-  async waitForBioContent(maxWait = 5000) {
-    const start = Date.now();
-    while (Date.now() - start < maxWait) {
-      const text = (this.getBioText() || '').trim();
-      if (text) {
-        return true;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
-    return false;
-  }
-
-  getBioText() {
-    // Strategy 1: Find "About me" / "Sobre mim" heading and get the bio text from the same card
-    try {
-      const aboutMeHeadings = ['About me', 'Sobre mim'];
-      const aboutMeHeading = Array.from(document.querySelectorAll('h2')).find(el =>
-        aboutMeHeadings.includes(el.textContent?.trim())
-      );
-
-      if (aboutMeHeading) {
-        // Find the parent card containing the heading
-        const aboutMeCard = aboutMeHeading.closest('[class*="Bgc($c-ds-background-primary)"]') ||
-          aboutMeHeading.closest('section') ||
-          aboutMeHeading.parentElement;
-
-        if (aboutMeCard) {
-          // Get all text elements within the card
-          const bioElements = aboutMeCard.querySelectorAll('.Typs\\(body-1-regular\\)');
-          for (const bioEl of bioElements) {
-            const bioText = bioEl.textContent?.trim().replace(/\s+/g, ' ');
-            if (bioText && bioText.length > 0 && bioText.length < 2000) {
-              // Make sure we're not getting the heading text itself
-              if (bioText !== 'About me' && bioText !== 'Sobre mim') {
-                return bioText;
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Strategy 2: Fallback - direct selector (may pick wrong element but maintains compatibility)
-    try {
-      const bioElement = document.querySelector('.Typs\\(body-1-regular\\)');
-      if (bioElement) {
-        const bioText = bioElement.textContent?.trim().replace(/\s+/g, ' ') || '';
-        if (bioText.length > 0 && bioText.length < 2000) {
-          return bioText;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Strategy 3: Fallback to original structural selector approach
-    const scrollContainer =
-      document.querySelector('div[class*="M(16px)"]') || document.querySelector('.M\\(16px\\)');
-    const scope =
-      scrollContainer && scrollContainer.offsetParent !== null ? scrollContainer : document;
-
-    let bioText = '';
-    let foundBio = false;
-
-    try {
-      if (scrollContainer && scrollContainer.offsetParent !== null) {
-        const allText = scrollContainer.textContent || '';
-
-        const uiMarkers = [
-          'Essentials',
-          'Lifestyle',
-          'Basics',
-          'Looking for',
-          'Languages',
-          'Verified',
-          'years',
-          'last message',
-          'mensagem',
-          'Share',
-          'Report',
-          'Block'
-        ];
-
-        let bioCandidate = allText;
-        let firstMarkerIndex = allText.length;
-
-        for (const marker of uiMarkers) {
-          const index = allText.indexOf(marker);
-          if (index !== -1 && index < firstMarkerIndex) {
-            firstMarkerIndex = index;
-          }
-        }
-
-        if (firstMarkerIndex > 0) {
-          bioCandidate = allText.substring(0, firstMarkerIndex);
-        }
-
-        bioCandidate = bioCandidate.trim().replace(/\s+/g, ' ');
-
-        if (bioCandidate.length > 10 && bioCandidate.length < 2000) {
-          bioText = bioCandidate;
-          foundBio = true;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    // Strategy 4: Try finding bio text using structural selectors
-    if (!foundBio) {
-      try {
-        const profileSections = scope.querySelectorAll(
-          'section, div[class*="profile"], div[class*="content"]'
-        );
-
-        for (const section of profileSections) {
-          const text = section.textContent?.trim() || '';
-          if (text.length > 20 && text.length < 2000) {
-            const filteredText = text
-              .split(/Essentials|Lifestyle|Basics|Looking for|Languages|Verified/i)[0]
-              .trim();
-
-            if (filteredText.length > 10 && !filteredText.match(/^\d+$/)) {
-              bioText = filteredText;
-              foundBio = true;
-              break;
-            }
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    // Strategy 5: Fallback - look for any substantial text block
-    if (!bioText) {
-      try {
-        const candidates = Array.from(scope.querySelectorAll('p, div, span')).filter((el) => {
-          const rect = el.getBoundingClientRect();
-          if (rect.width === 0 || rect.height === 0) return false;
-          if (el.closest('h1,h2,h3,header,nav,button')) return false;
-          const txt = (el.textContent || '').trim();
-          return txt.length > 30 && txt.length < 2000;
-        });
-        candidates.sort((a, b) => (b.textContent || '').length - (a.textContent || '').length);
-        if (candidates[0]) {
-          bioText = (candidates[0].textContent || '').trim();
-          foundBio = true;
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-
-    return bioText;
-  }
-
-  // Extract profile name from the DOM
-  getProfileName() {
-    try {
-      // Strategy 1: Look for h1 with aria-label containing name and age
-      const h1Elements = document.querySelectorAll('h1');
-      for (const h1 of h1Elements) {
-        const ariaLabel = h1.getAttribute('aria-label');
-        if (ariaLabel) {
-          // aria-label often contains "Name Age years"
-          const match = ariaLabel.match(/^([^\d]+)/);
-          if (match) {
-            const name = match[1].replace(/years?\s*$/, '').trim();
-            if (name && name.length > 0 && name.length < 100) {
-              return name;
-            }
-          }
-        }
-      }
-
-      // Strategy 2: Look for display-1 class elements containing the name
-      const nameSelectors = [
-        '[class*="display-1"]',
-        '[class*="display-2"]',
-        '[class*="Fxs(1)"][class*="Fxw(w)"] span:first-child'
-      ];
-
-      for (const selector of nameSelectors) {
-        const elements = document.querySelectorAll(selector);
-        for (const el of elements) {
-          const text = el.textContent?.trim();
-          if (text && text.length > 0 && text.length < 100 && !/^\d+$/.test(text)) {
-            if (!/years?$/i.test(text)) {
-              return text;
-            }
-          }
-        }
-      }
-
-      // Strategy 3: Look for the first span within h1 that is not just a number
-      const h1Span = document.querySelector('h1 span:first-child');
-      if (h1Span) {
-        const name = h1Span.textContent?.trim();
-        if (name && name.length > 0 && name.length < 100 && !/^\d+$/.test(name)) {
-          return name;
-        }
-      }
-
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
   getProfileContext() {
-    try {
-      const surface = getActiveProfileSurface(document);
-      const profile = extractProfileContext(surface);
-      return surface === document ? { ...profile, gender: null } : profile;
-    } catch (_error) {
-      return {};
-    }
-  }
-
-  getProfileContextForAI() {
-    const profileContext = this.getProfileContext();
-    const fallbackDistance = this.getDistance(profileContext);
-
-    return {
-      ...profileContext,
-      name: profileContext.name || this.getProfileName(),
-      age: profileContext.age || this.getAge(profileContext),
-      bio: profileContext.bio || this.getBioText() || '',
-      distance:
-        profileContext.distance ||
-        (fallbackDistance ? `${fallbackDistance.value} ${fallbackDistance.unit}` : null),
-      photoCount: profileContext.photoCount || this.getPhotoCount(profileContext)
-    };
+    const surface = getExpandedProfileContent(document);
+    return surface ? extractProfileContext(surface) : null;
   }
 
   isGenderFilterEnabled() {
@@ -663,57 +398,29 @@ class ProfileAnalyzer {
     return getCheckboxValue('.tinderAutopilotAdvancedFilter');
   }
 
-  // Check bio for banned words (call this AFTER opening the profile modal)
-  getProfileRejectionReason() {
-    const profileContext = this.getProfileContext();
+  getProfileRejectionReason(profile) {
     if (this.isBioFilterEnabled()) {
-      this.bioBlacklist = this.loadBioBlacklist();
-      const bioText = (profileContext.bio || this.getBioText() || '').toLowerCase();
-
-      if (bioText) {
-        for (const blacklistedWord of this.bioBlacklist) {
-          if (bioText.includes(blacklistedWord)) {
-            return 'Bio matched a blocked term';
-          }
-        }
-      }
+      const bio = normalizeBioFilterText(profile.bio);
+      const matched = this.bioBlacklist.some((word) => {
+        const term = normalizeBioFilterText(word);
+        return term && bio.includes(term);
+      });
+      if (matched) return 'Bio matched a blocked term';
     }
 
-    // Check gender filtering
-    if (this.isGenderFilterEnabled()) {
-      this.genderFilter = this.loadGenderFilter();
-
-      if (isGenderBlocked(profileContext.gender, this.genderFilter)) {
-        return 'Gender matched a blocked label';
-      }
+    if (this.isGenderFilterEnabled() && isGenderBlocked(profile.gender, this.loadGenderFilter())) {
+      return 'Gender matched a blocked label';
     }
 
-    // Check advanced filtering (age, distance, photo count)
-    if (this.isAdvancedFilterEnabled()) {
-      // Refresh settings from storage
-      this.ageRange = this.loadAgeRange();
-      this.maxDistance = this.loadMaxDistance();
-      this.minPhotoCount = this.loadMinPhotoCount();
-
-      const age = this.getAge(profileContext);
-      const distance = this.getDistance(profileContext);
-      const photoCount = this.getPhotoCount(profileContext);
-
-      if (
-        shouldSkipAdvancedProfile({
-          age,
-          distance,
-          photoCount,
-          ageRange: this.ageRange,
-          maxDistance: this.maxDistance,
-          minPhotoCount: this.minPhotoCount
-        })
-      ) {
-        return 'Profile falls outside age, distance, or photo limits';
-      }
-    }
-
-    return '';
+    if (!this.isAdvancedFilterEnabled()) return '';
+    return getAdvancedProfileRejectionReason({
+      age: profile.age,
+      distance: parseProfileDistance(profile.distance),
+      photoCount: profile.photoCount,
+      ageRange: this.loadAgeRange(),
+      maxDistance: this.loadMaxDistance(),
+      minPhotoCount: this.loadMinPhotoCount()
+    });
   }
 
   // Main method to check profile with modal opening
@@ -734,14 +441,15 @@ class ProfileAnalyzer {
       if (this.isProfileModalOpen()) {
         onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
-        await this.waitForModalClose(1500);
+        const closed = await this.waitForModalClose(1500);
         if (isCancelled()) return { action: stop };
+        if (!closed) return { action: stop, reason: 'Could not close the previous profile' };
       }
 
       onPhase(SWIPE_PHASES.openingProfile);
       const opened = await this.openProfile(isCancelled);
       if (isCancelled()) return { action: stop };
-      if (!opened) return { action: skip, reason: 'Could not open profile for filtering' };
+      if (!opened) return { action: stop, reason: 'Could not open profile for filtering' };
 
       const modalOpened = await this.waitForProfileModal(5000);
       if (isCancelled()) return { action: stop };
@@ -749,17 +457,15 @@ class ProfileAnalyzer {
         onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
         await this.waitForModalClose(1000);
-        return { action: skip, reason: 'Profile did not finish opening' };
+        return { action: stop, reason: 'Profile did not finish opening' };
       }
 
       onPhase(SWIPE_PHASES.readingProfile);
-      if (hasActiveBioFilter) await this.waitForBioContent(5000);
-      if (isCancelled()) return { action: stop };
-
-      let reason = this.getProfileRejectionReason();
+      const profile = this.getProfileContext();
+      if (!profile) return { action: stop, reason: 'Could not identify the active profile to filter' };
+      let reason = this.getProfileRejectionReason(profile);
       let action = reason ? skip : allow;
       if (action === allow && isAIFilterEnabled) {
-        const profile = this.getProfileContextForAI();
         onPhase(SWIPE_PHASES.waitingForAi);
         const aiResult = await this.aiFilter.analyze({
           bio: profile.bio,
@@ -777,7 +483,9 @@ class ProfileAnalyzer {
 
       onPhase(SWIPE_PHASES.closingProfile);
       this.closeProfile();
-      await this.waitForModalClose(2000);
+      const closed = await this.waitForModalClose(2000);
+      if (isCancelled()) return { action: stop };
+      if (!closed) return { action: stop, reason: 'Could not close the filtered profile' };
 
       return { action, reason: reason || 'Passed enabled profile filters' };
     } catch (error) {
@@ -789,121 +497,6 @@ class ProfileAnalyzer {
       }
       return { action: stop, reason: 'Profile analysis failed' };
     }
-  }
-
-  analyzeProfile() {
-    const bioText = this.getBioText();
-    const analysis = {
-      hasBio: bioText.length > 0,
-      bioLength: bioText.length,
-      containsBlacklistedWords: Boolean(this.getProfileRejectionReason()),
-      bioText: bioText.substring(0, 100) // First 100 chars for logging
-    };
-
-    return analysis;
-  }
-
-  // Get age from profile
-  getAge(profileContext = this.getProfileContext()) {
-    if (profileContext.age) return profileContext.age;
-
-    const ageSelectors = [
-      '[data-testid="age"]',
-      '.profileCard__age',
-      '.age',
-      '[class*="age"]',
-      'h1', // Age often appears in main heading
-      '.Fz\\(\\$xl\\)' // Tinder's specific class for age
-    ];
-
-    for (const selector of ageSelectors) {
-      const ageElement = document.querySelector(selector);
-      if (ageElement) {
-        const ageText = ageElement.textContent;
-        const ageMatch = ageText.match(/\b(\d{2})\b/); // Look for 2-digit age
-        if (ageMatch && parseInt(ageMatch[1]) >= 18 && parseInt(ageMatch[1]) <= 99) {
-          return parseInt(ageMatch[1]);
-        }
-      }
-    }
-
-    return null;
-  }
-
-  // Get photo count from profile
-  getPhotoCount(profileContext = this.getProfileContext()) {
-    if (profileContext.photoCount) return profileContext.photoCount;
-
-    // Look for photo indicators
-    const photoSelectors = [
-      '.keen-slider__slide img',
-      '[data-testid="photo"]',
-      '.profileCard__photo',
-      '.photo',
-      '[class*="photo"]',
-      '.slider img',
-      '.carousel img'
-    ];
-
-    let photoCount = 0;
-    for (const selector of photoSelectors) {
-      const photos = document.querySelectorAll(selector);
-      if (photos.length > photoCount) {
-        photoCount = photos.length;
-      }
-    }
-
-    // Fallback: look for photo dots/indicators
-    if (photoCount === 0) {
-      const dotSelectors = [
-        '.keen-slider__dot',
-        '[class*="dot"]',
-        '[class*="indicator"]',
-        '.slider-dots > *',
-        '.carousel-indicators > *'
-      ];
-
-      for (const selector of dotSelectors) {
-        const dots = document.querySelectorAll(selector);
-        if (dots.length > 0) {
-          photoCount = dots.length;
-          break;
-        }
-      }
-    }
-
-    return photoCount || 1; // Default to 1 if can't detect
-  }
-
-  // Get distance from profile
-  getDistance(profileContext = this.getProfileContext()) {
-    const profileDistance = parseProfileDistance(profileContext.distance);
-    if (profileDistance) return profileDistance;
-
-    const distanceSelectors = [
-      '[data-testid="distance"]',
-      '.profileCard__distance',
-      '.distance',
-      '[class*="distance"]',
-      '[class*="miles"]',
-      '[class*="km"]'
-    ];
-
-    for (const selector of distanceSelectors) {
-      const distanceElement = document.querySelector(selector);
-      if (distanceElement) {
-        const distanceText = distanceElement.textContent;
-        const distanceMatch = distanceText.match(/(\d+)\s*(miles?|km|kilometers?)/i);
-        if (distanceMatch) {
-          return {
-            value: parseInt(distanceMatch[1]),
-            unit: distanceMatch[2].toLowerCase()
-          };
-        }
-      }
-    }
-
-    return null;
   }
 }
 

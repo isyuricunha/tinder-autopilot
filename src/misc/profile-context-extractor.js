@@ -18,7 +18,12 @@ const GENDER_VALUES = [
   'female',
   'male',
   'mulher',
-  'homem'
+  'homem',
+  'mulher trans',
+  'homem trans',
+  'não binário',
+  'não binária',
+  'non binary'
 ];
 
 const GENDER_FIELD_SELECTOR = '[data-testid="gender"], .profileCard__gender, .gender';
@@ -44,11 +49,12 @@ const normalizeProfileText = (value) =>
     .trim();
 
 const parseProfileDistance = (value) => {
-  const match = normalizeProfileText(value).match(/(\d+)\s*(kilometers?|km|miles?)/i);
+  const match = normalizeProfileText(value)
+    .match(/^(\d+(?:[.,]\d+)?)\s*(kilometers?|quil[oô]metros?|km|miles?|milhas?|mi)(?: away| de distância)?$/iu);
   if (!match) return null;
 
   return {
-    value: parseInt(match[1], 10),
+    value: Number(match[1].replace(',', '.')),
     unit: match[2].toLowerCase()
   };
 };
@@ -79,8 +85,7 @@ const findHeading = (root, headings) => {
 const getProfileCardForHeading = (heading) => {
   if (!heading) return null;
   return (
-    heading.closest?.('section') ||
-    heading.closest?.('[class*="Bgc($c-ds-background-primary)"]') ||
+    heading.closest?.('section, [class*="Bgc($c-ds-background-primary)"]') ||
     heading.parentElement
   );
 };
@@ -104,6 +109,7 @@ const getCardValue = (root, headings, selectors = []) => {
 
   for (const selector of selectors) {
     const value = getElements(card, selector)
+      .filter(isVisibleProfileElement)
       .map(getElementText)
       .find((text) => text && !headings.map(normalizeHeading).includes(normalizeHeading(text)));
     if (value) return value;
@@ -117,11 +123,19 @@ const getCardValue = (root, headings, selectors = []) => {
 };
 
 const extractNameAndAge = (root) => {
-  for (const heading of getElements(root, 'h1')) {
+  const name = getElements(root, '[itemprop="name"]').find(isVisibleProfileElement);
+  const age = getElements(root, '[itemprop="age"]').find(isVisibleProfileElement);
+  if (name) {
+    const ageText = getElementText(age);
+    return { name: getElementText(name), age: /^\d{2}$/.test(ageText) ? Number(ageText) : null };
+  }
+
+  const headings = getElements(root, 'h1').filter(isVisibleProfileElement);
+  for (const heading of headings) {
     const candidates = [heading.getAttribute?.('aria-label'), heading.textContent].filter(Boolean);
     for (const candidate of candidates) {
       const text = normalizeProfileText(candidate);
-      const match = text.match(/^(.+?)\s+(\d{2})(?:\s*(?:years?|anos?))?$/i);
+      const match = text.match(/^(.+?)[,\s]+(\d{2})(?:\s*(?:years?(?: old)?|anos?))?$/i);
       if (match) {
         return {
           name: normalizeProfileText(match[1]),
@@ -131,19 +145,19 @@ const extractNameAndAge = (root) => {
     }
   }
 
-  return { name: null, age: null };
+  return { name: getElementText(headings[0]) || null, age: null };
 };
 
 const extractPhotoCount = (root) => {
-  const photoIndexes = getElements(root, '[aria-label^="Photo "]')
-    .map((element) => element.getAttribute?.('aria-label') || '')
-    .map((label) => label.match(/Photo\s+(\d+)/i))
+  const labels = getElements(root, '[aria-label]')
+    .map((element) => normalizeProfileText(element.getAttribute?.('aria-label')));
+  const photoIndexes = labels
+    .map((label) => label.match(/^(?:Photo|Foto)\s+(\d+)$/i))
     .filter(Boolean)
     .map((match) => parseInt(match[1], 10));
 
-  const carouselCounts = getElements(root, '[aria-label]')
-    .map((element) => element.getAttribute?.('aria-label') || '')
-    .map((label) => label.match(/\d+\s+of\s+(\d+)/i))
+  const carouselCounts = labels
+    .map((label) => label.match(/^\d+\s+(?:of|de)\s+(\d+)$/i))
     .filter(Boolean)
     .map((match) => parseInt(match[1], 10));
 
@@ -204,7 +218,7 @@ const extractEssentials = (root) => {
   };
 
   for (const item of essentials) {
-    if (!details.distance && /(\d+)\s*(miles?|km|kilometers?)/i.test(item)) {
+    if (!details.distance && parseProfileDistance(item)) {
       details.distance = item;
     } else if (!details.gender && isGenderText(item)) {
       details.gender = item;
@@ -221,6 +235,11 @@ const extractEssentials = (root) => {
 const extractProfileContext = (root = document) => {
   const nameAndAge = extractNameAndAge(root);
   const essentials = extractEssentials(root);
+  const distance = essentials.distance || [
+    ...getElements(root, '[class*="NetWidth("]').filter(isVisibleProfileElement).map(getElementText),
+    ...getElements(root, '[aria-label]').filter(isVisibleProfileElement)
+      .map((element) => normalizeProfileText(element.getAttribute('aria-label')))
+  ].find(parseProfileDistance);
 
   return {
     name: nameAndAge.name,
@@ -228,7 +247,7 @@ const extractProfileContext = (root = document) => {
     bio: getCardValue(root, ABOUT_ME_HEADINGS, ['.Typs\\(body-1-regular\\)']),
     lookingFor: getCardValue(root, LOOKING_FOR_HEADINGS, ['.Typs\\(display-3-strong\\)']),
     photoCount: extractPhotoCount(root),
-    distance: essentials.distance,
+    distance: distance || null,
     occupation: essentials.occupation,
     gender: essentials.gender,
     languages: essentials.languages,

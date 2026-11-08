@@ -23,6 +23,13 @@ test('shouldUseSuperLike requires enabled automation and remaining daily quota',
   );
 });
 
+test('distance strategy uses kilometers even when Tinder displays miles', () => {
+  const strategy = { isEnabled: true, canSuperLike: true, strategy: 'distance' };
+  assert.equal(shouldUseSuperLike({ ...strategy, distance: { value: 6, unit: 'mi' } }), true);
+  assert.equal(shouldUseSuperLike({ ...strategy, distance: { value: 7, unit: 'mi' } }), false);
+  assert.equal(shouldUseSuperLike(strategy), false);
+});
+
 test('shouldUseSuperLike evaluates each configured strategy', () => {
   assert.equal(
     shouldUseSuperLike({

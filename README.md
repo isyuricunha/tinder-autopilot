@@ -39,6 +39,8 @@ Sign in to [Tinder Web](https://tinder.com/) and open Recommendations. The Autop
 
 The profile filter sends your rules separately from the profile fields. It uses the gender field shown on the profile when available. Empty rules, request failures, and invalid decisions pause Auto Like. **Activity** shows the reason for the pause.
 
+Bio and gender lists accept commas or line breaks. Leave a list empty to apply no restrictions from that list. The distance limit is in kilometers, even when Tinder displays miles. If Tinder does not show a field, its limit does not reject the profile.
+
 ### Review replies before sending
 
 In **Messages**, expand **Test Replies**. Use **Preview Prompt** to inspect what would be sent to the provider. **Test Reply** generates a reply without sending it on Tinder. **Review Real Match** uses an eligible conversation to generate a preview. **Reply once** and **Continuous** can send messages to real matches.

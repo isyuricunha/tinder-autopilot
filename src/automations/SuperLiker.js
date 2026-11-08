@@ -1,5 +1,6 @@
 import { logger, warnLog } from '../misc/helper';
 import { extractProfileContext, parseProfileDistance } from '../misc/profile-context-extractor';
+import { getActiveProfileSurface, isVisibleProfileElement } from '../misc/profile-identity';
 import { shouldUseSuperLike } from '../misc/super-like-rules';
 import { findSuperLikeButton } from '../misc/tinder-dom-detectors';
 import { getSetting, setSetting } from '../misc/settings-store';
@@ -90,38 +91,16 @@ class SuperLiker {
     }
   }
 
-  getProfileContext() {
-    try {
-      return extractProfileContext(document);
-    } catch (_error) {
-      return {};
-    }
-  }
-
-  shouldSuperLike(profileContext = this.getProfileContext()) {
-    const strategy = this.getSuperLikeStrategy();
-    const decisionInput = {
+  shouldSuperLike(surface) {
+    const profile = surface === document ? {} : extractProfileContext(surface);
+    return shouldUseSuperLike({
       isEnabled: this.isEnabled(),
       canSuperLike: this.canSuperLike(),
-      strategy,
-      randomValue: Math.random()
-    };
-
-    switch (strategy) {
-      case 'verified':
-        decisionInput.isVerified = this.isProfileVerified();
-        break;
-      case 'photos':
-        decisionInput.photoCount = this.getPhotoCount(profileContext);
-        break;
-      case 'distance':
-        decisionInput.distance = this.getDistance(profileContext);
-        break;
-      default:
-        break;
-    }
-
-    return shouldUseSuperLike(decisionInput);
+      strategy: this.getSuperLikeStrategy(),
+      isVerified: this.isProfileVerified(surface),
+      photoCount: profile.photoCount,
+      distance: parseProfileDistance(profile.distance)
+    });
   }
 
   isEnabled() {
@@ -136,73 +115,23 @@ class SuperLiker {
     }
   }
 
-  isProfileVerified() {
-    const verifiedSelectors = [
-      '[data-testid="verified"]',
-      '.verified',
-      '[class*="verified"]',
-      '[aria-label*="verified"]',
-      '.checkmark',
-      '[class*="checkmark"]'
-    ];
+  isProfileVerified(surface) {
+    if (surface === document) return false;
+    const badge = surface.querySelector('[data-testid="verified"], [aria-label="Photo Verified" i]');
+    if (isVisibleProfileElement(badge)) return true;
 
-    for (const selector of verifiedSelectors) {
-      const element = document.querySelector(selector);
-      if (element) return true;
-    }
-
-    return false;
-  }
-
-  getPhotoCount(profileContext = this.getProfileContext()) {
-    if (profileContext.photoCount) return profileContext.photoCount;
-
-    const photoSelectors = ['.keen-slider__slide img', '[data-testid="photo"]', '.slider img'];
-
-    let maxCount = 0;
-    for (const selector of photoSelectors) {
-      const photos = document.querySelectorAll(selector);
-      maxCount = Math.max(maxCount, photos.length);
-    }
-
-    return maxCount || 1;
-  }
-
-  getDistance(profileContext = this.getProfileContext()) {
-    const profileDistance = parseProfileDistance(profileContext.distance);
-    if (profileDistance) return profileDistance;
-
-    const distanceSelectors = [
-      '[data-testid="distance"]',
-      '[class*="distance"]',
-      '[class*="miles"]',
-      '[class*="km"]'
-    ];
-
-    for (const selector of distanceSelectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        const text = element.textContent;
-        const match = text.match(/(\d+)\s*(miles?|km|kilometers?)/i);
-        if (match) {
-          return {
-            value: parseInt(match[1]),
-            unit: match[2].toLowerCase()
-          };
-        }
-      }
-    }
-
-    return null;
+    return Array.from(surface.querySelectorAll('svg title')).some((title) =>
+      /^(?:photo verified|foto verificada)$/i.test(title.textContent.trim()) &&
+      isVisibleProfileElement(title.ownerSVGElement || title.parentElement)
+    );
   }
 
   pressSuperLike() {
+    if (!this.isEnabled() || !this.canSuperLike()) return false;
     const superLikeButton = this.hasSuperLike();
     if (!superLikeButton) return false;
 
-    const profileContext = this.getProfileContext();
-
-    if (this.shouldSuperLike(profileContext)) {
+    if (this.shouldSuperLike(getActiveProfileSurface(document))) {
       superLikeButton.click();
       this.incrementSuperLikeCount();
 
