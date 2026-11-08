@@ -20,6 +20,7 @@ import {
 } from '../misc/ai-key-pool-storage';
 import { formatProfileContextForPrompt } from '../misc/profile-context-extractor';
 import {
+  AI_REASONING_EFFORTS,
   DEFAULT_AI_PROFILE_MODEL,
   DEFAULT_AI_PROFILE_REASONING_EFFORT,
   readAiProfileFilterSettings
@@ -186,6 +187,9 @@ class AIProfileFilter {
   // ----------------------------------------------------------------
   buildRequestBody(bio, imageBase64, name, profile) {
     const systemMessage = this.buildSystemMessage();
+    const reasoningEffort = this.reasoningEffort === AI_REASONING_EFFORTS.providerDefault
+      ? undefined
+      : this.reasoningEffort;
 
     const content = [];
 
@@ -219,7 +223,7 @@ class AIProfileFilter {
       ...getDeepSeekChatReasoningFields({
         providerType: this.providerType,
         model: this.model,
-        reasoningEffort: this.reasoningEffort
+        reasoningEffort
       })
     };
   }

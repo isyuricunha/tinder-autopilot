@@ -744,6 +744,7 @@ const createSwipeSettings = () =>
           storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
           defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
           options: [
+            { value: AI_REASONING_EFFORTS.providerDefault, text: 'Provider Default' },
             { value: AI_REASONING_EFFORTS.none, text: 'None' },
             { value: AI_REASONING_EFFORTS.low, text: 'Low' },
             { value: AI_REASONING_EFFORTS.medium, text: 'Medium' },
@@ -752,7 +753,7 @@ const createSwipeSettings = () =>
           ]
         }),
         createHelpText(
-          'Sets the reasoning effort for DeepSeek V4 over OpenAI-Compatible. Chat Completions providers set the output limit.'
+          'Provider Default uses the provider’s own reasoning settings. Explicit levels apply to DeepSeek V4 over OpenAI-Compatible.'
         )
       ]
     }),

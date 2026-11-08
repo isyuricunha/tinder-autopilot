@@ -36,6 +36,7 @@ test('DeepSeek V4 reasoning survives Chat Completions serialization', () => {
   assert.deepEqual(getDeepSeekChatReasoningFields({
     providerType, model: 'qwen3.6-35b', reasoningEffort: 'low'
   }), {});
+  assert.deepEqual(getDeepSeekChatReasoningFields({ providerType, model: 'deepseek-v4-flash' }), {});
 });
 
 test('buildAiChatRequestOptions keeps OpenAI-compatible providers unchanged', () => {

@@ -15,7 +15,7 @@ const {
 
 test('AI profile filter settings expose safe defaults', () => {
   assert.equal(DEFAULT_AI_PROFILE_MODEL, 'gpt-4o-mini');
-  assert.equal(DEFAULT_AI_PROFILE_REASONING_EFFORT, AI_REASONING_EFFORTS.medium);
+  assert.equal(DEFAULT_AI_PROFILE_REASONING_EFFORT, AI_REASONING_EFFORTS.providerDefault);
 });
 
 test('normalizeAiReasoningEffort accepts only known values', () => {
@@ -23,6 +23,14 @@ test('normalizeAiReasoningEffort accepts only known values', () => {
   assert.equal(normalizeAiReasoningEffort('none'), 'none');
   assert.equal(normalizeAiReasoningEffort('max'), 'max');
   assert.equal(normalizeAiReasoningEffort('unknown'), DEFAULT_AI_PROFILE_REASONING_EFFORT);
+});
+
+test('an explicit Provider Default overrides a saved legacy effort', () => {
+  const settings = {
+    [AI_PROFILE_SETTING_KEYS.reasoningEffort]: 'default',
+    [AI_PROFILE_SETTING_KEYS.legacyReasoningEffort]: 'high'
+  };
+  assert.equal(readAiProfileFilterSettings((key) => settings[key]).reasoningEffort, 'default');
 });
 
 test('readAiProfileFilterSettings reads dedicated settings', () => {

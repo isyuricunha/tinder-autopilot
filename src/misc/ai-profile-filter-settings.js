@@ -4,15 +4,15 @@ const {
 } = require('./ai-provider-settings');
 
 const DEFAULT_AI_PROFILE_MODEL = 'gpt-4o-mini';
-const DEFAULT_AI_PROFILE_REASONING_EFFORT = 'medium';
-
 const AI_REASONING_EFFORTS = {
+  providerDefault: 'default',
   none: 'none',
   low: 'low',
   medium: 'medium',
   high: 'high',
   max: 'max'
 };
+const DEFAULT_AI_PROFILE_REASONING_EFFORT = AI_REASONING_EFFORTS.providerDefault;
 
 const AI_PROFILE_SETTING_KEYS = {
   apiUrl: 'aiApiUrl',

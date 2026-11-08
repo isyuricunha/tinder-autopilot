@@ -58,6 +58,7 @@ const supportsNativeJsonResponseFormat = (providerType = DEFAULT_AI_PROVIDER_TYP
   Boolean(getAiChatProviderCapabilities(providerType).nativeJsonResponseFormat);
 
 const getDeepSeekChatReasoningFields = ({ providerType, model, reasoningEffort }) => {
+  if (!reasoningEffort) return {};
   if (normalizeAiProviderType(providerType) !== AI_PROVIDER_TYPES.openAiCompatible) return {};
   const isDeepSeekV4 = /(?:^|\/)deepseek-(?:flash|v4(?:\.1)?-(?:flash|pro))(?=$|[-:])/i
     .test(String(model || '').trim());
