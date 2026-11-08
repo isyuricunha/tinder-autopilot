@@ -1,0 +1,15 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "./scripts/package-extension.cjs",
+    ["@semantic-release/github", {
+      "assets": ["zips/tinder-autopilot-*.zip"],
+      "successComment": false,
+      "failComment": false,
+      "failTitle": false,
+      "releasedLabels": false
+    }]
+  ]
+}

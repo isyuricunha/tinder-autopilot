@@ -8,11 +8,9 @@
   "author": "Matthew <info@mgates.me>",
   "license": "MIT",
   "scripts": {
-    "major": "dotenv release-it -- major --ci",
-    "minor": "dotenv release-it -- minor --ci",
-    "patch": "dotenv release-it -- patch --ci",
     "start": "webpack --mode development --watch",
     "build": "webpack --mode production",
+    "package:extension": "pnpm build && node scripts/package-extension.cjs",
     "lint": "eslint src/**/*.js",
     "test": "node --test test/**/*.test.js"
   },
@@ -28,7 +26,6 @@
     "babel-loader": "^10.1.1",
     "bestzip": "^2.2.3",
     "copy-webpack-plugin": "^14.0.0",
-    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.4",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^10.1.8",
@@ -39,7 +36,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "invariant": "^2.2.4",
     "prettier": "^3.8.3",
-    "release-it": "^20.0.1",
+    "semantic-release": "25.0.9",
     "webpack": "^5.106.2",
     "webpack-cli": "^7.0.2"
   },

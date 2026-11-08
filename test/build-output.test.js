@@ -41,12 +41,16 @@ test('webpack build emits separate Chrome and Firefox extension folders', () => 
   }
 });
 
-test('Firefox manifest stays installable without Chrome-only update metadata', () => {
+test('browser manifests use their supported background script formats', () => {
   const chromeManifest = readJson('chrome/manifest.json');
   const firefoxManifest = readJson('chrome/manifest.firefox.json');
 
   assert.equal(chromeManifest.version, packageJson.version);
   assert.equal(firefoxManifest.version, packageJson.version);
+  assert.equal(chromeManifest.manifest_version, 3);
+  assert.deepEqual(chromeManifest.background, { service_worker: 'bg.js' });
+  assert.deepEqual(chromeManifest.permissions, ['storage']);
+  assert.ok(chromeManifest.host_permissions.includes('https://api.gotinder.com/*'));
   assert.equal(firefoxManifest.manifest_version, 2);
   assert.deepEqual(firefoxManifest.background, {
     scripts: ['bg.js'],

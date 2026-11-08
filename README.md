@@ -15,10 +15,10 @@ pnpm build
 
 | Browser | Load the build |
 | --- | --- |
-| Brave | Open `brave://extensions`, enable **Developer mode**, select **Load unpacked**, and choose `dist/`. This requires a Brave version that can load the project's unpacked Manifest V2 build. |
+| Chrome or Brave | Open `chrome://extensions` or `brave://extensions`, enable **Developer mode**, select **Load unpacked**, and choose `dist/`. |
 | Firefox | Open `about:debugging#/runtime/this-firefox`, select **Load Temporary Add-on**, and choose `dist-firefox/manifest.json`. Temporary add-ons are removed when Firefox restarts. |
 
-The current `dist/` build uses Manifest V2. Chrome 139 and later require Manifest V3. [Chrome support timeline](https://developer.chrome.com/docs/extensions/develop/migrate/mv2-deprecation-timeline)
+For a prebuilt copy, download the ZIP for your browser from [GitHub Releases](https://github.com/isyuricunha/tinder-autopilot/releases), extract it, and use the extracted folder in Chrome or Brave, or the extracted `manifest.json` in Firefox. Firefox's temporary installation uses the unpacked manifest.
 
 Sign in to [Tinder Web](https://tinder.com/) and open Recommendations. The Autopilot sidebar appears on the left. After rebuilding, reload the extension in your browser's extension manager, then refresh the Tinder tab.
 
@@ -67,6 +67,7 @@ When you enable model-based filtering or request a generated reply, the extensio
 | --- | --- |
 | `pnpm start` | Rebuild the extension while editing. |
 | `pnpm build` | Generate `dist/` and `dist-firefox/`. |
+| `pnpm package:extension` | Build and create browser-specific ZIPs under `zips/`. |
 | `pnpm lint` | Check source files with ESLint. |
 | `pnpm test` | Run the Node.js tests. |
 
@@ -77,5 +78,7 @@ When you enable model-based filtering or request a generated reply, the extensio
 - [webpack.config.js](webpack.config.js) selects the browser manifests and assembles the build output.
 
 For changes that touch Tinder's DOM or extension permissions, check the unpacked build in a browser as well as running the tests. Use [Conventional Commits](https://www.conventionalcommits.org/) and include verification details in the pull request.
+
+Pushes to `main` run verification before semantic-release evaluates the commits. Releases attach two ZIPs with the release version set in each manifest. For the initial setup, publish the `v3.0.0` baseline tag before pushing the workflow so release versions advance from the existing 3.0.0 builds.
 
 Maintained by [Yuri Cunha](mailto:me@yuricunha.com). The project continues the original work by Geczy. See [LICENSE.txt](LICENSE.txt) for the license text included in the repository.
