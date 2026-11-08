@@ -28,6 +28,7 @@ const {
   getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
+  getDeepSeekChatReasoningFields,
   isAiChatLengthStopReason,
   supportsNativeJsonResponseFormat
 } = require('./ai-chat-provider');
@@ -183,6 +184,19 @@ const applyProviderTokenAndReasoningFields = ({
   const normalizedProviderType = normalizeAiProviderType(providerType);
   const capabilities = getAiChatProviderCapabilities(normalizedProviderType);
   const safeMaxTokens = clampAiChatMaxTokens(normalizedProviderType, maxTokens);
+
+  if (compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson) {
+    const deepSeekFields = getDeepSeekChatReasoningFields({
+      providerType: normalizedProviderType,
+      model: body.model,
+      reasoningEffort
+    });
+    if (deepSeekFields.reasoning_effort) {
+      body.max_tokens = safeMaxTokens;
+      Object.assign(body, deepSeekFields);
+      return;
+    }
+  }
 
   if (
     compatibilityMode === AI_REPLY_COMPATIBILITY_MODES.reasoningJson &&

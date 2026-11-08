@@ -20,6 +20,25 @@ const {
 } = require('../src/misc/ai-message-reply-settings');
 const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 
+test('DeepSeek replies use max_tokens and send effort only in Reasoning mode', () => {
+  const options = {
+    providerType: AI_PROVIDER_TYPES.openAiCompatible,
+    model: 'deepseek-v4-flash',
+    maxTokens: 1024,
+    reasoningEffort: 'low'
+  };
+  const reasoning = buildAiReplyRequestBody({
+    ...options, compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.reasoningJson
+  });
+  assert.equal(reasoning.reasoning_effort, 'low');
+  assert.equal(reasoning.max_tokens, 1024);
+  assert.equal(reasoning.max_completion_tokens, undefined);
+  const loose = buildAiReplyRequestBody({
+    ...options, compatibilityMode: AI_REPLY_COMPATIBILITY_MODES.looseJson
+  });
+  assert.equal(loose.reasoning_effort, undefined);
+});
+
 test('buildAiReplySystemMessage includes tone and user context instructions', () => {
   const message = buildAiReplySystemMessage({
     addressInfo: 'Rua Teste 123',

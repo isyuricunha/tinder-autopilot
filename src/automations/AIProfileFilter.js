@@ -8,7 +8,11 @@ import {
   createAiProfileFilterFailure,
   summarizeAiProfileFilterHttpError
 } from '../misc/ai-profile-filter-result';
-import { buildAiChatApiUrl, buildAiChatRequestOptions } from '../misc/ai-chat-provider';
+import {
+  buildAiChatApiUrl,
+  buildAiChatRequestOptions,
+  getDeepSeekChatReasoningFields
+} from '../misc/ai-chat-provider';
 import { readAiProviderSettings } from '../misc/ai-provider-settings';
 import {
   markSelectedAiApiKeyResult,
@@ -219,7 +223,12 @@ class AIProfileFilter {
       messages,
       response_format: { type: 'json_object' },
       max_tokens: config.maxTokens,
-      temperature: config.temperature
+      temperature: config.temperature,
+      ...getDeepSeekChatReasoningFields({
+        providerType: this.providerType,
+        model: this.model,
+        reasoningEffort: this.reasoningEffort
+      })
     };
   }
 

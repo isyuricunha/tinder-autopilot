@@ -13,11 +13,29 @@ const {
   getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
+  getDeepSeekChatReasoningFields,
   isAiChatLengthStopReason,
   normalizeProviderMessages,
   supportsNativeJsonResponseFormat
 } = require('../src/misc/ai-chat-provider');
 const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
+
+test('DeepSeek V4 reasoning survives Chat Completions serialization', () => {
+  const providerType = AI_PROVIDER_TYPES.openAiCompatible;
+  for (const model of ['deepseek-v4-flash', 'deepseek-flash', 'deepseek/deepseek-v4.1-flash']) {
+    const body = {
+      model,
+      max_tokens: 128,
+      ...getDeepSeekChatReasoningFields({ providerType, model, reasoningEffort: 'low' })
+    };
+    assert.deepEqual(JSON.parse(buildAiChatRequestOptions({ body, providerType }).body), {
+      model, max_tokens: 128, reasoning_effort: 'low'
+    });
+  }
+  assert.deepEqual(getDeepSeekChatReasoningFields({
+    providerType, model: 'qwen3.6-35b', reasoningEffort: 'low'
+  }), {});
+});
 
 test('buildAiChatRequestOptions keeps OpenAI-compatible providers unchanged', () => {
   const body = {

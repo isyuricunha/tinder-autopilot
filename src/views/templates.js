@@ -750,7 +750,7 @@ const createSwipeSettings = () =>
           ]
         }),
         createHelpText(
-          'Controls profile analysis prompt depth and token budget for the profile filter.'
+          'Sets the profile filter response budget. For DeepSeek V4 over OpenAI-Compatible, it also sends the selected reasoning effort.'
         )
       ]
     }),

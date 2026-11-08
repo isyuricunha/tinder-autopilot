@@ -57,6 +57,14 @@ const clampAiChatMaxTokens = (providerType, maxTokens) => {
 const supportsNativeJsonResponseFormat = (providerType = DEFAULT_AI_PROVIDER_TYPE) =>
   Boolean(getAiChatProviderCapabilities(providerType).nativeJsonResponseFormat);
 
+const getDeepSeekChatReasoningFields = ({ providerType, model, reasoningEffort }) => {
+  if (normalizeAiProviderType(providerType) !== AI_PROVIDER_TYPES.openAiCompatible) return {};
+  const isDeepSeekV4 = /(?:^|\/)deepseek-(?:flash|v4(?:\.1)?-(?:flash|pro))(?=$|[-:])/i
+    .test(String(model || '').trim());
+  if (!isDeepSeekV4) return {};
+  return { reasoning_effort: reasoningEffort };
+};
+
 const isAnthropicProvider = (providerType) =>
   normalizeAiProviderType(providerType) === AI_PROVIDER_TYPES.anthropic;
 
@@ -304,6 +312,7 @@ module.exports = {
   getAiChatProviderCapabilities,
   getAiChatResponseContent,
   getAiChatStopReason,
+  getDeepSeekChatReasoningFields,
   isAiChatLengthStopReason,
   isAnthropicProvider,
   normalizeProviderMessages,
