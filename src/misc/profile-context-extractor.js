@@ -1,3 +1,5 @@
+const { isVisibleProfileElement } = require('./profile-identity');
+
 const ABOUT_ME_HEADINGS = ['About me', 'Sobre mim'];
 const LOOKING_FOR_HEADINGS = ['Looking for', 'Procurando', 'Buscando'];
 const ESSENTIALS_HEADINGS = ['Essentials', 'Essenciais'];
@@ -13,9 +15,13 @@ const GENDER_VALUES = [
   'agender',
   'woman',
   'man',
+  'female',
+  'male',
   'mulher',
   'homem'
 ];
+
+const GENDER_FIELD_SELECTOR = '[data-testid="gender"], .profileCard__gender, .gender';
 
 const LANGUAGE_WORDS = [
   'arabic',
@@ -63,8 +69,10 @@ const normalizeHeading = (heading) => normalizeProfileText(heading).toLowerCase(
 
 const findHeading = (root, headings) => {
   const acceptedHeadings = headings.map(normalizeHeading);
-  return getElements(root, 'h2,h3').find((heading) =>
-    acceptedHeadings.includes(normalizeHeading(heading.textContent))
+  return getElements(root, 'h2,h3').find(
+    (heading) =>
+      isVisibleProfileElement(heading) &&
+      acceptedHeadings.includes(normalizeHeading(heading.textContent))
   );
 };
 
@@ -163,6 +171,7 @@ const extractUnlabeledSection = (root, headings) => {
   if (!section) return [];
 
   return getElements(section, 'li')
+    .filter(isVisibleProfileElement)
     .map((item) => removeSectionNoise(getElementText(item)))
     .filter(Boolean);
 };
@@ -186,7 +195,11 @@ const extractEssentials = (root) => {
     essentials,
     distance: null,
     occupation: null,
-    gender: null,
+    gender:
+      getElements(root, GENDER_FIELD_SELECTOR)
+        .filter(isVisibleProfileElement)
+        .map(getElementText)
+        .find(isGenderText) || null,
     languages: []
   };
 
@@ -232,38 +245,26 @@ const hasValues = (value) => {
   return Boolean(value);
 };
 
-const formatMap = (value) =>
-  Object.entries(value || {})
-    .map(([key, itemValue]) => `${key}=${itemValue}`)
-    .join('; ');
-
 const formatProfileContextForPrompt = (profileContext = {}, fallbacks = {}) => {
   const profile = profileContext || {};
-  const lines = [];
-  const addLine = (label, value) => {
-    if (!hasValues(value)) return;
-    const formattedValue = Array.isArray(value)
-      ? value.join(', ')
-      : typeof value === 'object'
-        ? formatMap(value)
-        : value;
-    if (formattedValue) lines.push(`${label}: ${formattedValue}`);
+  const fields = {
+    name: profile.name || fallbacks.name,
+    age: profile.age || fallbacks.age,
+    bio: profile.bio || fallbacks.bio,
+    lookingFor: profile.lookingFor,
+    gender: isGenderText(profile.gender) ? profile.gender : undefined,
+    distance: profile.distance,
+    occupation: profile.occupation,
+    languages: profile.languages,
+    photoCount: profile.photoCount,
+    basics: profile.basics,
+    lifestyle: profile.lifestyle,
+    interests: profile.interests
   };
 
-  addLine('Name', profile.name || fallbacks.name);
-  addLine('Age', profile.age || fallbacks.age);
-  addLine('Bio', profile.bio || fallbacks.bio || '(no bio)');
-  addLine('Looking for', profile.lookingFor);
-  addLine('Gender', profile.gender);
-  addLine('Distance', profile.distance);
-  addLine('Occupation', profile.occupation);
-  addLine('Languages', profile.languages);
-  addLine('Photo count', profile.photoCount);
-  addLine('Basics', profile.basics);
-  addLine('Lifestyle', profile.lifestyle);
-  addLine('Interests', profile.interests);
-
-  return `PROFILE:\n${lines.join('\n')}`;
+  return JSON.stringify(
+    Object.fromEntries(Object.entries(fields).filter(([, value]) => hasValues(value)))
+  );
 };
 
 module.exports = {

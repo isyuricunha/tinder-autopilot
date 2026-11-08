@@ -33,3 +33,10 @@ test('parseAiDecision defaults to swipe on empty or invalid responses', () => {
     { shouldSwipe: true, reason: 'Parse error' }
   );
 });
+
+test('parseAiDecision does not treat an unrecognized decision as a rejection', () => {
+  const result = parseAiDecision({
+    content: [{ type: 'text', text: '{"shouldSwipe":"unknown","reason":"gender not shown"}' }]
+  });
+  assert.deepEqual(result, { shouldSwipe: true, reason: 'Invalid decision' });
+});

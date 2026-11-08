@@ -861,9 +861,8 @@ const createAiSettings = () =>
         createTextbox({
           className: 'aiFilterRules',
           label: 'Profile Filter Rules',
-          placeholder: 'Ignore profiles: trans, man, male, couples, onlyfans, commercial...',
-          helpText: 'Describe your swipe preferences. The AI will use these rules.',
-          defaultValue: 'Ignore profiles that are: trans, man, male, couples, onlyfans, or commercial.',
+          placeholder: 'Write your own profile filter rules.',
+          helpText: 'Enter your swipe criteria before enabling the AI Profile Filter.',
           textareaSize: 'large'
         }),
         createSelectCard({

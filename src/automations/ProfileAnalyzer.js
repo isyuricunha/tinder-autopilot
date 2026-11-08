@@ -9,7 +9,7 @@ import { extractProfileContext, parseProfileDistance } from '../misc/profile-con
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
 import { isAiProfileFilterFailure } from '../misc/ai-profile-filter-result';
 import { PROFILE_CHECK_ACTIONS } from '../misc/profile-check-result';
-import { getActiveProfileCard } from '../misc/profile-identity';
+import { getActiveProfileCard, getActiveProfileSurface } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
 import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
 import { getCheckboxValue } from '../views/toggle-control';
@@ -629,54 +629,12 @@ class ProfileAnalyzer {
 
   getProfileContext() {
     try {
-      return extractProfileContext(document);
+      const surface = getActiveProfileSurface(document);
+      const profile = extractProfileContext(surface);
+      return surface === document ? { ...profile, gender: null } : profile;
     } catch (_error) {
       return {};
     }
-  }
-
-  getGenderIdentity(profileContext = this.getProfileContext()) {
-    if (profileContext.gender) {
-      return profileContext.gender.toLowerCase().trim();
-    }
-
-    // Look for gender/identity information in profile essentials
-    const genderSelectors = [
-      '[data-testid="gender"]',
-      '.profileCard__gender',
-      '.gender',
-      '[class*="gender"]',
-      '[class*="identity"]'
-    ];
-
-    for (const selector of genderSelectors) {
-      const genderElement = document.querySelector(selector);
-      if (genderElement && genderElement.textContent) {
-        return genderElement.textContent.toLowerCase().trim();
-      }
-    }
-
-    // Fallback: look in profile text for common gender identifiers
-    const profileText = (this.getBioText() || '').toLowerCase();
-    const genderKeywords = [
-      'trans woman',
-      'trans man',
-      'non-binary',
-      'genderfluid',
-      'agender',
-      'woman',
-      'man',
-      'mulher',
-      'homem'
-    ];
-
-    for (const keyword of genderKeywords) {
-      if (profileText.includes(keyword)) {
-        return keyword;
-      }
-    }
-
-    return null;
   }
 
   getProfileContextForAI() {
@@ -688,7 +646,6 @@ class ProfileAnalyzer {
       name: profileContext.name || this.getProfileName(),
       age: profileContext.age || this.getAge(profileContext),
       bio: profileContext.bio || this.getBioText() || '',
-      gender: profileContext.gender || this.getGenderIdentity(profileContext),
       distance:
         profileContext.distance ||
         (fallbackDistance ? `${fallbackDistance.value} ${fallbackDistance.unit}` : null),
@@ -722,10 +679,9 @@ class ProfileAnalyzer {
 
     // Check gender filtering
     if (this.isGenderFilterEnabled()) {
-      const genderIdentity = this.getGenderIdentity(profileContext);
       this.genderFilter = this.loadGenderFilter();
 
-      if (isGenderBlocked(genderIdentity, this.genderFilter)) {
+      if (isGenderBlocked(profileContext.gender, this.genderFilter)) {
         return true;
       }
     }

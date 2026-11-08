@@ -8,6 +8,9 @@ const parseAiDecision = (data) => {
 
   try {
     const parsed = JSON.parse(content);
+    if (parsed?.shouldSwipe !== 'yes' && parsed?.shouldSwipe !== 'no') {
+      return { shouldSwipe: true, reason: 'Invalid decision' };
+    }
     const shouldSwipe = parsed.shouldSwipe === 'yes';
     const reason = parsed.reason || `confidence: ${parsed.confidence || '?'}`;
 
