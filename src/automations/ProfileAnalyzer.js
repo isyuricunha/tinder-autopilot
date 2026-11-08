@@ -12,7 +12,11 @@ import { PROFILE_CHECK_ACTIONS } from '../misc/profile-check-result';
 import { SWIPE_PHASES } from '../misc/swipe-progress';
 import { getActiveProfileCard, getActiveProfileSurface } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
-import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
+import {
+  findProfileCloseControl,
+  isProfileModalOpen,
+  waitForProfileClose
+} from '../misc/profile-modal-state';
 import { getCheckboxValue } from '../views/toggle-control';
 import AIProfileFilter from './AIProfileFilter';
 
@@ -389,18 +393,13 @@ class ProfileAnalyzer {
 
   // Wait for modal to actually close
   async waitForModalClose(timeout = 2000) {
-    const startTime = Date.now();
-
-    while (this.isProfileModalOpen()) {
-      if (Date.now() - startTime >= timeout) {
-        logger('⚠️ Profile is still open after close timeout');
-        return false;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-
-    debugLog('Profile confirmed closed');
-    return true;
+    const closed = await waitForProfileClose({
+      root: document.querySelector('#main-content')?.parentElement || document.body,
+      isOpen: () => this.isProfileModalOpen(),
+      timeout
+    });
+    if (!closed) logger('⚠️ Profile is still open after close timeout');
+    return closed;
   }
   // Wait for profile modal to open and load
   async waitForProfileModal(maxWait = 2000) {
@@ -736,7 +735,6 @@ class ProfileAnalyzer {
         onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
         await this.waitForModalClose(1500);
-        await new Promise((resolve) => setTimeout(resolve, 300));
         if (isCancelled()) return { action: stop };
       }
 
@@ -778,11 +776,8 @@ class ProfileAnalyzer {
       }
 
       onPhase(SWIPE_PHASES.closingProfile);
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      if (isCancelled()) return { action: stop };
       this.closeProfile();
       await this.waitForModalClose(2000);
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
       return { action, reason: reason || 'Passed enabled profile filters' };
     } catch (error) {

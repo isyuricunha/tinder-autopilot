@@ -5,7 +5,8 @@ const path = require('node:path');
 const {
   findProfileCloseControl,
   isNavigationBackControl,
-  isProfileModalOpen
+  isProfileModalOpen,
+  waitForProfileClose
 } = require('../src/misc/profile-modal-state');
 
 class FakeElement {
@@ -149,4 +150,40 @@ test('open recs profile is still detected as an open profile modal', () => {
 
   assert.equal(isProfileModalOpen(root, { pathname: '/app/recs', search: '' }), true);
   assert.equal(findProfileCloseControl(root).getAttribute('data-testid'), 'profileBackButton');
+});
+
+test('hidden profile controls and content do not keep the modal open', () => {
+  const root = loadFixture('tinder-html/tinder-open-profile-with-gender.html');
+  const hiddenParent = new FakeElement('div', { 'aria-hidden': 'true' });
+  [...root.profileBackButtons, ...root.profileContentElements, ...root.buttons].forEach((element) => {
+    element.parentElement = hiddenParent;
+  });
+  assert.equal(isProfileModalOpen(root, { pathname: '/app/recs' }), false);
+  assert.equal(findProfileCloseControl(root), null);
+});
+
+test('a DOM update confirms close before the timer and disconnects the observer', async () => {
+  let open = true;
+  let onMutation;
+  let disconnected = false;
+  const Observer = class {
+    constructor(callback) { onMutation = callback; }
+    observe() {}
+    disconnect() { disconnected = true; }
+  };
+  const close = waitForProfileClose({ root: {}, isOpen: () => open, timeout: 5000, Observer });
+  open = false;
+  onMutation();
+  assert.equal(await close, true);
+  assert.equal(disconnected, true);
+});
+
+test('a still-open profile resolves false when the observer deadline expires', async () => {
+  let disconnected = false;
+  const Observer = class {
+    observe() {}
+    disconnect() { disconnected = true; }
+  };
+  assert.equal(await waitForProfileClose({ root: {}, isOpen: () => true, timeout: 0, Observer }), false);
+  assert.equal(disconnected, true);
 });

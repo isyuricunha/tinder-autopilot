@@ -1,4 +1,5 @@
 const { normalizeDomText } = require('./tinder-dom-detectors');
+const { isVisibleProfileElement } = require('./profile-identity');
 
 const getElements = (root, selector) => {
   try {
@@ -27,15 +28,8 @@ const getControlText = (element) =>
     .filter(Boolean)
     .join(' ');
 
-const isVisibleElement = (element) => {
-  if (!element || element.disabled) return false;
-  if (element.getAttribute?.('aria-hidden') === 'true') return false;
-  if (element.offsetParent === null) return false;
-  return true;
-};
-
 const isProfileBackButton = (element) =>
-  isVisibleElement(element) && element.getAttribute?.('data-testid') === 'profileBackButton';
+  isVisibleProfileElement(element) && element.getAttribute?.('data-testid') === 'profileBackButton';
 
 const isNavigationBackControl = (element) => {
   const text = getControlText(element);
@@ -43,7 +37,7 @@ const isNavigationBackControl = (element) => {
 };
 
 const isProfileCloseControl = (element) => {
-  if (!isVisibleElement(element) || isNavigationBackControl(element)) return false;
+  if (!isVisibleProfileElement(element) || isNavigationBackControl(element)) return false;
   if (isProfileBackButton(element)) return true;
 
   const text = getControlText(element);
@@ -56,8 +50,7 @@ const isProfileCloseControl = (element) => {
 };
 
 const findProfileCloseControl = (root) =>
-  [getFirstElement(root, '[data-testid="profileBackButton"]')]
-    .find(isProfileBackButton) ||
+  getElements(root, '[data-testid="profileBackButton"]').find(isProfileBackButton) ||
   getElements(root, 'button, [role="button"]').find(isProfileCloseControl) ||
   null;
 
@@ -71,7 +64,7 @@ const hasExpandedProfileContent = (root) =>
       '.Pos\\(r\\)--ml.Z\\(1\\).Bgc\\(\\$c-ds-background-primary\\).Ov\\(h\\).Expand.profileContent'
     ].join(',')
   ).some((element) => {
-    if (!isVisibleElement(element)) return false;
+    if (!isVisibleProfileElement(element)) return false;
 
     const classText = getClassText(element);
     const hasProfileClass = classText.includes('profileContent');
@@ -95,11 +88,33 @@ const isProfileLocation = (locationValue) => {
 
 const isProfileModalOpen = (root, locationValue) =>
   Boolean(
-    isProfileBackButton(getFirstElement(root, '[data-testid="profileBackButton"]')) ||
+    getElements(root, '[data-testid="profileBackButton"]').some(isProfileBackButton) ||
     hasExpandedProfileContent(root) ||
     hasHiddenCardStack(root) ||
     isProfileLocation(locationValue)
   );
+
+const waitForProfileClose = ({ root, isOpen, timeout, Observer = MutationObserver }) => {
+  if (!isOpen()) return Promise.resolve(true);
+
+  return new Promise((resolve) => {
+    const finish = (closed) => {
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve(closed);
+    };
+    const observer = new Observer(() => {
+      if (!isOpen()) finish(true);
+    });
+    observer.observe(root, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['aria-hidden', 'inert', 'hidden', 'class', 'style']
+    });
+    const timer = setTimeout(() => finish(!isOpen()), timeout);
+  });
+};
 
 module.exports = {
   findProfileCloseControl,
@@ -107,5 +122,6 @@ module.exports = {
   hasExpandedProfileContent,
   isNavigationBackControl,
   isProfileCloseControl,
-  isProfileModalOpen
+  isProfileModalOpen,
+  waitForProfileClose
 };
