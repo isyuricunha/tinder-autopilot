@@ -1,11 +1,11 @@
 const KEYBOARD_SHORTCUT_EVENT_TYPES = ['keydown', 'keyup'];
 
 const getKeyboardShortcutTarget = ({
-  activeElement,
   body,
+  activeCard,
   documentElement,
   documentNode
-}) => activeElement || body || documentElement || documentNode || null;
+}) => body || activeCard || documentElement || documentNode || null;
 
 const buildKeyboardShortcutEventInit = ({ key, keyCode, view }) => ({
   key,

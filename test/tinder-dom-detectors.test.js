@@ -26,6 +26,10 @@ class FakeElement {
     return this.attributes.class || '';
   }
 
+  get classList() {
+    return { contains: (name) => this.className.split(/\s+/).includes(name) };
+  }
+
   getAttribute(name) {
     return this.attributes[name] || null;
   }
@@ -149,6 +153,33 @@ test('ignores action buttons inside hidden Tinder panels', () => {
   };
 
   assert.equal(findLikeButton(root), null);
+});
+
+test('prefers native gamepad buttons over other controls with the same label', () => {
+  const root = new HtmlRoot(`
+    <button>Like</button>
+    <button>Pass</button>
+    <button class="gamepad-button Bgc($c-ds-background-gamepad-sparks-nope-default)">Não</button>
+    <button class="gamepad-button Bgc($c-ds-background-gamepad-sparks-like-default)">Curtir</button>
+  `);
+
+  assert.equal(findLikeButton(root).textContent, 'Curtir');
+  assert.equal(findDislikeButton(root).textContent, 'Não');
+});
+
+test('resolves explicit swipe labels and skips unrelated or disabled controls', () => {
+  const root = new HtmlRoot(`
+    <button>Change password</button>
+    <button>Likes You</button>
+    <button class="gamepad-button" aria-label="Swipe Right" aria-disabled="true"></button>
+    <button aria-label="Swipe Right"></button>
+    <button data-testid="gamepad-dislike-button"></button>
+  `);
+
+  assert.equal(findLikeButton(root).getAttribute('aria-disabled'), null);
+  assert.equal(findDislikeButton(root).getAttribute('data-testid'), 'gamepad-dislike-button');
+  assert.equal(findLikeButton(new HtmlRoot('<button>Likes You</button>')), null);
+  assert.equal(findDislikeButton(new HtmlRoot('<button>Change password</button>')), null);
 });
 
 test('ignores Autopilot sidebar controls when finding Tinder action buttons', () => {

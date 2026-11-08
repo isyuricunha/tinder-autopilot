@@ -10,23 +10,23 @@ test('keyboard shortcut events use a single keydown and keyup sequence', () => {
   assert.deepEqual(KEYBOARD_SHORTCUT_EVENT_TYPES, ['keydown', 'keyup']);
 });
 
-test('getKeyboardShortcutTarget prefers the focused element and falls back safely', () => {
+test('Tinder shortcuts target the body even when an extension control has focus', () => {
   const activeElement = { id: 'active' };
   const body = { id: 'body' };
+  const activeCard = { id: 'card' };
   const documentElement = { id: 'html' };
   const documentNode = { id: 'document' };
 
   assert.equal(
-    getKeyboardShortcutTarget({ activeElement, body, documentElement, documentNode }),
-    activeElement
-  );
-  assert.equal(
-    getKeyboardShortcutTarget({ activeElement: null, body, documentElement, documentNode }),
+    getKeyboardShortcutTarget({ activeElement, body, activeCard, documentElement, documentNode }),
     body
   );
   assert.equal(
+    getKeyboardShortcutTarget({ activeCard, documentElement, documentNode }),
+    activeCard
+  );
+  assert.equal(
     getKeyboardShortcutTarget({
-      activeElement: null,
       body: null,
       documentElement,
       documentNode
@@ -35,7 +35,6 @@ test('getKeyboardShortcutTarget prefers the focused element and falls back safel
   );
   assert.equal(
     getKeyboardShortcutTarget({
-      activeElement: null,
       body: null,
       documentElement: null,
       documentNode

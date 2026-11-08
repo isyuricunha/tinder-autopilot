@@ -1,14 +1,16 @@
 const ACTION_CONFIG = {
   like: {
-    includeText: ['like'],
-    includeClasses: ['sparks-like'],
+    includeText: ['like', 'curtir', 'swipe right'],
+    includeClasses: ['sparks-like', 'gamepad__button--like'],
     excludeText: ['super like', 'first impressions', 'boost', 'nope', 'rewind'],
     excludeClasses: ['sparks-super-like', 'sparks-boost', 'sparks-nope', 'sparks-rewind']
   },
   nope: {
-    includeText: ['nope', 'pass', 'dislike'],
-    includeClasses: ['sparks-nope'],
-    excludeText: ['like', 'super like', 'boost', 'rewind'],
+    includeText: [
+      'nope', 'pass', 'dislike', 'não', 'nao', 'recusar', 'não curtir', 'nao curtir', 'swipe left'
+    ],
+    includeClasses: ['sparks-nope', 'gamepad__button--dislike'],
+    excludeText: ['super like', 'boost', 'rewind'],
     excludeClasses: ['sparks-like', 'sparks-super-like', 'sparks-boost', 'sparks-rewind']
   },
   superLike: {
@@ -46,7 +48,7 @@ const getClassText = (element) => {
   return className?.baseVal || '';
 };
 
-const getControlText = (element) =>
+const getControlLabels = (element) =>
   [
     element?.textContent,
     element?.getAttribute?.('aria-label'),
@@ -54,8 +56,9 @@ const getControlText = (element) =>
     element?.getAttribute?.('data-testid')
   ]
     .map(normalizeDomText)
-    .filter(Boolean)
-    .join(' ');
+    .filter(Boolean);
+
+const getControlText = (element) => getControlLabels(element).join(' ');
 
 const isVisibleElement = (element) => {
   if (!element || element.disabled) return false;
@@ -99,22 +102,34 @@ const hasAutopilotActionAncestor = (element) => {
 const isActionButton = (button, action) => {
   const config = ACTION_CONFIG[action];
   if (!config || !isVisibleElement(button)) return false;
+  if (button.getAttribute?.('aria-disabled') === 'true') return false;
   if (hasHiddenActionAncestor(button)) return false;
   if (hasAutopilotActionAncestor(button)) return false;
+  if (button.getClientRects?.().length === 0) return false;
+  const style = button.ownerDocument?.defaultView?.getComputedStyle(button);
+  if (style?.visibility === 'hidden') return false;
 
-  const text = getControlText(button);
+  const labels = getControlLabels(button);
+  const text = labels.join(' ');
   const classText = getClassText(button).toLowerCase();
 
   if (textIncludesAny(text, config.excludeText)) return false;
   if (classIncludesAny(classText, config.excludeClasses)) return false;
 
-  return (
-    textIncludesAny(text, config.includeText) || classIncludesAny(classText, config.includeClasses)
-  );
+  if (classIncludesAny(classText, config.includeClasses)) return true;
+  if (action === 'superLike') return textIncludesAny(text, config.includeText);
+
+  return labels.some((label) => {
+    const actionLabel = label.replace(/^gamepad-/, '').replace(/-button$/, '').replace(/-/g, ' ');
+    return config.includeText.includes(actionLabel);
+  });
 };
 
-const findActionButton = (root, action) =>
-  getActionCandidates(root).find((button) => isActionButton(button, action)) || null;
+const findActionButton = (root, action) => {
+  const candidates = getActionCandidates(root).filter((button) => isActionButton(button, action));
+  const gamepadButton = candidates.find((button) => button.classList?.contains('gamepad-button'));
+  return gamepadButton || candidates[0] || null;
+};
 
 const findLikeButton = (root = document) => findActionButton(root, 'like');
 
