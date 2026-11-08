@@ -12,6 +12,7 @@ import {
 } from './templates';
 import { SIDEBAR_LAYOUT_STYLES } from './sidebar-layout-styles';
 import { SIDEBAR_THEME } from './sidebar-theme';
+import { formatActivityLog, updateActivityActions } from './sidebar-activity-log';
 
 const ACTIVE_PANEL_SETTING = 'sidebarActivePanel';
 
@@ -33,14 +34,49 @@ const createActivityHeading = (title, buttonId, buttonLabel) =>
     })
   ]);
 
+const createActivityLog = () => {
+  const log = createElement('ol', {
+    className: 'ta-activity-log',
+    attributes: { role: 'list', 'aria-label': 'Recent activity' }
+  });
+  const createAction = (id, text) => createElement('button', {
+    id, text, attributes: { type: 'button', 'data-activity-action': '' }
+  });
+  const copy = createAction('copyActivityLog', 'Copy log');
+  const clear = createAction('clearActivityLog', 'Clear log');
+  const feedback = createElement('p', {
+    className: 'ta-activity-feedback', attributes: { role: 'status' }
+  });
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(formatActivityLog(log));
+      feedback.textContent = 'Activity log copied.';
+    } catch {
+      feedback.textContent = 'Clipboard unavailable. Select the log to copy it manually.';
+    }
+  });
+  clear.addEventListener('click', () => {
+    log.replaceChildren();
+    updateActivityActions(log);
+    feedback.textContent = 'Activity log cleared.';
+  });
+
+  const section = createElement('div', {}, [
+    createElement('div', { className: 'ta-activity-heading' }, [
+      createElement('h4', { text: 'Activity log' }),
+      createElement('div', { className: 'ta-activity-actions' }, [copy, clear])
+    ]),
+    feedback,
+    log
+  ]);
+  updateActivityActions(log);
+  return section;
+};
+
 const createActivity = () => [
   createActivityHeading('Swipe totals', 'resetCounters', 'Reset totals'),
   createCounterLogs(),
-  createActivityHeading('Activity log', 'clearActivityLog', 'Clear log'),
-  createElement('ol', {
-    className: 'ta-activity-log',
-    attributes: { role: 'list', 'aria-label': 'Recent activity' }
-  })
+  createActivityLog()
 ];
 
 const createSidebarNavigation = () => {

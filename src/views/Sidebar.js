@@ -269,13 +269,6 @@ class Sidebar {
       });
     }
 
-    const clearActivityLogButton = document.getElementById('clearActivityLog');
-    if (clearActivityLogButton) {
-      this.addTrackedListener(clearActivityLogButton, 'click', () => {
-        this.clearActivityLog();
-      });
-    }
-
     // Auto unmatch
     waitUntilElementExists('img[alt="No Reason"]', () => {
       document.querySelector('ul li:last-of-type button').click();
@@ -841,17 +834,6 @@ class Sidebar {
 
   initializeCounters = () => {
     renderCounters();
-  };
-
-  clearActivityLog = () => {
-    const activityLog = document.querySelector('#infoBanner .ta-activity-log');
-    if (!activityLog) return false;
-
-    while (activityLog.firstChild) {
-      activityLog.removeChild(activityLog.firstChild);
-    }
-
-    return true;
   };
 
   updateOperationalStatusChip = ({ id, status }) => {

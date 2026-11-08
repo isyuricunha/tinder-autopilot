@@ -181,6 +181,13 @@ const SIDEBAR_LAYOUT_STYLES = `
     font-size: 13px;
   }
 
+  #infoBanner .ta-activity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
   #infoBanner .ta-activity-heading button {
     min-height: 36px;
     padding: 4px 10px;
@@ -192,9 +199,24 @@ const SIDEBAR_LAYOUT_STYLES = `
     font: 600 12px/1.25 system-ui, sans-serif;
   }
 
-  #infoBanner .ta-activity-heading button:hover {
+  #infoBanner .ta-activity-heading button:hover:not(:disabled) {
     border-color: ${theme.borderStrong};
     color: ${theme.text};
+  }
+
+  #infoBanner .ta-activity-heading button:disabled {
+    cursor: default;
+    opacity: .55;
+  }
+
+  #infoBanner .ta-activity-feedback {
+    margin: 4px 12px;
+    color: ${theme.textMuted};
+    font-size: 12px;
+  }
+
+  #infoBanner .ta-activity-feedback:empty {
+    margin: 0;
   }
 
   #infoBanner .ta-activity-log {

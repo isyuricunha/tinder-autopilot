@@ -5,6 +5,28 @@ const createActivityElement = (doc, tag, className, text) => {
   return element;
 };
 
+const updateActivityActions = (log) => {
+  const hasEntries = log.childElementCount > 0;
+  const controls = log.parentElement?.querySelectorAll('[data-activity-action]') || [];
+  controls.forEach((button) => { button.disabled = !hasEntries; });
+};
+
+const formatActivityLog = (log) =>
+  Array.from(log.children, (row) => {
+    const time = row.querySelector('time').textContent;
+    const message = row.querySelector('.ta-activity-message');
+    if (message) return `${time}  ${message.textContent}`;
+
+    const duration = row.querySelector('.ta-activity-duration').textContent;
+    const lines = [`${time}  ${row.dataset.outcome} · ${duration}`];
+    const reason = row.querySelector('.ta-activity-reason');
+    if (reason) lines.push(`  ${reason.textContent}`);
+    row.querySelectorAll('.ta-activity-timings dt').forEach((label) => {
+      lines.push(`  ${label.textContent}: ${label.nextElementSibling.textContent}`);
+    });
+    return lines.join('\n');
+  }).join('\n\n');
+
 const appendActivityEntry = (log, entry, now = new Date()) => {
   const doc = log.ownerDocument;
   const row = createActivityElement(doc, 'li', 'ta-activity-entry');
@@ -49,6 +71,7 @@ const appendActivityEntry = (log, entry, now = new Date()) => {
 
   log.prepend(row);
   if (log.children.length > 50) log.lastElementChild.remove();
+  updateActivityActions(log);
 };
 
-module.exports = { appendActivityEntry };
+module.exports = { appendActivityEntry, formatActivityLog, updateActivityActions };

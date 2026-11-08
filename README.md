@@ -59,7 +59,7 @@ In **Messages**, expand **Test Replies**. Use **Preview Prompt** to inspect what
 | The provider rejects a request | Verify the provider, API key, and model in the corresponding settings. For **OpenAI-Compatible**, also check the base URL. |
 | Super Likes are unavailable | Check the selected strategy, the extension's daily cap, and the Super Likes available in your Tinder account. |
 
-When reporting an issue, include your browser version, the last visible phase, and the relevant Activity lines. Remove profile names, message contents, credentials, and account identifiers before sharing.
+When reporting an issue, include your browser version, the last visible phase, and the relevant Activity lines. **Copy log** includes the timing details for each entry. Remove profile names, message contents, credentials, and account identifiers before sharing.
 
 ## Data and account access
 
