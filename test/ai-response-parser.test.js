@@ -27,6 +27,14 @@ test('parseAiDecision accepts Anthropic text content responses', () => {
   assert.deepEqual(result, { shouldSwipe: false, reason: 'banned term' });
 });
 
+test('an approval without a reason or numeric confidence pauses the filter', () => {
+  for (const content of ['{"shouldSwipe":"yes"}', '{"shouldSwipe":"yes","reason":" ","confidence":"?"}']) {
+    const result = parseAiDecision({ choices: [{ message: { content } }] });
+    assert.equal(isAiProfileFilterFailure(result), true);
+    assert.equal(result.reason, 'AI decision omitted its reason');
+  }
+});
+
 test('empty and malformed decisions pause the filter', () => {
   assert.equal(isAiProfileFilterFailure(parseAiDecision({})), true);
   const malformed = parseAiDecision({ choices: [{ message: { content: 'not json' } }] });

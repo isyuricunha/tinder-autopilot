@@ -20,11 +20,14 @@ const parseAiDecision = (data) => {
       return createAiProfileFilterFailure('Invalid AI decision');
     }
     const shouldSwipe = parsed.shouldSwipe === 'yes';
-    const reason = typeof parsed.reason === 'string' && parsed.reason.trim()
-      ? parsed.reason.trim()
-      : `confidence: ${Number.isFinite(parsed.confidence) ? parsed.confidence : '?'}`;
+    const reason = typeof parsed.reason === 'string' ? parsed.reason.trim() : '';
+    if (reason) return { shouldSwipe, reason };
 
-    return { shouldSwipe, reason };
+    if (Number.isFinite(parsed.confidence)) {
+      return { shouldSwipe, reason: `confidence: ${parsed.confidence}` };
+    }
+
+    return createAiProfileFilterFailure('AI decision omitted its reason');
   } catch (error) {
     return createAiProfileFilterFailure('AI response was not valid JSON');
   }
