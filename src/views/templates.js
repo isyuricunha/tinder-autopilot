@@ -882,11 +882,11 @@ const createMessageSettings = () =>
       title: 'Auto Message',
       defaultOpen: false,
       children: [
-        createCheckbox('tinderAutopilotMessage', 'Auto message'),
+        createCheckbox('tinderAutopilotMessage', 'Auto message', 'Send an opening message only to matches with an empty conversation.'),
         createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
         createTextbox({
           label: 'Auto Message Template',
-          helpText: 'The message to send to matches.',
+          helpText: 'Use {name} to insert the match’s display name.',
           placeholder: 'Your message to send',
           className: 'messageToSend',
           defaultValue: getDefaultMessage()
@@ -935,7 +935,7 @@ const createMessageSettings = () =>
         createTextbox({
           label: 'Shareable Location Info',
           helpText:
-            'Always sent to the AI. The prompt tells it to share this only when the match asks about location.',
+            'Sent to the provider only when the latest match message asks about location.',
           placeholder: 'Examples: city/state, neighborhood, region, meeting area, address...',
           className: 'aiReplyAddressInfo',
           defaultValue: DEFAULT_AI_REPLY_ADDRESS_INFO

@@ -43,6 +43,8 @@ The profile filter sends your rules separately from the profile fields. It uses 
 
 In **Messages**, expand **Test Replies**. Use **Preview Prompt** to inspect what would be sent to the provider. **Test Reply** generates a reply without sending it on Tinder. **Review Real Match** uses an eligible conversation to generate a preview. **Reply once** and **Continuous** can send messages to real matches.
 
+**Auto Message** sends your template to matches with empty conversations. The `{name}` placeholder keeps the match's display name as written. Run Auto Message or model-assisted replies one at a time. Turning a mode off stops new sends and lets requests already in progress finish.
+
 ## Troubleshooting
 
 | Symptom | What to check |

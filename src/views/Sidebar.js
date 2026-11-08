@@ -300,7 +300,14 @@ class Sidebar {
 
     this.bindCheckbox(this.swiper.selector, this.swiper.start, this.swiper.stop);
 
-    this.bindCheckbox(this.messenger.selector, this.messenger.start, this.messenger.stop);
+    this.bindCheckbox(this.messenger.selector, () => {
+      if (this.aiMessageResponder.isBusy) {
+        setToggleControlState(this.messenger.selector, false);
+        logger('Stop AI replies and wait for the current request before starting Auto Message');
+        return;
+      }
+      this.messenger.start();
+    }, this.messenger.stop);
 
     this.bindAiReplyModeSelector();
 
@@ -1393,6 +1400,11 @@ class Sidebar {
     if (!canStartAiReplyMode({ currentMode, requestedMode: nextMode })) {
       logger('Stop the current AI reply mode before starting another');
       this.updateAiReplyModeSelector(currentMode);
+      return;
+    }
+
+    if (this.messenger.isBusy) {
+      logger('Stop Auto Message and wait for the current request before starting AI replies');
       return;
     }
 

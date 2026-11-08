@@ -200,6 +200,7 @@ const reviewNextPendingAiReply = async ({
 
 const processAiReplyMatch = async ({
   apiKey = '',
+  canSend = () => true,
   generateReply = generateAiMessageReply,
   loadRawMessages,
   match,
@@ -258,6 +259,13 @@ const processAiReplyMatch = async ({
 
   if (typeof sendMessage !== 'function') {
     return createSkippedAiReplyMatchResult('Send function unavailable', {
+      matchId: context.matchId,
+      matchName: context.matchName
+    });
+  }
+
+  if (!canSend()) {
+    return createSkippedAiReplyMatchResult('Reply run stopped before send', {
       matchId: context.matchId,
       matchName: context.matchName
     });

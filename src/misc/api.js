@@ -34,20 +34,12 @@ const getMyProfile = () =>
     `https://api.gotinder.com/v2/profile?locale=en&include=account%2Cboost%2Ccontact_cards%2Cemail_settings%2Cinstagram%2Clikes%2Cnotifications%2Cplus_control%2Cproducts%2Cpurchase%2Creadreceipts%2Cswipenote%2Cspotify%2Csuper_likes%2Ctinder_u%2Ctravel%2Ctutorials%2Cuser`
   );
 
-const getRawMessagesForMatch = (match) =>
-  fetchResource(buildMatchMessagesUrl(match)).then((data) => get(data, 'data.messages', []));
-
-const getMessagesForMatch = (match) =>
-  getRawMessagesForMatch(match).then((messages) =>
-    // Normalize and immediately filter/release to avoid holding large data in memory
-    messages.map((r) =>
-      get(r, 'message', '')
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-zA-Z0-9]+/g, '-')
-        .replace('thanks', 'thank')
-    )
-  );
+const getRawMessagesForMatch = async (match) => {
+  const result = await fetchResource(buildMatchMessagesUrl(match));
+  const messages = result?.data?.messages;
+  if (!Array.isArray(messages)) throw new Error('Tinder returned an invalid message history');
+  return messages;
+};
 
 const getProfileData = () => {
   try {
@@ -90,7 +82,6 @@ export {
   fetchResource,
   sendMessageToMatch,
   getRawMessagesForMatch,
-  getMessagesForMatch,
   getMatches,
   getMyProfile
 };

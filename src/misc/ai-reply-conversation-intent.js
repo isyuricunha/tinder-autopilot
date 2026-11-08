@@ -29,6 +29,8 @@ const classifyAiReplyConversationIntent = (conversationTurns = []) => {
       /\b(?:de|da)\s+onde\s+(?:tu|vc|voce|você|ce|cê)\s+(?:e|é|eh)\b/,
       /\b(?:tu|vc|voce|você|ce|cê)\s+(?:e|é|eh)\s+(?:de|da)\s+onde\b/,
       /\b(?:qual|onde|aonde).{0,30}\b(?:cidade|bairro|regiao|região)\b/,
+      /\b(?:onde|aonde).{0,30}\b(?:encontrar|se ver|vamos nos ver)\b/,
+      /\bwhere\b.{0,35}\b(?:live|from|stay|meet)\b/,
       /\b(?:endereco|endereço)\b/
     ]),
     mentionsTiredSickColdBusyOrSleep: matchesAny(latestText, [

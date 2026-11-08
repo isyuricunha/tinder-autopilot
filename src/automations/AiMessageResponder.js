@@ -42,6 +42,12 @@ class AiMessageResponder {
 
   isRunning = false;
 
+  runTask = null;
+
+  get isBusy() {
+    return this.runTask !== null;
+  }
+
   isContinuousMode = false;
 
   activeSelector = this.selector;
@@ -68,9 +74,9 @@ class AiMessageResponder {
 
   startMode = ({ continuous }) => {
     const selector = continuous ? this.continuousSelector : this.selector;
-    if (this.isRunning) {
-      logger('AI message replies already running');
-      setToggleControlState(selector, false);
+    if (this.isBusy) {
+      logger('AI replies are still finishing the previous run');
+      if (!this.isRunning) this.emitModeChange('off');
       return;
     }
 
@@ -87,9 +93,11 @@ class AiMessageResponder {
 
     logger(continuous ? 'Starting continuous AI message replies' : 'Starting AI message replies');
 
-    this.run().catch((error) => {
+    this.runTask = this.run().catch((error) => {
       logger(` Error running AI message replies: ${error.message}`);
       this.stop();
+    }).finally(() => {
+      this.runTask = null;
     });
   };
 
@@ -229,6 +237,7 @@ class AiMessageResponder {
     }
 
     const rawMessages = await getRawMessagesForMatch(matchId);
+    if (!this.isRunning) return null;
     this.checkedMessages += 1;
     logger(`AI checked ${this.checkedMessages}`);
 
@@ -252,6 +261,7 @@ class AiMessageResponder {
     const keySelection = await selectAiApiKeyForRequest({
       providerType: settings.providerType
     });
+    if (!this.isRunning) return null;
 
     const result = await processAiReplyMatch({
       apiKey: keySelection.apiKey,
@@ -260,6 +270,7 @@ class AiMessageResponder {
       match,
       profileData,
       rawMessages,
+      canSend: () => this.isRunning,
       sendMessage: sendMessageToMatch,
       settings
     });
@@ -268,7 +279,7 @@ class AiMessageResponder {
       selectedKey: keySelection.selectedKey
     });
 
-    if (this.isContinuousMode && pendingContext.status === 'pending') {
+    if (this.isContinuousMode && pendingContext.status === 'pending' && (this.isRunning || result.didSend)) {
       this.rememberContinuousResult(pendingContext, result);
     }
 
@@ -348,6 +359,7 @@ class AiMessageResponder {
 
         try {
           await randomDelay();
+          if (!this.isRunning) break;
           const result = await this.processMatch({ match, profileData, settings });
           if (result?.status === 'sent') {
             await this.waitAfterSentReply(settings);

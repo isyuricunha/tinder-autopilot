@@ -28,6 +28,23 @@ const match = {
   }
 };
 
+test('stopping while a reply is being generated prevents sending it', async () => {
+  let running = true;
+  const result = await processAiReplyMatch({
+    match,
+    profileData,
+    rawMessages: [{ from: 'person-1', message: 'Tudo bem?' }],
+    canSend: () => running,
+    generateReply: async () => {
+      running = false;
+      return { shouldSend: true, reply: 'Tudo bem!' };
+    },
+    sendMessage: () => assert.fail('stopped run attempted to send')
+  });
+  assert.equal(result.didSend, false);
+  assert.equal(result.reason, 'Reply run stopped before send');
+});
+
 test('AI reply flow extracts profile and match identifiers', () => {
   assert.equal(getCurrentUserId(profileData), 'user-1');
   assert.equal(getMatchId(match), 'match-1');
