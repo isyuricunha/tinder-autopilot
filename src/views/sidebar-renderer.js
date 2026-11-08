@@ -12,7 +12,7 @@ import {
 } from './templates';
 import { SIDEBAR_LAYOUT_STYLES } from './sidebar-layout-styles';
 import { SIDEBAR_THEME } from './sidebar-theme';
-import { formatActivityLog, updateActivityActions } from './sidebar-activity-log';
+import { formatActivityLog, updateActivityView } from './sidebar-activity-log';
 
 const ACTIVE_PANEL_SETTING = 'sidebarActivePanel';
 
@@ -40,12 +40,22 @@ const createActivityLog = () => {
     attributes: { role: 'list', 'aria-label': 'Recent activity' }
   });
   const createAction = (id, text) => createElement('button', {
-    id, text, attributes: { type: 'button', 'data-activity-action': '' }
+    id, text, attributes: { type: 'button' }
   });
   const copy = createAction('copyActivityLog', 'Copy log');
-  const clear = createAction('clearActivityLog', 'Clear log');
+  const clear = createAction('clearActivityLog', 'Clear all');
+  const filter = createElement('select', { id: 'activityFilter' }, [
+    ['all', 'All activity'],
+    ['liked', 'Likes'],
+    ['skipped', 'Skips'],
+    ['attention', 'Pauses and failed swipes']
+  ].map(([value, text]) => createElement('option', { text, attributes: { value } })));
   const feedback = createElement('p', {
     className: 'ta-activity-feedback', attributes: { role: 'status' }
+  });
+  filter.addEventListener('change', () => {
+    feedback.textContent = '';
+    updateActivityView(log);
   });
   copy.addEventListener('click', async () => {
     try {
@@ -57,7 +67,7 @@ const createActivityLog = () => {
   });
   clear.addEventListener('click', () => {
     log.replaceChildren();
-    updateActivityActions(log);
+    updateActivityView(log);
     feedback.textContent = 'Activity log cleared.';
   });
 
@@ -66,10 +76,19 @@ const createActivityLog = () => {
       createElement('h4', { text: 'Activity log' }),
       createElement('div', { className: 'ta-activity-actions' }, [copy, clear])
     ]),
+    createElement('label', { className: 'ta-activity-filter', attributes: { for: 'activityFilter' } }, [
+      createElement('span', { text: 'Show' }),
+      filter
+    ]),
     feedback,
+    createElement('p', {
+      className: 'ta-activity-empty-filter',
+      text: 'No activity matches this filter.',
+      attributes: { hidden: '', role: 'status' }
+    }),
     log
   ]);
-  updateActivityActions(log);
+  updateActivityView(log);
   return section;
 };
 

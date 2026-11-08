@@ -219,6 +219,34 @@ const SIDEBAR_LAYOUT_STYLES = `
     margin: 0;
   }
 
+  #infoBanner .ta-activity-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 12px 0;
+    color: ${theme.textMuted};
+    font-size: 12px;
+  }
+
+  #infoBanner .ta-activity-filter select {
+    min-width: 0;
+    min-height: 36px;
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid ${theme.border};
+    border-radius: 7px;
+    background: ${theme.surface};
+    color: ${theme.text};
+    font: inherit;
+  }
+
+  #infoBanner .ta-activity-empty-filter {
+    margin: 8px 12px;
+    padding: 8px 10px;
+    color: ${theme.textMuted};
+    font-size: 13px;
+  }
+
   #infoBanner .ta-activity-log {
     margin: 8px 12px;
     padding: 6px;
@@ -236,6 +264,14 @@ const SIDEBAR_LAYOUT_STYLES = `
     content: 'No activity yet.';
     padding: 4px 6px;
     color: ${theme.textMuted};
+  }
+
+  #infoBanner .ta-activity-empty-filter:not([hidden]) + .ta-activity-log {
+    display: none;
+  }
+
+  #infoBanner :is(.ta-activity-entry, .ta-activity-empty-filter)[hidden] {
+    display: none;
   }
 
   #infoBanner .ta-activity-entry {

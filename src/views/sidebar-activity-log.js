@@ -5,14 +5,33 @@ const createActivityElement = (doc, tag, className, text) => {
   return element;
 };
 
-const updateActivityActions = (log) => {
-  const hasEntries = log.childElementCount > 0;
-  const controls = log.parentElement?.querySelectorAll('[data-activity-action]') || [];
-  controls.forEach((button) => { button.disabled = !hasEntries; });
+const ACTIVITY_FILTERS = {
+  all: [],
+  liked: ['Liked', 'Super Liked'],
+  skipped: ['Skipped'],
+  attention: ['Paused', 'No swipe']
+};
+
+const updateActivityView = (log) => {
+  const section = log.parentElement;
+  const filter = section?.querySelector('#activityFilter');
+  if (!filter) return;
+
+  const outcomes = ACTIVITY_FILTERS[filter.value] || ACTIVITY_FILTERS.all;
+  let visible = 0;
+  Array.from(log.children).forEach((row) => {
+    const hidden = outcomes.length > 0 && !outcomes.includes(row.dataset.outcome);
+    if (row.hidden !== hidden) row.hidden = hidden;
+    if (!hidden) visible += 1;
+  });
+
+  section.querySelector('#copyActivityLog').disabled = visible === 0;
+  section.querySelector('#clearActivityLog').disabled = log.childElementCount === 0;
+  section.querySelector('.ta-activity-empty-filter').hidden = visible > 0 || log.childElementCount === 0;
 };
 
 const formatActivityLog = (log) =>
-  Array.from(log.children, (row) => {
+  Array.from(log.children).filter((row) => !row.hidden).map((row) => {
     const time = row.querySelector('time').textContent;
     const message = row.querySelector('.ta-activity-message');
     if (message) return `${time}  ${message.textContent}`;
@@ -71,7 +90,7 @@ const appendActivityEntry = (log, entry, now = new Date()) => {
 
   log.prepend(row);
   if (log.children.length > 50) log.lastElementChild.remove();
-  updateActivityActions(log);
+  updateActivityView(log);
 };
 
-module.exports = { appendActivityEntry, formatActivityLog, updateActivityActions };
+module.exports = { appendActivityEntry, formatActivityLog, updateActivityView };
