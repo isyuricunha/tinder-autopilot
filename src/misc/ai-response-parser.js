@@ -3,11 +3,11 @@ const {
   getAiChatStopReason,
   isAiChatLengthStopReason
 } = require('./ai-chat-provider');
-const { createAiProfileFilterFailure } = require('./ai-profile-filter-result');
+const { AI_PROFILE_FILTER_TRUNCATED, createAiProfileFilterFailure } = require('./ai-profile-filter-result');
 
 const parseAiDecision = (data) => {
   if (isAiChatLengthStopReason(getAiChatStopReason(data))) {
-    return createAiProfileFilterFailure('AI decision was truncated');
+    return createAiProfileFilterFailure('AI decision was truncated', AI_PROFILE_FILTER_TRUNCATED);
   }
   const content = getAiChatResponseContent(data);
   if (!content) {

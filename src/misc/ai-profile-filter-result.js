@@ -1,4 +1,5 @@
 const AI_PROFILE_FILTER_NEUTRAL = 'neutral';
+const AI_PROFILE_FILTER_TRUNCATED = 'truncated';
 
 const stripHtml = (value = '') =>
   String(value || '')
@@ -26,10 +27,11 @@ const summarizeAiProfileFilterHttpError = ({ status, body = '' } = {}) => {
   return `${status || 'unknown'} ${limitText(detail)}`;
 };
 
-const createAiProfileFilterFailure = (reason) => ({
+const createAiProfileFilterFailure = (reason, code) => ({
   isFailure: true,
   reason: String(reason || 'AI filter failed'),
-  shouldSwipe: AI_PROFILE_FILTER_NEUTRAL
+  shouldSwipe: AI_PROFILE_FILTER_NEUTRAL,
+  ...(code ? { code } : {})
 });
 
 const isAiProfileFilterFailure = (result) =>
@@ -37,6 +39,7 @@ const isAiProfileFilterFailure = (result) =>
 
 module.exports = {
   AI_PROFILE_FILTER_NEUTRAL,
+  AI_PROFILE_FILTER_TRUNCATED,
   createAiProfileFilterFailure,
   isAiProfileFilterFailure,
   summarizeAiProfileFilterHttpError

@@ -729,7 +729,7 @@ class Swiper {
     }
 
     // Profile passed all filters - try Super Like first (safely) then Like
-    if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
+    if (!profileCheck?.regularLikeOnly && this.superLiker?.pressSuperLike?.()) {
       this.setProgress(SWIPE_PHASES.confirmingSwipe);
       if (await this.waitForProfileAdvance(profileId)) {
         if (this.cycle) {

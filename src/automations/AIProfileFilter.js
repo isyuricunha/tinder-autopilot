@@ -2,6 +2,7 @@ import { logger } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import { fetchWithBackgroundFallback } from '../misc/background-fetch';
 import { parseAiDecision } from '../misc/ai-response-parser';
+import { retryTruncatedProfileDecision } from '../misc/ai-profile-filter-retry';
 import {
   createAiProfileFilterFailure,
   summarizeAiProfileFilterHttpError
@@ -83,9 +84,9 @@ class AIProfileFilter {
    * @param {string|null} params.name - The profile name
    * @param {Object|null} params.profile - Structured profile details extracted from the DOM
    * @param {string|null} params.imageBase64 - Optional screenshot base64
-   * @returns {Promise<{shouldSwipe: boolean, reason: string}>}
+   * @param {Function} params.isCancelled - Whether the swipe cycle has stopped
    */
-  async analyze({ bio, name, profile, imageBase64 }) {
+  async analyze({ bio, name, profile, imageBase64, isCancelled = () => false }) {
     this.apiUrl = this.loadApiUrl();
     this.model = this.loadModel();
     this.providerType = this.loadProviderType();
@@ -121,35 +122,15 @@ class AIProfileFilter {
         return createAiProfileFilterFailure('AI not configured');
       }
 
-      const response = await fetchWithBackgroundFallback(
-        requestUrl,
-        buildAiChatRequestOptions({
-          apiKey: this.apiKey,
-          body,
-          providerType: this.providerType
-        })
-      );
-
-      if (!response.ok) {
-        await markSelectedAiApiKeyResult({
-          selectedKey: keySelection.selectedKey,
-          status: response.status
-        });
-        const errorText = await response.text();
-        const errorSummary = summarizeAiProfileFilterHttpError({
-          body: errorText,
-          status: response.status
-        });
-        logger(`⚠️ AI API error: ${errorSummary}`);
-        return createAiProfileFilterFailure(`API error: ${errorSummary}`);
-      }
-
-      await markSelectedAiApiKeyResult({
-        selectedKey: keySelection.selectedKey,
-        status: response.status
+      return await retryTruncatedProfileDecision({
+        maxTokens: body.max_tokens,
+        isCancelled,
+        request: (maxTokens) => this.requestDecision(
+          requestUrl,
+          { ...body, max_tokens: maxTokens },
+          keySelection
+        )
       });
-      const data = await response.json();
-      return parseAiDecision(data);
     } catch (error) {
       if (keySelection?.selectedKey) {
         await markSelectedAiApiKeyResult({
@@ -160,6 +141,25 @@ class AIProfileFilter {
       logger(`⚠️ AI Filter failed: ${error.message}`);
       return createAiProfileFilterFailure(`Error: ${error.message}`);
     }
+  }
+
+  async requestDecision(requestUrl, body, keySelection) {
+    const response = await fetchWithBackgroundFallback(
+      requestUrl,
+      buildAiChatRequestOptions({ apiKey: this.apiKey, body, providerType: this.providerType })
+    );
+    await markSelectedAiApiKeyResult({
+      selectedKey: keySelection.selectedKey,
+      status: response.status
+    });
+    if (response.ok) return parseAiDecision(await response.json());
+
+    const errorSummary = summarizeAiProfileFilterHttpError({
+      body: await response.text(),
+      status: response.status
+    });
+    logger(`⚠️ AI API error: ${errorSummary}`);
+    return createAiProfileFilterFailure(`API error: ${errorSummary}`);
   }
 
   // ----------------------------------------------------------------

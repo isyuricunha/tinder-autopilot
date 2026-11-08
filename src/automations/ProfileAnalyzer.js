@@ -465,12 +465,14 @@ class ProfileAnalyzer {
       if (!profile) return { action: stop, reason: 'Could not identify the active profile to filter' };
       let reason = this.getProfileRejectionReason(profile);
       let action = reason ? skip : allow;
+      let regularLikeOnly = false;
       if (action === allow && isAIFilterEnabled) {
         onPhase(SWIPE_PHASES.waitingForAi);
         const aiResult = await this.aiFilter.analyze({
           bio: profile.bio,
           name: profile.name,
-          profile
+          profile,
+          isCancelled
         });
         if (isCancelled()) return { action: stop };
 
@@ -478,7 +480,8 @@ class ProfileAnalyzer {
           return { action: stop, reason: aiResult.reason };
         }
         action = aiResult.shouldSwipe === false ? skip : allow;
-        reason = aiResult.reason ? `AI: ${aiResult.reason}` : 'AI evaluated profile';
+        regularLikeOnly = aiResult.isFallback === true;
+        reason = `${regularLikeOnly ? 'Fallback' : 'AI'}: ${aiResult.reason}`;
       }
 
       onPhase(SWIPE_PHASES.closingProfile);
@@ -487,7 +490,7 @@ class ProfileAnalyzer {
       if (isCancelled()) return { action: stop };
       if (!closed) return { action: stop, reason: 'Could not close the filtered profile' };
 
-      return { action, reason: reason || 'Passed enabled profile filters' };
+      return { action, reason: reason || 'Passed enabled profile filters', regularLikeOnly };
     } catch (error) {
       errorLog('Error checking profile with modal:', error);
       if (!isCancelled()) {
