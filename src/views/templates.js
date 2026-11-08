@@ -55,7 +55,6 @@ const DEFAULT_MESSAGE = 'Hey {name}, how are you?';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const AI_MODEL_DATALIST_ID = 'aiModelOptions';
-const SECTION_TITLE_STYLE = `color: ${SIDEBAR_THEME.text}; padding: 16px 20px 12px 20px; letter-spacing: 0; text-transform: uppercase; margin: 24px 0 0 0; font-size: 14px; font-weight: 600; border-left: 3px solid ${SIDEBAR_THEME.accent}; background: ${SIDEBAR_THEME.accentSofter}; border-radius: 0 8px 8px 0;`;
 const FIELD_LABEL_STYLE = `display: block; color: ${SIDEBAR_THEME.text}; font-size: 13px; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3;`;
 const OPERATIONAL_STATUS_CHIP_STYLE = `min-width: 0; padding: 10px 8px; background: ${SIDEBAR_THEME.surface}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);`;
 const TEXTAREA_SIZE_STYLES = {
@@ -115,7 +114,7 @@ const createHelpText = (helpText) => {
 
   return createElement('div', {
     text: helpText,
-    style: `margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: ${SIDEBAR_THEME.textSubtle}; font-size: 11px; text-align: left; line-height: 1.4;`
+    style: `margin: 4px 16px 12px 16px; padding: 0; letter-spacing: 0; font-weight: 400; color: ${SIDEBAR_THEME.textMuted}; font-size: 12px; text-align: left; line-height: 1.45;`
   });
 };
 
@@ -137,28 +136,14 @@ const createCard = (children) =>
   );
 
 const createTopBanner = () =>
-  createElement(
-    'div',
-    {
-      style: `position: relative; z-index: 2; transition: all 0.2s ease; text-align: center; background: ${SIDEBAR_THEME.backgroundElevated}; border-bottom: 1px solid ${SIDEBAR_THEME.border}; padding: 14px 8px; min-height: 54px; display: flex; align-items: center; justify-content: center;`
-    },
-    [
-      createElement(
-        'a',
-        {
-          style: `display: flex; align-items: center; color: ${SIDEBAR_THEME.text}; font-weight: 700; font-size: 18px; text-decoration: none; white-space: nowrap; overflow: hidden;`,
-          attributes: { href: '/app/profile' }
-        },
-        [
-          createElement(
-            'span',
-            { style: 'display: flex; align-items: center; gap: 6px;' },
-            [createElement('span', { text: 'Autopilot' })]
-          )
-        ]
-      )
-    ]
-  );
+  createElement('header', { className: 'ta-sidebar-header' }, [
+    createElement('span', { className: 'ta-sidebar-mark', text: 'A', attributes: { 'aria-hidden': 'true' } }),
+    createElement('h2', { text: 'Tinder Autopilot' }),
+    createElement('a', {
+      text: 'My profile',
+      attributes: { href: '/app/profile' }
+    })
+  ]);
 
 const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) => {
   const sectionId = normalizeSidebarSectionId(id);
@@ -169,22 +154,24 @@ const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) 
     readSetting: getSetting
   });
   const indicator = createElement('span', {
-    text: isOpen ? '-' : '+',
-    style: `margin-left: 12px; color: ${SIDEBAR_THEME.textMuted}; font-size: 15px; font-weight: 700;`
+    text: isOpen ? '−' : '+',
+    className: 'ta-section-indicator',
+    attributes: { 'aria-hidden': 'true' }
   });
   const content = createElement(
     'div',
     {
       id: contentId,
-      style: isOpen ? 'display: block;' : 'display: none;',
+      className: 'ta-disclosure-content',
       attributes: { 'data-sidebar-section-content': sectionId }
     },
     children
   );
+  content.hidden = !isOpen;
   const header = createElement(
     'button',
     {
-      style: `${SECTION_TITLE_STYLE} width: 100%; display: flex; justify-content: space-between; align-items: center; text-align: left; font-family: inherit; cursor: pointer; border-top: 0; border-right: 0; border-bottom: 0;`,
+      className: 'ta-section-toggle',
       attributes: {
         type: 'button',
         'aria-controls': contentId,
@@ -197,8 +184,8 @@ const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) 
   header.addEventListener('click', () => {
     const nextOpen = header.getAttribute('aria-expanded') !== 'true';
     header.setAttribute('aria-expanded', String(nextOpen));
-    indicator.textContent = nextOpen ? '-' : '+';
-    content.style.display = nextOpen ? 'block' : 'none';
+    indicator.textContent = nextOpen ? '−' : '+';
+    content.hidden = !nextOpen;
     writeSidebarSectionOpen({
       sectionId,
       isOpen: nextOpen,
@@ -206,8 +193,11 @@ const createSidebarSection = ({ id, title, defaultOpen = true, children = [] }) 
     });
   });
 
-  return createElement('section', { attributes: { 'data-sidebar-section': sectionId } }, [
-    header,
+  return createElement('section', {
+    className: 'ta-disclosure',
+    attributes: { 'data-sidebar-section': sectionId }
+  }, [
+    createElement('h4', {}, [header]),
     content
   ]);
 };
@@ -222,7 +212,7 @@ const createTextbox = ({
   attributes = {},
   textareaSize = 'default'
 }) => {
-  const fieldStyle = `width: calc(100% - 32px); display: block; border: 1px solid ${SIDEBAR_THEME.border}; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; padding: 12px; border-radius: 8px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-shadow: none;`;
+  const fieldStyle = `width: 100%; display: block; box-sizing: border-box; border: 1px solid ${SIDEBAR_THEME.border}; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; padding: 12px; border-radius: 8px; font-size: 14px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-shadow: none;`;
   const inputAttributes = { placeholder, ...attributes };
   if (defaultValue !== undefined) inputAttributes.value = defaultValue;
   const labelElement = label
@@ -500,6 +490,7 @@ const createSelectCard = ({ id, label, options, storageKey, defaultValue }) => {
     createElement('div', { style: 'padding: 16px;' }, [
       createElement('label', {
         text: label,
+        attributes: { for: id },
         style: `color: ${SIDEBAR_THEME.text}; font-size: 15px; font-weight: 500; margin-bottom: 12px; display: block;`
       }),
       select
@@ -571,7 +562,7 @@ const createCounterCard = ({ id, label, pathD }) =>
   );
 
 const createCounterLogs = () =>
-  createElement('div', { style: 'margin: 16px 12px 12px 12px; display: flex; gap: 8px;' }, [
+  createElement('div', { style: 'margin: 8px 12px 16px; display: flex; gap: 8px;' }, [
     createCounterCard({
       id: 'likeCount',
       label: 'Liked',
@@ -580,7 +571,7 @@ const createCounterLogs = () =>
     }),
     createCounterCard({
       id: 'deslikeCount',
-      label: 'Desliked',
+      label: 'Skipped',
       pathD:
         'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19z'
     })
@@ -596,12 +587,12 @@ const createOperationalStatusChip = ({ id, label, value }) =>
     [
       createElement('span', {
         text: label,
-        style: `display: block; color: ${SIDEBAR_THEME.textSubtle}; font-size: 10px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: 0; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+        style: `display: block; color: ${SIDEBAR_THEME.textMuted}; font-size: 10px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: 0; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
       }),
       createElement('strong', {
         id,
         text: value,
-        style: `display: block; color: ${SIDEBAR_THEME.text}; font-size: 12px; font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;`
+        style: `display: block; color: ${SIDEBAR_THEME.text}; font-size: 12px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere;`
       })
     ]
   );
@@ -610,7 +601,7 @@ const createOperationalStatus = () =>
   createElement(
     'div',
     {
-      style: 'margin: 0 12px 12px 12px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;'
+      className: 'ta-operational-status'
     },
     [
       createOperationalStatusChip({
@@ -638,29 +629,12 @@ const getDefaultMessage = () => {
   return DEFAULT_MESSAGE;
 };
 
-const createAutopilot = () =>
-  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createSidebarSection({
-      id: 'main-settings',
-      title: 'Main Settings',
-      defaultOpen: true,
-      children: [
-        createCheckbox('tinderAutopilot', 'Auto like', 'Begin automatically swiping right on all profiles.'),
-        createCheckbox(
-          'tinderAutopilotHideMine',
-          'Only show unanswered messages',
-          'Load the messages list, then hide conversations where the last visible reply is yours.'
-        ),
-        createCheckbox(
-          'tinderAutopilotAnonymous',
-          'Anonymous Mode',
-          'Hide profile pictures so you can take screenshots.'
-        )
-      ]
-    }),
+const createSwipeSettings = () =>
+  createFragment([
+    createCheckbox('tinderAutopilot', 'Auto Like', 'Automatically swipe on recommendations using your enabled filters.'),
     createSidebarSection({
       id: 'bio-filtering',
-      title: 'Bio Filtering',
+      title: 'Bio & Gender',
       defaultOpen: false,
       children: [
         createCheckbox('tinderAutopilotBioFilter', 'Enable Bio Filtering', 'Skip profiles based on bio content.'),
@@ -687,7 +661,7 @@ const createAutopilot = () =>
     }),
     createSidebarSection({
       id: 'advanced-filtering',
-      title: 'Advanced Filtering',
+      title: 'Age, Distance & Photos',
       defaultOpen: false,
       children: [
         createCheckbox(
@@ -738,8 +712,50 @@ const createAutopilot = () =>
       ]
     }),
     createSidebarSection({
+      id: 'ai-profile-filtering',
+      title: 'AI Profile Filter',
+      defaultOpen: false,
+      children: [
+        createCheckbox(
+          'tinderAutopilotAIProfileFilter',
+          'Enable AI Profile Filter',
+          'Apply your rules to each profile. Set up a provider in Settings.'
+        ),
+        createTextbox({
+          className: 'aiFilterRules',
+          label: 'Profile Filter Rules',
+          placeholder: 'Write your own profile filter rules.',
+          helpText: 'Enter your swipe criteria before enabling the AI Profile Filter.',
+          textareaSize: 'large'
+        }),
+        createTextbox({
+          className: 'aiProfileModel',
+          label: 'Profile Filter Model',
+          placeholder: 'gpt-4o-mini',
+          helpText: 'Model used only for profile filtering.',
+          defaultValue: DEFAULT_AI_PROFILE_MODEL,
+          type: 'text',
+          attributes: { list: AI_MODEL_DATALIST_ID }
+        }),
+        createSelectCard({
+          id: 'aiProfileReasoningEffort',
+          label: 'Profile Reasoning Effort',
+          storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
+          defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
+          options: [
+            { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
+            { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
+            { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
+          ]
+        }),
+        createHelpText(
+          'Controls profile analysis prompt depth and token budget for the profile filter.'
+        )
+      ]
+    }),
+    createSidebarSection({
       id: 'super-like-settings',
-      title: 'Super Like Settings',
+      title: 'Super Likes',
       defaultOpen: false,
       children: [
         createCheckbox(
@@ -764,16 +780,28 @@ const createAutopilot = () =>
     })
   ]);
 
-const createAiSettings = () =>
-  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
+const createGeneralSettings = () =>
+  createFragment([
+    createSidebarSection({
+      id: 'main-settings',
+      title: 'Privacy',
+      defaultOpen: false,
+      children: [
+        createCheckbox(
+          'tinderAutopilotAnonymous',
+          'Anonymous Mode',
+          'Hide profile pictures so you can take screenshots.'
+        )
+      ]
+    }),
     createSidebarSection({
       id: 'ai-connection',
-      title: 'AI Connection',
+      title: 'AI Provider',
       defaultOpen: true,
       children: [
         createSelectCard({
           id: AI_PROVIDER_SETTING_KEY,
-          label: 'API Type',
+          label: 'Provider',
           storageKey: AI_PROVIDER_SETTING_KEY,
           defaultValue: DEFAULT_AI_PROVIDER_TYPE,
           options: [
@@ -785,12 +813,12 @@ const createAiSettings = () =>
           ]
         }),
         createHelpText(
-          'OpenAI, OpenAI-Compatible, Mistral AI, and NVIDIA NIM use chat completions. Anthropic uses the Messages API.'
+          'Profile filtering and AI replies share this provider.'
         ),
         createTextbox({
           className: 'aiApiUrl',
           label: 'API Base URL',
-          placeholder: 'https://bifrost.yuricunha.com/v1',
+          placeholder: 'https://api.example.com/v1',
           helpText:
             'Editable only for OpenAI-Compatible. Official providers use fixed endpoints and derive the chat endpoint automatically.',
           defaultValue: getAiProviderDefaultApiUrl(DEFAULT_AI_PROVIDER_TYPE),
@@ -838,93 +866,36 @@ const createAiSettings = () =>
           'Model fields accept manual values. Refresh Models fills suggestions when the provider exposes a compatible /models endpoint.'
         )
       ]
-    }),
+    })
+  ]);
+
+const createMessageSettings = () =>
+  createFragment([
+    createAiReplyModeSelector(),
+    createCheckbox(
+      'tinderAutopilotHideMine',
+      'Only show unanswered messages',
+      'Hide conversations where your reply is the last visible message.'
+    ),
     createSidebarSection({
-      id: 'ai-profile-filtering',
-      title: 'AI Profile Filtering',
+      id: 'messaging-settings',
+      title: 'Auto Message',
       defaultOpen: false,
       children: [
-        createCheckbox(
-          'tinderAutopilotAIProfileFilter',
-          'Enable AI Profile Filter',
-          'Use an LLM to intelligently decide which profiles to skip.'
-        ),
+        createCheckbox('tinderAutopilotMessage', 'Auto message'),
+        createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
         createTextbox({
-          className: 'aiProfileModel',
-          label: 'Profile Filter Model',
-          placeholder: 'gpt-4o-mini',
-          helpText: 'Model used only for profile filtering.',
-          defaultValue: DEFAULT_AI_PROFILE_MODEL,
-          type: 'text',
-          attributes: { list: AI_MODEL_DATALIST_ID }
-        }),
-        createTextbox({
-          className: 'aiFilterRules',
-          label: 'Profile Filter Rules',
-          placeholder: 'Write your own profile filter rules.',
-          helpText: 'Enter your swipe criteria before enabling the AI Profile Filter.',
-          textareaSize: 'large'
-        }),
-        createSelectCard({
-          id: 'aiProfileReasoningEffort',
-          label: 'Profile Reasoning Effort',
-          storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
-          defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
-          options: [
-            { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
-            { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
-            { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
-          ]
-        }),
-        createHelpText(
-          'Controls profile analysis prompt depth and token budget for the profile filter.'
-        )
-      ]
-    }),
-    createSidebarSection({
-      id: 'ai-message-replies',
-      title: 'AI Message Replies',
-      defaultOpen: true,
-      children: [
-        createTextbox({
-          className: AI_REPLY_SETTING_KEYS.model,
-          label: 'Reply Model',
-          placeholder: 'gpt-4o-mini',
-          helpText: 'Model used only for AI message replies.',
-          defaultValue: DEFAULT_AI_REPLY_MODEL,
-          type: 'text',
-          attributes: { list: AI_MODEL_DATALIST_ID }
-        }),
-        createSelectCard({
-          id: 'aiReplyCompatibilityMode',
-          label: 'JSON / Reasoning Mode',
-          storageKey: AI_REPLY_SETTING_KEYS.compatibilityMode,
-          defaultValue: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
-          options: [
-            { value: AI_REPLY_COMPATIBILITY_MODES.standardJson, text: 'Standard JSON' },
-            { value: AI_REPLY_COMPATIBILITY_MODES.reasoningJson, text: 'Reasoning / Thinking' },
-            { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
-          ]
-        }),
-        createSelectCard({
-          id: AI_REPLY_SETTING_KEYS.reasoningEffort,
-          label: 'Reply Reasoning Effort',
-          storageKey: AI_REPLY_SETTING_KEYS.reasoningEffort,
-          defaultValue: DEFAULT_AI_REPLY_REASONING_EFFORT,
-          options: [
-            { value: AI_REPLY_REASONING_EFFORTS.low, text: 'Low' },
-            { value: AI_REPLY_REASONING_EFFORTS.medium, text: 'Medium' },
-            { value: AI_REPLY_REASONING_EFFORTS.high, text: 'High' }
-          ]
-        }),
-        createHelpText(
-          'Sent only in Reasoning / Thinking mode. OpenAI/OpenAI-Compatible use reasoning_effort, Mistral uses high/none, NVIDIA NIM sends it for GPT-OSS NIM models, and Anthropic uses adaptive or manual thinking on compatible Claude models.'
-        )
+          label: 'Auto Message Template',
+          helpText: 'The message to send to matches.',
+          placeholder: 'Your message to send',
+          className: 'messageToSend',
+          defaultValue: getDefaultMessage()
+        })
       ]
     }),
     createSidebarSection({
       id: 'ai-reply-prompt-context',
-      title: 'AI Reply Prompt Context',
+      title: 'Reply Instructions',
       defaultOpen: false,
       children: [
         createTextbox({
@@ -990,8 +961,102 @@ const createAiSettings = () =>
       ]
     }),
     createSidebarSection({
+      id: 'ai-reply-testing',
+      title: 'Test Replies',
+      defaultOpen: false,
+      children: [
+        createTextbox({
+          label: 'Test Conversation',
+          helpText:
+            'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
+          placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
+          className: 'aiReplyTestConversation',
+          defaultValue: '',
+          textareaSize: 'large'
+        }),
+        createTextbox({
+          label: 'Test Match Name',
+          helpText: 'Optional match name used only for the preview/test prompt.',
+          placeholder: 'Ana',
+          className: 'aiReplyTestMatchName',
+          defaultValue: '',
+          type: 'text'
+        }),
+        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px; flex-wrap: wrap;' }, [
+          createElement('button', {
+            id: 'previewAiReplyPrompt',
+            text: 'Preview Prompt',
+            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            attributes: { type: 'button' }
+          }),
+          createElement('button', {
+            id: 'testAiReply',
+            text: 'Test Reply',
+            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            attributes: { type: 'button' }
+          }),
+          createElement('button', {
+            id: 'reviewNextAiReply',
+            text: 'Review Real Match',
+            style: `flex: 1 1 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
+            attributes: { type: 'button' }
+          })
+        ]),
+        createTextbox({
+          label: 'Test Output',
+          helpText: 'Preview or test output. This is never sent automatically.',
+          placeholder: 'Preview/test output appears here.',
+          className: 'aiReplyTestOutput',
+          defaultValue: '',
+          attributes: { readonly: 'true' },
+          textareaSize: 'output'
+        })
+      ]
+    }),
+    createSidebarSection({
+      id: 'ai-message-replies',
+      title: 'Reply Model & Format',
+      defaultOpen: false,
+      children: [
+        createTextbox({
+          className: AI_REPLY_SETTING_KEYS.model,
+          label: 'Reply Model',
+          placeholder: 'gpt-4o-mini',
+          helpText: 'Model used only for AI message replies.',
+          defaultValue: DEFAULT_AI_REPLY_MODEL,
+          type: 'text',
+          attributes: { list: AI_MODEL_DATALIST_ID }
+        }),
+        createSelectCard({
+          id: 'aiReplyCompatibilityMode',
+          label: 'JSON / Reasoning Mode',
+          storageKey: AI_REPLY_SETTING_KEYS.compatibilityMode,
+          defaultValue: DEFAULT_AI_REPLY_COMPATIBILITY_MODE,
+          options: [
+            { value: AI_REPLY_COMPATIBILITY_MODES.standardJson, text: 'Standard JSON' },
+            { value: AI_REPLY_COMPATIBILITY_MODES.reasoningJson, text: 'Reasoning / Thinking' },
+            { value: AI_REPLY_COMPATIBILITY_MODES.looseJson, text: 'Loose JSON' }
+          ]
+        }),
+        createSelectCard({
+          id: AI_REPLY_SETTING_KEYS.reasoningEffort,
+          label: 'Reply Reasoning Effort',
+          storageKey: AI_REPLY_SETTING_KEYS.reasoningEffort,
+          defaultValue: DEFAULT_AI_REPLY_REASONING_EFFORT,
+          options: [
+            { value: AI_REPLY_REASONING_EFFORTS.low, text: 'Low' },
+            { value: AI_REPLY_REASONING_EFFORTS.medium, text: 'Medium' },
+            { value: AI_REPLY_REASONING_EFFORTS.high, text: 'High' }
+          ]
+        }),
+        createHelpText(
+          'Sent only in Reasoning / Thinking mode. OpenAI/OpenAI-Compatible use reasoning_effort, Mistral uses high/none, NVIDIA NIM sends it for GPT-OSS NIM models, and Anthropic uses adaptive or manual thinking on compatible Claude models.'
+        )
+      ]
+    }),
+    createSidebarSection({
       id: 'ai-reply-runtime',
-      title: 'AI Reply Runtime',
+      title: 'Reply Limits & Timing',
       defaultOpen: false,
       children: [
         createSlider({
@@ -1048,106 +1113,13 @@ const createAiSettings = () =>
         }),
         createHelpText('Continuous-only controls are enabled only while Continuous mode is selected.')
       ]
-    }),
-    createSidebarSection({
-      id: 'ai-reply-testing',
-      title: 'AI Reply Testing',
-      defaultOpen: false,
-      children: [
-        createTextbox({
-          label: 'Test Conversation',
-          helpText:
-            'Paste a test conversation using USER: and MATCH: lines. Preview/Test never sends a Tinder message.',
-          placeholder: 'MATCH: oi\nUSER: opa\nMATCH: tudo bem?',
-          className: 'aiReplyTestConversation',
-          defaultValue: '',
-          textareaSize: 'large'
-        }),
-        createTextbox({
-          label: 'Test Match Name',
-          helpText: 'Optional match name used only for the preview/test prompt.',
-          placeholder: 'Ana',
-          className: 'aiReplyTestMatchName',
-          defaultValue: '',
-          type: 'text'
-        }),
-        createElement('div', { style: 'margin: 0 12px 12px 12px; display: flex; gap: 8px; flex-wrap: wrap;' }, [
-          createElement('button', {
-            id: 'previewAiReplyPrompt',
-            text: 'Preview Prompt',
-            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
-            attributes: { type: 'button' }
-          }),
-          createElement('button', {
-            id: 'testAiReply',
-            text: 'Test Reply',
-            style: `flex: 1 1 120px; padding: 10px 12px; background: ${SIDEBAR_THEME.accentGradient}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.accentBorder}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
-            attributes: { type: 'button' }
-          }),
-          createElement('button', {
-            id: 'reviewNextAiReply',
-            text: 'Review Real Match',
-            style: `flex: 1 1 100%; padding: 10px 12px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.text}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;`,
-            attributes: { type: 'button' }
-          })
-        ]),
-        createTextbox({
-          label: 'Test Output',
-          helpText: 'Preview or test output. This is never sent automatically.',
-          placeholder: 'Preview/test output appears here.',
-          className: 'aiReplyTestOutput',
-          defaultValue: '',
-          attributes: { readonly: 'true' },
-          textareaSize: 'output'
-        })
-      ]
     })
-  ]);
-
-const createMassMessage = () =>
-  createElement('div', { className: 'Mt(20px)--ml Mt(16px)--s' }, [
-    createSidebarSection({
-      id: 'messaging-settings',
-      title: 'Messaging Settings',
-      defaultOpen: true,
-      children: [
-        createCheckbox('tinderAutopilotMessage', 'Auto message'),
-        createCheckbox('tinderAutopilotMessageNewOnly', 'New matches only'),
-        createAiReplyModeSelector(),
-        createTextbox({
-          label: 'Auto Message Template',
-          helpText: 'The message to send to matches.',
-          placeholder: 'Your message to send',
-          className: 'messageToSend',
-          defaultValue: getDefaultMessage()
-        })
-      ]
-    })
-  ]);
-
-const createLoggerHeader = () =>
-  createElement('div', { style: 'margin-top: 16px;' }, [
-    createElement(
-      'div',
-      {
-        style: `${SECTION_TITLE_STYLE} display: flex; justify-content: space-between; align-items: center; gap: 12px;`
-      },
-      [
-        createElement('span', { text: 'Activity' }),
-        createElement('button', {
-          id: 'clearActivityLog',
-          text: 'Clear',
-          style: `padding: 6px 10px; background: ${SIDEBAR_THEME.surfaceMuted}; color: ${SIDEBAR_THEME.textMuted}; border: 1px solid ${SIDEBAR_THEME.border}; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;`,
-          attributes: { type: 'button' }
-        })
-      ]
-    )
   ]);
 
 const createInfoBanner = () =>
   createElement('div', {
     id: 'infoBanner',
-    style: `overflow: hidden; background: ${SIDEBAR_THEME.background}; position: relative; height: 100%; z-index: 9999; border-right: 1px solid ${SIDEBAR_THEME.border};`
+    style: `overflow: hidden; background: ${SIDEBAR_THEME.background}; position: relative; height: 100%; z-index: 9999;`
   });
 
 export {
@@ -1159,9 +1131,8 @@ export {
   createTopBanner,
   createCounterLogs,
   createOperationalStatus,
-  createAutopilot,
-  createAiSettings,
-  createMassMessage,
-  createLoggerHeader,
+  createSwipeSettings,
+  createMessageSettings,
+  createGeneralSettings,
   createInfoBanner
 };

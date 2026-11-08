@@ -157,19 +157,19 @@ class Sidebar {
     insertCss(
       `
       /* Custom Scrollbar */
-      .custom-scrollbar::-webkit-scrollbar {
+      #infoBanner .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
       }
-      .custom-scrollbar::-webkit-scrollbar-track {
+      #infoBanner .custom-scrollbar::-webkit-scrollbar-track {
         background: ${SIDEBAR_THEME.surfaceMuted};
         border-radius: 4px;
       }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
+      #infoBanner .custom-scrollbar::-webkit-scrollbar-thumb {
         background: ${SIDEBAR_THEME.accentGradient};
         border-radius: 4px;
         transition: all 0.2s ease;
       }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      #infoBanner .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: ${SIDEBAR_THEME.accentHover};
       }
       
@@ -181,33 +181,27 @@ class Sidebar {
       }
       
       /* Activity log styling */
-      .txt p {
+      #infoBanner .txt p {
         margin: 4px 0 !important;
         padding: 8px 12px !important;
         border-radius: 8px !important;
         background: ${SIDEBAR_THEME.accentSofter} !important;
         border-left: 3px solid ${SIDEBAR_THEME.accent} !important;
       }
-      .txt span {
+      #infoBanner .txt span {
         color: ${SIDEBAR_THEME.accentHover} !important;
         font-weight: 600 !important;
       }
       
       /* Textarea focus effects */
-      textarea:focus,
-      input:focus,
-      select:focus {
+      #infoBanner :is(textarea, input, select):focus {
         outline: none !important;
         box-shadow: 0 0 0 2px ${SIDEBAR_THEME.focusShadow} !important;
         border-color: ${SIDEBAR_THEME.accent} !important;
       }
       
       /* Selection colors */
-      ::selection {
-        background: ${SIDEBAR_THEME.focusShadow};
-        color: ${SIDEBAR_THEME.text};
-      }
-      ::-moz-selection {
+      #infoBanner ::selection {
         background: ${SIDEBAR_THEME.focusShadow};
         color: ${SIDEBAR_THEME.text};
       }
@@ -851,7 +845,7 @@ class Sidebar {
   };
 
   clearActivityLog = () => {
-    const activityLog = document.querySelector('.txt');
+    const activityLog = document.querySelector('#infoBanner .txt');
     if (!activityLog) return false;
 
     while (activityLog.firstChild) {
@@ -868,6 +862,7 @@ class Sidebar {
     const chipElement = valueElement.closest('[data-operational-status-chip]');
     const isSuccess = status.tone === 'success';
     valueElement.textContent = status.text;
+    valueElement.title = status.text;
     valueElement.style.color = isSuccess ? SIDEBAR_THEME.success : SIDEBAR_THEME.text;
 
     if (chipElement) {

@@ -24,7 +24,7 @@ const errorLog = (...values) => writeConsole('error', values);
 const logger = (v, level = 'info') => {
   writeConsole(level, [v]);
   const now = new Date();
-  const txt = document.querySelector('.txt');
+  const txt = document.querySelector('#infoBanner .txt');
   if (!txt) return;
 
   const message = document.createElement('p');
