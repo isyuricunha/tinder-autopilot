@@ -2,6 +2,8 @@
 
 A browser extension for Tinder Web that automates swipes and messaging. The sidebar gives you control over which profiles to skip, when to send messages, and how to review recent activity.
 
+Visit the [Tinder Autopilot website](https://isyuricunha.github.io/tinder-autopilot/) for an overview and browser-specific installation instructions.
+
 ## Install from source
 
 Use Node.js and the pnpm version listed in [package.json](package.json).
