@@ -45,11 +45,24 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify release baseline
+      - name: Initialize legacy release baseline
         run: |
-          if ! git merge-base --is-ancestor v3.0.0 HEAD; then
-            echo "::error::Push the v3.0.0 baseline tag before enabling automatic releases. See README."
+          baseline=3c48cdc6e5344dd3bc3b24ebab977469e7682d47
+          ref=refs/tags/v3.0.0
+
+          # Preserve the version of builds distributed before semantic-release.
+          if ! git merge-base --is-ancestor "$baseline" HEAD; then
+            echo "::error::The 3.0.0 baseline commit is missing from the release branch history."
             exit 1
+          fi
+          if git show-ref --verify --quiet "$ref"; then
+            if [ "$(git rev-parse "$ref^{commit}")" != "$baseline" ]; then
+              echo "::error::v3.0.0 points to a different commit than the 3.0.0 baseline."
+              exit 1
+            fi
+          else
+            # semantic-release pushes this local baseline alongside the new release tag.
+            git tag "${ref#refs/tags/}" "$baseline"
           fi
       - run: pnpm build
       - run: pnpm exec semantic-release

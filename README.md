@@ -83,6 +83,6 @@ When you enable model-based filtering or request a generated reply, the extensio
 
 For changes that touch Tinder's DOM or extension permissions, check the unpacked build in a browser as well as running the tests. Use [Conventional Commits](https://www.conventionalcommits.org/) and include verification details in the pull request.
 
-Pushes to `main` run verification before semantic-release evaluates the commits. Releases attach two ZIPs with the release version set in each manifest. For the initial setup, publish the `v3.0.0` baseline tag before pushing the workflow so release versions advance from the existing 3.0.0 builds.
+Pushes to `main` run verification before semantic-release evaluates the commits. Releases attach two ZIPs with the release version set in each manifest. The workflow initializes the `v3.0.0` baseline automatically if it is missing, so release versions advance from the existing 3.0.0 builds.
 
 Maintained by [Yuri Cunha](mailto:me@yuricunha.com). The project continues the original work by Geczy. See [LICENSE.txt](LICENSE.txt) for the license text included in the repository.
