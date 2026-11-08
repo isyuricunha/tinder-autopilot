@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { parseAiDecision } = require('../src/misc/ai-response-parser');
+const { isAiProfileFilterFailure } = require('../src/misc/ai-profile-filter-result');
 
 test('parseAiDecision accepts yes responses', () => {
   const result = parseAiDecision({
@@ -26,17 +27,23 @@ test('parseAiDecision accepts Anthropic text content responses', () => {
   assert.deepEqual(result, { shouldSwipe: false, reason: 'banned term' });
 });
 
-test('parseAiDecision defaults to swipe on empty or invalid responses', () => {
-  assert.deepEqual(parseAiDecision({}), { shouldSwipe: true, reason: 'Empty response' });
-  assert.deepEqual(
-    parseAiDecision({ choices: [{ message: { content: 'not json' } }] }),
-    { shouldSwipe: true, reason: 'Parse error' }
-  );
+test('empty and malformed decisions pause the filter', () => {
+  assert.equal(isAiProfileFilterFailure(parseAiDecision({})), true);
+  const malformed = parseAiDecision({ choices: [{ message: { content: 'not json' } }] });
+  assert.equal(isAiProfileFilterFailure(malformed), true);
 });
 
 test('parseAiDecision does not treat an unrecognized decision as a rejection', () => {
   const result = parseAiDecision({
     content: [{ type: 'text', text: '{"shouldSwipe":"unknown","reason":"gender not shown"}' }]
   });
-  assert.deepEqual(result, { shouldSwipe: true, reason: 'Invalid decision' });
+  assert.equal(isAiProfileFilterFailure(result), true);
+});
+
+test('a truncated response cannot authorize a swipe even if the JSON is complete', () => {
+  const result = parseAiDecision({
+    stop_reason: 'max_tokens',
+    content: [{ type: 'text', text: '{"shouldSwipe":"yes","reason":"looks good"}' }]
+  });
+  assert.equal(isAiProfileFilterFailure(result), true);
 });

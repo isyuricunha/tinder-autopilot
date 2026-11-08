@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const path = require('node:path');
+const { runInNewContext } = require('node:vm');
 const {
   BACKGROUND_FETCH_MESSAGE_TYPE,
   createResponseFromBackgroundMessage,
@@ -97,3 +100,54 @@ test('fetchWithBackgroundFallback uses normal fetch outside an extension runtime
     globalThis.fetch = previousFetch;
   }
 });
+
+test('the background handler replies when reading the response fails', async () => {
+  const { response } = runBackgroundRequest({
+    fetch: async () => ({
+      text: async () => { throw new Error('Response body interrupted'); }
+    })
+  });
+  const [result, error] = await response;
+  assert.equal(result, null);
+  assert.equal(error.message, 'Response body interrupted');
+});
+
+test('the background request deadline aborts even while reading the body', async () => {
+  let signal;
+  let markReading;
+  const reading = new Promise((resolve) => { markReading = resolve; });
+  const { response, expire } = runBackgroundRequest({
+    fetch: async (_url, options) => {
+      signal = options.signal;
+      return {
+        text: () => new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+          markReading();
+        })
+      };
+    }
+  });
+  await reading;
+  expire();
+  const [result, error] = await response;
+  assert.equal(signal.aborted, true);
+  assert.equal(result, null);
+  assert.match(error.message, /timed out after 30 seconds/);
+});
+
+function runBackgroundRequest({ fetch }) {
+  let handler;
+  let expire;
+  runInNewContext(readFileSync(path.join(__dirname, '../src/misc/bg.js'), 'utf8'), {
+    chrome: { runtime: { onMessage: { addListener: (listener) => { handler = listener; } } } },
+    AbortController,
+    fetch,
+    setTimeout: (callback) => { expire = callback; },
+    clearTimeout: () => {}
+  });
+  const response = new Promise((resolve) => {
+    const request = { type: BACKGROUND_FETCH_MESSAGE_TYPE, url: 'https://api.example.test' };
+    assert.equal(handler(request, {}, resolve), true);
+  });
+  return { response, expire };
+}

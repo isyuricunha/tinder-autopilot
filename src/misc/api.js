@@ -1,5 +1,6 @@
 import get from 'lodash/get';
 import { buildRequestOptions } from './api-request-options';
+import { fetchViaBackground } from './background-fetch';
 import { getRawStorageValue, getJsonSetting } from './settings-store';
 import { buildTinderApiDefaultOptions } from './tinder-api-options';
 import { buildMatchMessagesUrl, buildSendMessageUrl } from './tinder-api-urls';
@@ -10,44 +11,14 @@ const getDefaultOptions = () =>
     persistentDeviceId: getRawStorageValue('TinderWeb/uuid')
   });
 
-const fetchResource = (url, body = false) => {
-  return new Promise((resolve, reject) => {
-    const options = buildRequestOptions(getDefaultOptions(), body);
-    chrome.runtime.sendMessage({ url, options }, (messageResponse) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      if (!messageResponse) {
-        reject(new Error('Empty response from background request'));
-        return;
-      }
-      const [response, error] = messageResponse;
-      if (response === null) {
-        reject(error instanceof Error ? error : new Error(String(error)));
-      } else {
-        // Use undefined on a 204 - No Content
-        const body = response.body ? new Blob([response.body]) : undefined;
-        resolve(
-          new Response(body, {
-            status: response.status,
-            statusText: response.statusText
-          })
-        );
-      }
-    });
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status} ${response.statusText}`);
-      }
-      const textPromise = response.text();
-      // Help GC by nullifying the response reference after extracting data
-      return textPromise;
-    })
-    .then((data) => {
-      return data ? JSON.parse(data) : {};
-    });
+const fetchResource = async (url, body = false) => {
+  const options = buildRequestOptions(getDefaultOptions(), body);
+  const response = await fetchViaBackground(url, options);
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status} ${response.statusText}`);
+  }
+  const data = await response.text();
+  return data ? JSON.parse(data) : {};
 };
 
 const getMatches = async (newOnly, nextPageToken) => {

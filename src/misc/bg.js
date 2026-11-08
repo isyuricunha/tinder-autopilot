@@ -1,25 +1,30 @@
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-  if (!request || !request.url) {
+const BACKGROUND_FETCH_MESSAGE_TYPE = 'TinderAutopilot/backgroundFetch';
+const REQUEST_TIMEOUT_MS = 30000;
+
+const fetchResponse = async (request) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(request.url, { ...request.options, signal: controller.signal });
+    const body = await response.text();
+    return [{ body, status: response.status, statusText: response.statusText }, null];
+  } catch (error) {
+    const message = controller.signal.aborted
+      ? `Background request timed out after ${REQUEST_TIMEOUT_MS / 1000} seconds`
+      : error?.message || String(error);
+    return [null, { message }];
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  if (request?.type !== BACKGROUND_FETCH_MESSAGE_TYPE) return false;
+  if (!request.url) {
     sendResponse([null, { message: 'Missing request URL' }]);
     return false;
   }
 
-  fetch(request.url, request.options).then(
-    function (response) {
-      return response.text().then(function (text) {
-        sendResponse([
-          {
-            body: text,
-            status: response.status,
-            statusText: response.statusText
-          },
-          null
-        ]);
-      });
-    },
-    function (error) {
-      sendResponse([null, { message: error && error.message ? error.message : String(error) }]);
-    }
-  );
+  fetchResponse(request).then(sendResponse);
   return true;
 });
