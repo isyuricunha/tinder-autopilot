@@ -44,10 +44,12 @@ test('a cycle summary keeps its decision and aggregated phase timings separate',
   trackSwipePhase(cycle, SWIPE_PHASES.confirmingSwipe, 2500);
   cycle.outcome = 'Skipped';
   cycle.reason = 'AI:  Matched rule\nfrom bio';
+  cycle.method = 'keyboard ArrowLeft';
   assert.deepEqual(summarizeSwipeCycle(cycle, 3000), {
     outcome: 'Skipped',
     duration: '3 s',
     reason: 'AI: Matched rule from bio',
+    method: 'keyboard ArrowLeft',
     timings: [
       { phase: SWIPE_PHASES.closingProfile, duration: '700 ms' },
       { phase: SWIPE_PHASES.waitingForAi, duration: '1.8 s' },

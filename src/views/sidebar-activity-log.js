@@ -68,9 +68,15 @@ const appendActivityEntry = (log, entry, now = new Date()) => {
       row.append(createActivityElement(doc, 'p', 'ta-activity-reason', entry.reason));
     }
 
-    if (entry.timings.length) {
+    if (entry.method || entry.timings.length) {
       const details = createActivityElement(doc, 'details', 'ta-activity-details');
       const timings = createActivityElement(doc, 'dl', 'ta-activity-timings');
+      if (entry.method) {
+        timings.append(
+          createActivityElement(doc, 'dt', '', 'Swipe control'),
+          createActivityElement(doc, 'dd', '', entry.method)
+        );
+      }
       entry.timings.forEach(({ phase, duration: elapsed }) => {
         timings.append(
           createActivityElement(doc, 'dt', '', phase),
@@ -78,7 +84,7 @@ const appendActivityEntry = (log, entry, now = new Date()) => {
         );
       });
       details.append(
-        createActivityElement(doc, 'summary', '', 'Step timings'),
+        createActivityElement(doc, 'summary', '', 'Swipe details'),
         timings
       );
       row.append(details);

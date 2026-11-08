@@ -356,7 +356,7 @@ const SIDEBAR_LAYOUT_STYLES = `
 
   #infoBanner .ta-activity-timings {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
     gap: 4px 12px;
     margin: 5px 0 0;
     padding-top: 6px;
@@ -366,8 +366,8 @@ const SIDEBAR_LAYOUT_STYLES = `
 
   #infoBanner .ta-activity-timings dd {
     margin: 0;
+    max-width: 16ch;
     text-align: right;
-    white-space: nowrap;
   }
 `;
 

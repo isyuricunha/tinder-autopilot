@@ -418,7 +418,10 @@ class Swiper {
   };
 
   finishDislikeAction = (targetProfileId, method) => {
-    if (this.cycle) this.cycle.outcome = 'Skipped';
+    if (this.cycle) {
+      this.cycle.outcome = 'Skipped';
+      this.cycle.method = method;
+    }
     debugLog(`Skipped using ${method}`);
     this.incrementDislikeCounter();
     this.clearProfileActionState(targetProfileId);
@@ -426,7 +429,10 @@ class Swiper {
   };
 
   finishLikeAction = (targetProfileId, method) => {
-    if (this.cycle) this.cycle.outcome = 'Liked';
+    if (this.cycle) {
+      this.cycle.outcome = 'Liked';
+      this.cycle.method = method || 'Like button';
+    }
     debugLog(`Liked using ${method || 'like button'}`);
     this.incrementLikeCounter();
     this.clearProfileActionState(targetProfileId);
@@ -475,7 +481,7 @@ class Swiper {
       }
 
       if (this.hasActionTargetAdvanced(beforeProfileId)) {
-        return this.finishLikeAction(beforeProfileId, 'delayed DOM update');
+        return this.finishLikeAction(beforeProfileId, 'Like button (delayed confirmation)');
       }
     }
 
@@ -492,7 +498,7 @@ class Swiper {
       }
 
       if (this.hasActionTargetAdvanced(beforeProfileId)) {
-        return this.finishLikeAction(beforeProfileId, 'delayed keyboard ArrowRight update');
+        return this.finishLikeAction(beforeProfileId, 'keyboard ArrowRight (delayed confirmation)');
       }
     } else {
       if (this.abortSwipeActionIfStopped('Like fallback')) return false;
@@ -726,7 +732,10 @@ class Swiper {
     if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
       this.setProgress(SWIPE_PHASES.confirmingSwipe);
       if (await this.waitForProfileAdvance(profileId)) {
-        if (this.cycle) this.cycle.outcome = 'Super Liked';
+        if (this.cycle) {
+          this.cycle.outcome = 'Super Liked';
+          this.cycle.method = 'Super Like button';
+        }
         this.clearProfileActionState(profileId);
         return true;
       }

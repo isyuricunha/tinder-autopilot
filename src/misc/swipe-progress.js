@@ -28,6 +28,7 @@ const createSwipeCycle = (now) => ({
   durations: new Map(),
   reason: '',
   outcome: 'No swipe',
+  method: '',
   cancelled: false
 });
 
@@ -54,6 +55,7 @@ const summarizeSwipeCycle = (cycle, now) => {
     outcome: cycle.outcome,
     duration: formatActivityDuration(now - cycle.startedAt),
     reason: cycle.reason.trim().replace(/\s+/g, ' '),
+    method: cycle.method,
     timings: Array.from(cycle.durations, ([phase, elapsed]) => ({
       phase,
       duration: formatActivityDuration(elapsed)
