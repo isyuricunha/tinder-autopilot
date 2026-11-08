@@ -27,6 +27,7 @@ import {
   incrementProfileActionFailure,
   shouldStopAfterProfileActionFailures
 } from '../misc/swipe-action-state';
+import { SWIPE_PHASES, createSwipeCycle, summarizeSwipeCycle, trackSwipePhase } from '../misc/swipe-progress';
 import {
   shouldSkipProfileCheckAction,
   shouldStopProfileCheckAction
@@ -39,7 +40,11 @@ class Swiper {
 
   isRunning = false;
 
-  isProcessingSwipe = false;
+  cycle = null;
+
+  progress = { phase: SWIPE_PHASES.off, startedAt: null, reason: '' };
+
+  onProgressChange = null;
 
   profileFirstSeen = {};
 
@@ -57,18 +62,37 @@ class Swiper {
     this.superLiker = new SuperLiker();
   }
 
+  setProgress = (phase, reason = '') => {
+    if (this.progress.phase === phase && this.progress.reason === reason) return;
+    const now = Date.now();
+    if (this.cycle && !this.cycle.cancelled) trackSwipePhase(this.cycle, phase, now);
+    this.progress = { phase, startedAt: now, reason };
+    this.onProgressChange?.();
+  };
+
   start = () => {
-    logger('Starting to swipe using a randomized interval');
+    if (this.isRunning) return;
     this.isRunning = true;
+    this.setProgress(this.cycle ? SWIPE_PHASES.finishing : SWIPE_PHASES.waitingForCard);
+    logger('Auto Like started');
     this.run();
   };
 
-  stop = () => {
+  stop = (reason = '') => {
     this.isRunning = false;
-    this.isProcessingSwipe = false;
-    logger('Autopilot stopped ⛔️');
+    if (this.cycle && !this.cycle.cancelled) {
+      this.cycle.cancelled = true;
+      this.cycle.endedAt = Date.now();
+      this.cycle.outcome = reason ? 'Paused' : 'Stopped';
+      this.cycle.reason = reason || 'Auto Like turned off';
+    } else if (!this.cycle) {
+      logger(reason ? `Auto Like paused · ${reason}` : 'Auto Like stopped');
+    }
     this.clearAllTimers();
+    this.setProgress(reason ? SWIPE_PHASES.paused : SWIPE_PHASES.off, reason);
   };
+
+  isSwipeCancelled = () => !this.isRunning || Boolean(this.cycle?.cancelled);
 
   clearAllTimers = () => {
     this.activeTimers.forEach((timerId) => {
@@ -79,7 +103,7 @@ class Swiper {
       clearInterval(intervalId);
     });
     this.activeIntervals.clear();
-    logger('🧹 Cleared all active timers');
+    debugLog('Cleared swipe timers');
   };
 
   scheduleRun = (delay) => {
@@ -129,10 +153,10 @@ class Swiper {
       !findVisibleDialog(document);
 
     if (!hasSwipeControls) {
-      logger('🔍 Debug: No swipe controls or active card found');
+      debugLog('No swipe controls or active card found');
     }
     if (!hasProfile) {
-      logger('🔍 Debug: No profile detected');
+      debugLog('No profile detected');
     }
 
     return hasSwipeControls && hasProfile && noBlockingModals;
@@ -290,6 +314,7 @@ class Swiper {
     const start = Date.now();
 
     while (Date.now() - start < timeout) {
+      if (this.isSwipeCancelled()) return null;
       const isProfileModalOpen = this.profileAnalyzer.isProfileModalOpen();
       const likeButton = this.hasLike();
       const hasProfile = this.hasProfile();
@@ -303,7 +328,7 @@ class Swiper {
         })
       ) {
         if (isProfileModalOpen) {
-          logger('✅ Like button is available inside the open profile');
+          debugLog('Like button is available inside the open profile');
         }
         return likeButton;
       }
@@ -318,6 +343,7 @@ class Swiper {
     const start = Date.now();
 
     while (Date.now() - start < timeout) {
+      if (this.isSwipeCancelled()) return false;
       if (this.matchFound()) return true;
 
       const afterProfileId = this.getCurrentProfileId();
@@ -334,7 +360,7 @@ class Swiper {
       await sleep(150);
     }
 
-    return hasProfileAdvanced({
+    return !this.isSwipeCancelled() && hasProfileAdvanced({
       beforeProfileId,
       afterProfileId: this.getCurrentProfileId(),
       hasProfile: this.hasProfile()
@@ -356,7 +382,7 @@ class Swiper {
   };
 
   hasActionTargetAdvanced = (targetProfileId) =>
-    hasProfileAdvanced({
+    !this.isSwipeCancelled() && hasProfileAdvanced({
       beforeProfileId: targetProfileId,
       afterProfileId: this.getCurrentProfileId(),
       hasProfile: this.hasProfile()
@@ -381,8 +407,8 @@ class Swiper {
 
   stopFallbackForChangedTarget = (targetProfileId, phase) => {
     const currentProfileId = this.getCurrentProfileId();
-    logger(
-      `⏭️ Target profile changed before ${phase}; target=${targetProfileId || 'unknown'}, current=${currentProfileId || 'unknown'}`
+    debugLog(
+      `Target profile changed before ${phase}; target=${targetProfileId || 'unknown'}, current=${currentProfileId || 'unknown'}`
     );
     this.recordProfileActionFailure(
       targetProfileId || currentProfileId,
@@ -392,14 +418,16 @@ class Swiper {
   };
 
   finishDislikeAction = (targetProfileId, method) => {
-    logger(`⏭️ ❌ Skipped profile using ${method}`);
+    if (this.cycle) this.cycle.outcome = 'Skipped';
+    debugLog(`Skipped using ${method}`);
     this.incrementDislikeCounter();
     this.clearProfileActionState(targetProfileId);
     return true;
   };
 
   finishLikeAction = (targetProfileId, method) => {
-    logger(`✅ ❤️ Liked profile${method ? ` using ${method}` : ''}`);
+    if (this.cycle) this.cycle.outcome = 'Liked';
+    debugLog(`Liked using ${method || 'like button'}`);
     this.incrementLikeCounter();
     this.clearProfileActionState(targetProfileId);
     this.scheduleProfileCleanup(targetProfileId);
@@ -412,23 +440,24 @@ class Swiper {
   };
 
   abortSwipeActionIfStopped = (phase) => {
-    if (this.isRunning) return false;
-    logger(`⏹️ ${phase} aborted because autopilot is stopped`);
+    if (!this.isSwipeCancelled()) return false;
+    debugLog(`${phase} cancelled`);
     return true;
   };
 
   recordProfileActionFailure = (profileId, reason) => {
     const failureCount = incrementProfileActionFailure(this.profileActionFailures, profileId);
-    logger(`⚠️ ${reason} (${failureCount}/${this.maxProfileActionFailures})`);
+    if (this.cycle) this.cycle.reason = reason;
+    debugLog(`${reason} (${failureCount}/${this.maxProfileActionFailures})`);
 
     if (shouldStopAfterProfileActionFailures(failureCount, this.maxProfileActionFailures)) {
-      logger('🛑 Stopping autopilot because the same profile did not advance after repeated actions');
-      this.isRunning = false;
+      this.stop(`${reason} after ${failureCount} attempts`);
     }
   };
 
   pressConfirmedLike = async (profileId) => {
     const beforeProfileId = profileId || this.getCurrentProfileId();
+    this.setProgress(SWIPE_PHASES.preparingSwipe);
     const likeButton = await this.waitForLikeButton();
 
     if (this.abortSwipeActionIfStopped('Like action')) return false;
@@ -439,7 +468,7 @@ class Swiper {
       }
 
       likeButton.click();
-      logger('✅ ❤️ Like clicked, waiting for next profile');
+      this.setProgress(SWIPE_PHASES.confirmingSwipe);
 
       if (await this.waitForProfileAdvance(beforeProfileId, 4500)) {
         return this.finishLikeAction(beforeProfileId, '');
@@ -453,7 +482,8 @@ class Swiper {
     if (this.abortSwipeActionIfStopped('Like fallback')) return false;
 
     if (this.canRetryActionForProfile(beforeProfileId)) {
-      logger('⌨️ Trying keyboard shortcut for like (ArrowRight) as fallback...');
+      this.setProgress(SWIPE_PHASES.confirmingSwipe);
+      debugLog('Trying ArrowRight as a fallback');
       if (
         this.pressKey('ArrowRight', 39) &&
         (await this.waitForProfileAdvance(beforeProfileId, 3500))
@@ -471,7 +501,6 @@ class Swiper {
 
     if (this.abortSwipeActionIfStopped('Like failure handling')) return false;
 
-    logger(`⚠️ Like click did not advance profile (id=${beforeProfileId})`);
     this.recordProfileActionFailure(beforeProfileId, 'Like action did not advance profile');
     return false;
   };
@@ -551,6 +580,7 @@ class Swiper {
   pressLike = async () => {
     // Check if we can swipe (has profile available)
     if (!this.canSwipe()) {
+      if (this.cycle) this.cycle.reason = 'Swipe surface became unavailable';
       return false;
     }
 
@@ -561,29 +591,38 @@ class Swiper {
     }
 
     // Check if profile should be skipped based on bio (opens modal, checks, closes)
-    const profileCheckAction = await this.profileAnalyzer.checkProfileWithModal();
+    const profileCheck = await this.profileAnalyzer.checkProfileWithModal({
+      onPhase: (phase) => this.setProgress(phase),
+      isCancelled: this.isSwipeCancelled
+    });
+    if (this.abortSwipeActionIfStopped('Profile check')) return false;
 
-    if (shouldStopProfileCheckAction(profileCheckAction)) {
-      logger('🛑 Stopping autopilot because AI Filter is unavailable');
-      this.isRunning = false;
+    const action = profileCheck?.action ?? profileCheck;
+    const reason = profileCheck?.reason || '';
+    if (this.cycle) this.cycle.reason = reason;
+    if (shouldStopProfileCheckAction(action)) {
+      this.stop(reason || 'Profile filter unavailable');
       return false;
     }
 
-    const shouldSkip = shouldSkipProfileCheckAction(profileCheckAction);
+    const shouldSkip = shouldSkipProfileCheckAction(action);
 
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
-      logger('🚫 Profile should be skipped, attempting to dislike...');
       const targetProfileId = profileId || this.getCurrentProfileId();
-      // Make sure any modal/overlay is closed
-      try {
+      if (this.profileAnalyzer.isProfileModalOpen()) {
+        this.setProgress(SWIPE_PHASES.closingProfile);
         this.profileAnalyzer.closeProfile();
         await this.profileAnalyzer.waitForModalClose(1200);
-      } catch { }
+      }
 
       if (this.abortSwipeActionIfStopped('Dislike action')) return false;
-      if (findVisibleDialog(document)) return false;
+      if (findVisibleDialog(document)) {
+        if (this.cycle) this.cycle.reason = 'A dialog blocked the swipe';
+        return false;
+      }
 
+      this.setProgress(SWIPE_PHASES.confirmingSwipe);
       let lastDislikeMethod = '';
 
       // Method 1: Try clicking dislike button
@@ -601,24 +640,21 @@ class Swiper {
             return this.finishDislikeAction(targetProfileId, 'dislike button');
           }
 
-          logger('🚪 Waiting for modal to close after dislike...');
-          await this.profileAnalyzer.waitForModalClose(1200);
-
+          if (this.abortSwipeActionIfStopped('Dislike confirmation')) return false;
           if (this.profileAnalyzer.isProfileModalOpen()) {
-            logger('🚪 Modal still open, forcing close...');
+            this.setProgress(SWIPE_PHASES.closingProfile);
             this.profileAnalyzer.closeProfile();
             await this.profileAnalyzer.waitForModalClose(1200);
           }
 
+          if (this.abortSwipeActionIfStopped('Dislike confirmation')) return false;
           if (this.hasActionTargetAdvanced(targetProfileId)) {
             return this.finishDislikeAction(targetProfileId, 'dislike button');
           }
 
-          logger(
-            `⚠️ Dislike button click did not change target profile (id=${targetProfileId})`
-          );
+          debugLog('Dislike button did not advance the profile');
         } catch (e) {
-          logger(`⚠️ Error clicking dislike button: ${e.message}`);
+          debugLog(`Error clicking dislike button: ${e.message}`);
         }
       }
 
@@ -631,6 +667,7 @@ class Swiper {
         return this.stopFallbackForChangedTarget(targetProfileId, 'dislike keyboard fallback');
       }
 
+      this.setProgress(SWIPE_PHASES.confirmingSwipe);
       if (this.pressKey('ArrowLeft', 37)) {
         lastDislikeMethod = 'keyboard ArrowLeft';
         if (await this.waitForProfileAdvance(targetProfileId, 3000)) {
@@ -652,15 +689,11 @@ class Swiper {
         if (await this.waitForProfileAdvance(targetProfileId, 2500)) {
           return this.finishDislikeAction(targetProfileId, 'swipe-left drag');
         }
-        logger(
-          `⚠️ Swipe-left drag did not change target profile (id=${targetProfileId})`
-        );
+        debugLog('Swipe-left drag did not advance the profile');
       }
 
-      // Last resort: Report that we couldn't dislike and return false to try again
-      logger('❌ Could not dislike profile! Manual intervention may be needed.');
-      logger('🛑 Stopping autopilot to prevent unwanted likes...');
-      this.isRunning = false; // Stop the autopilot
+      if (this.abortSwipeActionIfStopped('Dislike failure handling')) return false;
+      this.stop('Swipe left could not be confirmed');
       return false;
     }
 
@@ -675,14 +708,21 @@ class Swiper {
       const elapsed = Date.now() - (this.profileFirstSeen[profileId] || Date.now());
       if (elapsed < minGateMs) {
         const waitMs = minGateMs - elapsed;
-        logger(`⏳ Waiting ${waitMs}ms before like due to bio filter`);
+        this.setProgress(SWIPE_PHASES.pacing);
         await sleep(waitMs);
       }
     }
 
+    if (this.abortSwipeActionIfStopped('Swipe action')) return false;
+    if (profileId && !this.canRetryActionForProfile(profileId)) {
+      return this.stopFallbackForChangedTarget(profileId, 'swipe action');
+    }
+
     // Profile passed all filters - try Super Like first (safely) then Like
     if (this.superLiker && this.superLiker.pressSuperLike && this.superLiker.pressSuperLike()) {
+      this.setProgress(SWIPE_PHASES.confirmingSwipe);
       if (await this.waitForProfileAdvance(profileId)) {
+        if (this.cycle) this.cycle.outcome = 'Super Liked';
         this.clearProfileActionState(profileId);
         return true;
       }
@@ -721,13 +761,10 @@ class Swiper {
   };
 
   run = () => {
-    if (!this.isRunning) {
-      return;
-    }
+    if (!this.isRunning || this.cycle) return;
 
-    // Must be on matches page
     if (!this.interactions.isOnMatchesPage()) {
-      logger('Going to main page to start liking');
+      this.setProgress(SWIPE_PHASES.openingFeed);
       this.interactions.goToMainPage();
 
       const waitForMatchPage = this.scheduleInterval(() => {
@@ -739,56 +776,42 @@ class Swiper {
       return;
     }
 
-    if (this.interactions.closeInstructions()) {
-      this.scheduleRun(generateRandomNumber());
-      return;
-    }
-
-    if (this.interactions.closeMatchFound()) {
-      this.scheduleRun(generateRandomNumber());
-      return;
-    }
-
-    if (this.interactions.closeModal()) {
+    if (
+      this.interactions.closeInstructions() ||
+      this.interactions.closeMatchFound() ||
+      this.interactions.closeModal()
+    ) {
+      this.setProgress(SWIPE_PHASES.dismissingDialog);
       this.scheduleRun(generateRandomNumber());
       return;
     }
 
     if (!this.canSwipe()) {
-      logger('No profiles found. Waiting 4s');
+      this.setProgress(SWIPE_PHASES.waitingForCard);
       this.scheduleRun(generateRandomNumber(3000, 4000));
       return;
     }
 
-    // Keep Swiping
     if (this.matchFound()) {
+      this.setProgress(SWIPE_PHASES.dismissingDialog);
       this.scheduleRun(generateRandomNumber(500, 900));
       return;
     }
 
-    if (this.isProcessingSwipe) {
-      logger('Swipe action already in progress. Waiting before next cycle');
-      this.scheduleRun(800);
-      return;
-    }
-
-    // What we came here to do, swipe right!
-    this.isProcessingSwipe = true;
+    const cycle = createSwipeCycle(Date.now());
+    this.cycle = cycle;
+    this.setProgress(SWIPE_PHASES.readingProfile);
     this.pressLike()
-      .then((success) => {
-        if (success) {
-          this.scheduleRun(generateRandomNumber(3000, 4000));
-        } else if (this.isRunning) {
-          logger('No profiles found. Waiting 4s');
-          this.scheduleRun(generateRandomNumber(3000, 4000));
-        }
-      })
       .catch((error) => {
-        logger(`⚠️ Swipe cycle failed: ${error.message}`);
-        this.scheduleRun(generateRandomNumber(3000, 4000));
+        if (!cycle.cancelled) cycle.reason = `Swipe cycle failed: ${error.message}`;
       })
       .finally(() => {
-        this.isProcessingSwipe = false;
+        logger(summarizeSwipeCycle(cycle, cycle.endedAt ?? Date.now()));
+        this.cycle = null;
+        if (this.isRunning) {
+          this.setProgress(SWIPE_PHASES.cooldown);
+          this.scheduleRun(generateRandomNumber(3000, 4000));
+        }
       });
   };
 }

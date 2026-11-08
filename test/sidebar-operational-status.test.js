@@ -2,21 +2,52 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { AI_REPLY_MODES } = require('../src/views/ai-reply-mode-state');
 const {
+  SWIPE_PHASES,
+  createSwipeCycle,
+  summarizeSwipeCycle,
+  trackSwipePhase
+} = require('../src/misc/swipe-progress');
+const {
   OPERATIONAL_STATUS_TONES,
   getAiReplyOperationalStatus,
   getAutoLikeOperationalStatus,
   getProviderOperationalStatus
 } = require('../src/views/sidebar-operational-status');
 
-test('operational status summarizes Auto Like state', () => {
-  assert.deepEqual(getAutoLikeOperationalStatus(false), {
+test('Auto Like shows elapsed time for its current phase and reports automatic pauses', () => {
+  assert.deepEqual(getAutoLikeOperationalStatus(), {
     text: 'Off',
     tone: OPERATIONAL_STATUS_TONES.idle
   });
-  assert.deepEqual(getAutoLikeOperationalStatus(true), {
-    text: 'Running',
+  assert.deepEqual(getAutoLikeOperationalStatus({
+    phase: SWIPE_PHASES.waitingForAi,
+    startedAt: 1000
+  }, 67000), {
+    text: 'Waiting for AI · 1m 6s',
     tone: OPERATIONAL_STATUS_TONES.success
   });
+  assert.deepEqual(getAutoLikeOperationalStatus({
+    phase: SWIPE_PHASES.paused,
+    reason: 'Swipe left could not be confirmed'
+  }), {
+    text: 'Paused',
+    tone: OPERATIONAL_STATUS_TONES.warning,
+    detail: 'Swipe left could not be confirmed'
+  });
+});
+
+test('a cycle summary combines time from repeated phases and keeps the decision on one line', () => {
+  const cycle = createSwipeCycle(0);
+  trackSwipePhase(cycle, SWIPE_PHASES.closingProfile, 0);
+  trackSwipePhase(cycle, SWIPE_PHASES.waitingForAi, 300);
+  trackSwipePhase(cycle, SWIPE_PHASES.closingProfile, 2100);
+  trackSwipePhase(cycle, SWIPE_PHASES.confirmingSwipe, 2500);
+  cycle.outcome = 'Skipped';
+  cycle.reason = 'AI:  Matched rule\nfrom bio';
+  assert.equal(
+    summarizeSwipeCycle(cycle, 3000),
+    'Skipped · 3s · AI: Matched rule from bio (Closing profile 700ms · Waiting for AI 1s · Confirming swipe 500ms)'
+  );
 });
 
 test('operational status summarizes AI reply mode', () => {

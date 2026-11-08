@@ -1,4 +1,4 @@
-import { errorLog, logger, warnLog } from '../misc/helper';
+import { debugLog, errorLog, logger, warnLog } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import {
   isGenderBlocked,
@@ -9,6 +9,7 @@ import { extractProfileContext, parseProfileDistance } from '../misc/profile-con
 import { hasEnabledBioBlacklist, shouldRequireProfileModal } from '../misc/profile-filter-state';
 import { isAiProfileFilterFailure } from '../misc/ai-profile-filter-result';
 import { PROFILE_CHECK_ACTIONS } from '../misc/profile-check-result';
+import { SWIPE_PHASES } from '../misc/swipe-progress';
 import { getActiveProfileCard, getActiveProfileSurface } from '../misc/profile-identity';
 import { findOpenProfileButton } from '../misc/tinder-dom-detectors';
 import { findProfileCloseControl, isProfileModalOpen } from '../misc/profile-modal-state';
@@ -30,14 +31,13 @@ class ProfileAnalyzer {
       const stored = getSetting('bioBlacklist');
       if (stored) {
         const words = parseFilterList(stored);
-        logger(`📝 Loaded ${words.length} banned words: ${words.join(', ')}`);
+        debugLog(`Loaded ${words.length} bio filter terms`);
         return words;
       }
     } catch (e) {
       warnLog('Failed to load bio blacklist', e);
     }
     const defaults = ['trans', 'onlyfans', 'premium', 'cashapp', 'venmo'];
-    logger(`📝 Using default banned words: ${defaults.join(', ')}`);
     return defaults;
   }
 
@@ -97,7 +97,7 @@ class ProfileAnalyzer {
   }
 
   // Open the profile modal by clicking on the card
-  async openProfile() {
+  async openProfile(isCancelled = () => false) {
     try {
       const activeCard = getActiveProfileCard(document);
       const isSafeButton = (btn) => {
@@ -133,6 +133,7 @@ class ProfileAnalyzer {
       if (openProfileButton && isSafeButton(openProfileButton)) {
         openProfileButton.click();
         await new Promise((resolve) => setTimeout(resolve, 500));
+        if (isCancelled()) return false;
         if (this.isProfileModalOpen()) {
           return true;
         }
@@ -182,6 +183,7 @@ class ProfileAnalyzer {
 
                 // Wait and check if modal opened
                 await new Promise((resolve) => setTimeout(resolve, 500));
+                if (isCancelled()) return false;
                 if (this.isProfileModalOpen()) {
                   return true;
                 }
@@ -234,6 +236,7 @@ class ProfileAnalyzer {
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
 
+      if (isCancelled()) return false;
       if (this.isProfileModalOpen()) {
         return true;
       }
@@ -285,12 +288,12 @@ class ProfileAnalyzer {
       const profileBackButton = findProfileCloseControl(document);
       if (profileBackButton) {
         profileBackButton.click();
-        logger('🚪 Profile close command sent using profile close control');
+        debugLog('Profile close control clicked');
         return true;
       }
 
       if (!this.isProfileModalOpen()) {
-        logger('🚪 No profile modal detected; skipping profile close command');
+        debugLog('Profile already closed');
         return false;
       }
 
@@ -388,16 +391,16 @@ class ProfileAnalyzer {
   async waitForModalClose(timeout = 2000) {
     const startTime = Date.now();
 
-    while (Date.now() - startTime < timeout) {
-      if (!this.isProfileModalOpen()) {
-        logger('✅ Modal confirmed closed');
-        return true;
+    while (this.isProfileModalOpen()) {
+      if (Date.now() - startTime >= timeout) {
+        logger('⚠️ Profile is still open after close timeout');
+        return false;
       }
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    logger('⚠️ Modal may still be open after timeout');
-    return false;
+    debugLog('Profile confirmed closed');
+    return true;
   }
   // Wait for profile modal to open and load
   async waitForProfileModal(maxWait = 2000) {
@@ -419,7 +422,7 @@ class ProfileAnalyzer {
     const start = Date.now();
     while (Date.now() - start < maxWait) {
       const text = (this.getBioText() || '').trim();
-      if (text && text.length >= 10) {
+      if (text) {
         return true;
       }
       await new Promise((resolve) => setTimeout(resolve, 250));
@@ -662,7 +665,7 @@ class ProfileAnalyzer {
   }
 
   // Check bio for banned words (call this AFTER opening the profile modal)
-  async shouldSkipProfile() {
+  getProfileRejectionReason() {
     const profileContext = this.getProfileContext();
     if (this.isBioFilterEnabled()) {
       this.bioBlacklist = this.loadBioBlacklist();
@@ -671,7 +674,7 @@ class ProfileAnalyzer {
       if (bioText) {
         for (const blacklistedWord of this.bioBlacklist) {
           if (bioText.includes(blacklistedWord)) {
-            return true;
+            return 'Bio matched a blocked term';
           }
         }
       }
@@ -682,7 +685,7 @@ class ProfileAnalyzer {
       this.genderFilter = this.loadGenderFilter();
 
       if (isGenderBlocked(profileContext.gender, this.genderFilter)) {
-        return true;
+        return 'Gender matched a blocked label';
       }
     }
 
@@ -707,125 +710,89 @@ class ProfileAnalyzer {
           minPhotoCount: this.minPhotoCount
         })
       ) {
-        return true;
+        return 'Profile falls outside age, distance, or photo limits';
       }
     }
 
-    return false;
+    return '';
   }
 
   // Main method to check profile with modal opening
-  async checkProfileWithModal() {
+  async checkProfileWithModal({ onPhase = () => {}, isCancelled = () => false } = {}) {
+    const { allow, skip, stop } = PROFILE_CHECK_ACTIONS;
     try {
       const hasActiveBioFilter = this.hasActiveBioFilter();
-      const isGenderFilterEnabled = this.isGenderFilterEnabled();
-      const isAdvancedFilterEnabled = this.isAdvancedFilterEnabled();
-
-      // Check if AI filter is enabled
       const isAIFilterEnabled = AIProfileFilter.isEnabled();
-      const requireModal = shouldRequireProfileModal({
+      if (!shouldRequireProfileModal({
         hasActiveBioFilter,
-        isGenderFilterEnabled,
-        isAdvancedFilterEnabled,
+        isGenderFilterEnabled: this.isGenderFilterEnabled(),
+        isAdvancedFilterEnabled: this.isAdvancedFilterEnabled(),
         isAIFilterEnabled
-      });
-
-      // If no filters enabled at all, skip the check
-      if (!requireModal) {
-        return false; // Don't skip
+      })) {
+        return { action: allow, reason: 'No profile filters enabled' };
       }
 
-      // IMPORTANT: Check if modal is already open from previous cycle
       if (this.isProfileModalOpen()) {
+        onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
         await this.waitForModalClose(1500);
-        // Wait a bit more before opening new one
         await new Promise((resolve) => setTimeout(resolve, 300));
+        if (isCancelled()) return { action: stop };
       }
 
-      // Open the profile
-      const opened = await this.openProfile();
+      onPhase(SWIPE_PHASES.openingProfile);
+      const opened = await this.openProfile(isCancelled);
+      if (isCancelled()) return { action: stop };
+      if (!opened) return { action: skip, reason: 'Could not open profile for filtering' };
 
-      if (!opened) {
-        if (requireModal) {
-          return true;
-        }
-        return false;
-      }
-
-      // Wait for modal to open
-      const modalOpened = await this.waitForProfileModal(
-        requireModal ? 5000 : 3000
-      );
-
+      const modalOpened = await this.waitForProfileModal(5000);
+      if (isCancelled()) return { action: stop };
       if (!modalOpened) {
-        if (requireModal) {
-          this.closeProfile();
-          await this.waitForModalClose(1000);
-          return true;
-        }
+        onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
         await this.waitForModalClose(1000);
-        return false;
+        return { action: skip, reason: 'Profile did not finish opening' };
       }
 
-      // Check if should skip
-      if (hasActiveBioFilter) {
-        await this.waitForBioContent(5000);
-      }
-      let shouldSkip = await this.shouldSkipProfile();
+      onPhase(SWIPE_PHASES.readingProfile);
+      if (hasActiveBioFilter) await this.waitForBioContent(5000);
+      if (isCancelled()) return { action: stop };
 
-      // If traditional filters passed, run AI filter if enabled
-      if (!shouldSkip && isAIFilterEnabled) {
-        const profileContext = this.getProfileContextForAI();
-        logger('🤖 AI Filter enabled, analyzing profile...');
-        try {
-          const aiResult = await this.aiFilter.analyze({
-            bio: profileContext.bio,
-            name: profileContext.name,
-            profile: profileContext
-          });
+      let reason = this.getProfileRejectionReason();
+      let action = reason ? skip : allow;
+      if (action === allow && isAIFilterEnabled) {
+        const profile = this.getProfileContextForAI();
+        onPhase(SWIPE_PHASES.waitingForAi);
+        const aiResult = await this.aiFilter.analyze({
+          bio: profile.bio,
+          name: profile.name,
+          profile
+        });
+        if (isCancelled()) return { action: stop };
 
-          if (aiResult.shouldSwipe === 'neutral') {
-            if (isAiProfileFilterFailure(aiResult)) {
-              logger(`🛑 AI Filter unavailable: ${aiResult.reason}`);
-              return PROFILE_CHECK_ACTIONS.stop;
-            }
-            logger('🤖 AI Filter returned neutral, relying on traditional filter result');
-          } else if (!aiResult.shouldSwipe) {
-            // IA explicitly says NO
-            shouldSkip = true;
-            logger(`🤖 AI Filter rejected profile: ${aiResult.reason}`);
-          } else {
-            // IA explicitly says YES
-            logger(`🤖 AI Filter approved profile: ${aiResult.reason}`);
-          }
-        } catch (error) {
-          logger(`⚠️ AI Filter analysis failed: ${error.message}`);
-          return PROFILE_CHECK_ACTIONS.stop;
+        if (isAiProfileFilterFailure(aiResult)) {
+          return { action: stop, reason: aiResult.reason };
         }
+        action = aiResult.shouldSwipe === false ? skip : allow;
+        reason = aiResult.reason ? `AI: ${aiResult.reason}` : 'AI evaluated profile';
       }
 
-      // Close the profile modal and WAIT for it to actually close
-      await new Promise((_resolve) => setTimeout(_resolve, 200));
+      onPhase(SWIPE_PHASES.closingProfile);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (isCancelled()) return { action: stop };
       this.closeProfile();
-
       await this.waitForModalClose(2000);
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Extra safety wait
-      await new Promise((_resolve) => setTimeout(_resolve, 300));
-
-      return shouldSkip;
-    } catch (e) {
-      errorLog('Error checking profile with modal:', e);
-      // If there's an error, close modal and don't skip
-      try {
+      return { action, reason: reason || 'Passed enabled profile filters' };
+    } catch (error) {
+      errorLog('Error checking profile with modal:', error);
+      if (!isCancelled()) {
+        onPhase(SWIPE_PHASES.closingProfile);
         this.closeProfile();
         await this.waitForModalClose(1000);
-      } catch (_closeError) {
-        // Ignore close errors
       }
-      return false;
+      return { action: stop, reason: 'Profile analysis failed' };
     }
   }
 
@@ -834,7 +801,7 @@ class ProfileAnalyzer {
     const analysis = {
       hasBio: bioText.length > 0,
       bioLength: bioText.length,
-      containsBlacklistedWords: this.shouldSkipProfile(),
+      containsBlacklistedWords: Boolean(this.getProfileRejectionReason()),
       bioText: bioText.substring(0, 100) // First 100 chars for logging
     };
 

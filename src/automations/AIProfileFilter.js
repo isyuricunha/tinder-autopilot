@@ -149,7 +149,7 @@ class AIProfileFilter {
         status: response.status
       });
       const data = await response.json();
-      return this.parseResponse(data);
+      return parseAiDecision(data);
     } catch (error) {
       if (keySelection?.selectedKey) {
         await markSelectedAiApiKeyResult({
@@ -239,15 +239,6 @@ ${rules}
 <response_format>
 Return a single JSON object with "shouldSwipe" set to "yes" or "no" and "reason" set to a string. For "no", identify the rule and the profile field that matched. ${reasonDetail}
 </response_format>`;
-  }
-
-  // ----------------------------------------------------------------
-  // Parse LLM response to structured decision
-  // ----------------------------------------------------------------
-  parseResponse(data) {
-    const result = parseAiDecision(data);
-    logger(`🤖 AI says: ${result.shouldSwipe ? 'Swipe YES' : 'Swipe NO'} - ${result.reason}`);
-    return result;
   }
 
   // ----------------------------------------------------------------

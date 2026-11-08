@@ -1,8 +1,10 @@
 const { AI_REPLY_MODES, normalizeAiReplyMode } = require('./ai-reply-mode-state');
+const { SWIPE_PHASES, formatSwipeDuration } = require('../misc/swipe-progress');
 
 const OPERATIONAL_STATUS_TONES = Object.freeze({
   idle: 'idle',
-  success: 'success'
+  success: 'success',
+  warning: 'warning'
 });
 
 const createOperationalStatus = ({ text, tone = OPERATIONAL_STATUS_TONES.idle }) => ({
@@ -10,11 +12,24 @@ const createOperationalStatus = ({ text, tone = OPERATIONAL_STATUS_TONES.idle })
   tone
 });
 
-const getAutoLikeOperationalStatus = (isRunning = false) =>
-  createOperationalStatus({
-    text: isRunning ? 'Running' : 'Off',
-    tone: isRunning ? OPERATIONAL_STATUS_TONES.success : OPERATIONAL_STATUS_TONES.idle
+const getAutoLikeOperationalStatus = (
+  { phase = SWIPE_PHASES.off, startedAt, reason } = {},
+  now = Date.now()
+) => {
+  if (phase === SWIPE_PHASES.off) return createOperationalStatus({ text: phase });
+  if (phase === SWIPE_PHASES.paused) {
+    return {
+      text: phase,
+      tone: OPERATIONAL_STATUS_TONES.warning,
+      detail: reason
+    };
+  }
+
+  return createOperationalStatus({
+    text: startedAt == null ? phase : `${phase} · ${formatSwipeDuration(now - startedAt)}`,
+    tone: OPERATIONAL_STATUS_TONES.success
   });
+};
 
 const getAiReplyOperationalStatus = (mode = AI_REPLY_MODES.off) => {
   const normalizedMode = normalizeAiReplyMode(mode);

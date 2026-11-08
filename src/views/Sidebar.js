@@ -127,6 +127,7 @@ class Sidebar {
     this.anonymous = new Anonymous();
     this.hideUnanswered = new HideUnanswered();
     this.swiper = new Swiper();
+    this.swiper.onProgressChange = this.syncAutoLikeProgress;
     this.messenger = new Messenger();
     this.aiMessageResponder = new AiMessageResponder();
     this.aiMessageResponder.onModeChange = this.updateAiReplyModeSelector;
@@ -142,6 +143,9 @@ class Sidebar {
   };
 
   removeAllListeners = () => {
+    clearInterval(this.autoLikeStatusTimer);
+    this.autoLikeStatusTimer = null;
+
     if (this.cancelMountWait) {
       this.cancelMountWait();
       this.cancelMountWait = null;
@@ -861,29 +865,42 @@ class Sidebar {
 
     const chipElement = valueElement.closest('[data-operational-status-chip]');
     const isSuccess = status.tone === 'success';
+    const isWarning = status.tone === 'warning';
     valueElement.textContent = status.text;
-    valueElement.title = status.text;
-    valueElement.style.color = isSuccess ? SIDEBAR_THEME.success : SIDEBAR_THEME.text;
+    valueElement.title = status.detail || status.text;
+    valueElement.style.color = SIDEBAR_THEME[status.tone] || SIDEBAR_THEME.text;
 
     if (chipElement) {
-      chipElement.style.background = isSuccess
-        ? SIDEBAR_THEME.successSoft
-        : SIDEBAR_THEME.surface;
-      chipElement.style.borderColor = isSuccess
-        ? SIDEBAR_THEME.successBorder
-        : SIDEBAR_THEME.border;
+      const tone = isSuccess || isWarning ? status.tone : null;
+      chipElement.style.background = SIDEBAR_THEME[`${tone}Soft`] || SIDEBAR_THEME.surface;
+      chipElement.style.borderColor = SIDEBAR_THEME[`${tone}Border`] || SIDEBAR_THEME.border;
     }
 
     return true;
   };
 
+  updateAutoLikeStatus = () =>
+    this.updateOperationalStatusChip({
+      id: 'autoLikeOperationalStatus',
+      status: getAutoLikeOperationalStatus(this.swiper.progress)
+    });
+
+  syncAutoLikeProgress = () => {
+    const { selector, isRunning } = this.swiper;
+    if (getCheckboxValue(selector) !== isRunning) setToggleControlState(selector, isRunning);
+    this.updateAutoLikeStatus();
+
+    if (isRunning && this.autoLikeStatusTimer == null) {
+      this.autoLikeStatusTimer = setInterval(this.updateAutoLikeStatus, 1000);
+    } else if (!isRunning) {
+      clearInterval(this.autoLikeStatusTimer);
+      this.autoLikeStatusTimer = null;
+    }
+  };
+
   updateOperationalStatus = (mode = this.getCurrentAiReplyMode()) => {
     const providerLabel = getAiProviderLabel(this.getSelectedAiProviderType());
     const statuses = [
-      {
-        id: 'autoLikeOperationalStatus',
-        status: getAutoLikeOperationalStatus(getCheckboxValue('.tinderAutopilot'))
-      },
       {
         id: 'aiReplyOperationalStatus',
         status: getAiReplyOperationalStatus(mode)
@@ -896,7 +913,7 @@ class Sidebar {
 
     return statuses.reduce(
       (didUpdate, statusConfig) => this.updateOperationalStatusChip(statusConfig) || didUpdate,
-      false
+      this.updateAutoLikeStatus()
     );
   };
 
