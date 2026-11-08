@@ -10,7 +10,11 @@ const {
 test('normalizeProfileCheckAction preserves the legacy boolean contract', () => {
   assert.equal(normalizeProfileCheckAction(true), PROFILE_CHECK_ACTIONS.skip);
   assert.equal(normalizeProfileCheckAction(false), PROFILE_CHECK_ACTIONS.allow);
-  assert.equal(normalizeProfileCheckAction(undefined), PROFILE_CHECK_ACTIONS.allow);
+});
+
+test('an absent or unrecognized filter decision stops Auto Like', () => {
+  assert.equal(shouldStopProfileCheckAction(undefined), true);
+  assert.equal(shouldStopProfileCheckAction('unknown'), true);
 });
 
 test('profile check helpers identify skip and stop actions', () => {

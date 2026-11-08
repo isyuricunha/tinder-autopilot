@@ -156,8 +156,7 @@ const getProfileIdentityFromScope = (scope) => {
 
 const getProfileIdentity = (root = document) =>
   getProfileIdentityFromScope(getExpandedProfileContent(root)) ||
-  getProfileIdentityFromScope(getActiveProfileCard(root)) ||
-  getProfileIdentityFromScope(root);
+  getProfileIdentityFromScope(getActiveProfileCard(root));
 
 const getActiveProfileSurface = (root = document) =>
   getExpandedProfileContent(root) || getActiveProfileCard(root) || root;

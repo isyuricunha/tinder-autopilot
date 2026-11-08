@@ -456,14 +456,14 @@ class Swiper {
   };
 
   pressConfirmedLike = async (profileId) => {
-    const beforeProfileId = profileId || this.getCurrentProfileId();
+    const beforeProfileId = profileId;
     this.setProgress(SWIPE_PHASES.preparingSwipe);
     const likeButton = await this.waitForLikeButton();
 
     if (this.abortSwipeActionIfStopped('Like action')) return false;
 
     if (likeButton) {
-      if (beforeProfileId && !this.canRetryActionForProfile(beforeProfileId)) {
+      if (!this.canRetryActionForProfile(beforeProfileId)) {
         return this.stopFallbackForChangedTarget(beforeProfileId, 'like button click');
       }
 
@@ -586,6 +586,10 @@ class Swiper {
 
     // Track when current profile was first seen for gating
     const profileId = this.getCurrentProfileId();
+    if (!profileId) {
+      this.stop('Could not identify the active profile before filtering');
+      return false;
+    }
     if (!this.profileFirstSeen[profileId]) {
       this.profileFirstSeen[profileId] = Date.now();
     }
@@ -609,7 +613,7 @@ class Swiper {
 
     if (shouldSkip) {
       // Profile blocked - try multiple methods to dislike
-      const targetProfileId = profileId || this.getCurrentProfileId();
+      const targetProfileId = profileId;
       if (this.profileAnalyzer.isProfileModalOpen()) {
         this.setProgress(SWIPE_PHASES.closingProfile);
         this.profileAnalyzer.closeProfile();
@@ -714,7 +718,7 @@ class Swiper {
     }
 
     if (this.abortSwipeActionIfStopped('Swipe action')) return false;
-    if (profileId && !this.canRetryActionForProfile(profileId)) {
+    if (!this.canRetryActionForProfile(profileId)) {
       return this.stopFallbackForChangedTarget(profileId, 'swipe action');
     }
 

@@ -212,3 +212,11 @@ test('exposes the expanded profile as the active action surface', () => {
 
   assert.match(getActiveProfileSurface(root).className, /profileContent/);
 });
+
+test('does not mistake a page heading or sidebar photo for the swipe target', () => {
+  const root = new FakeElement('main', {}, '', [
+    new FakeElement('h1', {}, 'Explore'),
+    new FakeElement('img', { src: 'avatar.jpg' }, '')
+  ]);
+  assert.equal(getProfileIdentity(root), null);
+});

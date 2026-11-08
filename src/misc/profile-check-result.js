@@ -6,8 +6,8 @@ const PROFILE_CHECK_ACTIONS = Object.freeze({
 
 const normalizeProfileCheckAction = (value) => {
   if (value === true || value === PROFILE_CHECK_ACTIONS.skip) return PROFILE_CHECK_ACTIONS.skip;
-  if (value === PROFILE_CHECK_ACTIONS.stop) return PROFILE_CHECK_ACTIONS.stop;
-  return PROFILE_CHECK_ACTIONS.allow;
+  if (value === false || value === PROFILE_CHECK_ACTIONS.allow) return PROFILE_CHECK_ACTIONS.allow;
+  return PROFILE_CHECK_ACTIONS.stop;
 };
 
 const shouldSkipProfileCheckAction = (value) =>
