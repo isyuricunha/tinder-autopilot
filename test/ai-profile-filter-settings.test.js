@@ -20,6 +20,8 @@ test('AI profile filter settings expose safe defaults', () => {
 
 test('normalizeAiReasoningEffort accepts only known values', () => {
   assert.equal(normalizeAiReasoningEffort(AI_REASONING_EFFORTS.low), AI_REASONING_EFFORTS.low);
+  assert.equal(normalizeAiReasoningEffort('none'), 'none');
+  assert.equal(normalizeAiReasoningEffort('max'), 'max');
   assert.equal(normalizeAiReasoningEffort('unknown'), DEFAULT_AI_PROFILE_REASONING_EFFORT);
 });
 

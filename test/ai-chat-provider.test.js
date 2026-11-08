@@ -23,14 +23,15 @@ const { AI_PROVIDER_TYPES } = require('../src/misc/ai-provider-settings');
 test('DeepSeek V4 reasoning survives Chat Completions serialization', () => {
   const providerType = AI_PROVIDER_TYPES.openAiCompatible;
   for (const model of ['deepseek-v4-flash', 'deepseek-flash', 'deepseek/deepseek-v4.1-flash']) {
-    const body = {
-      model,
-      max_tokens: 128,
-      ...getDeepSeekChatReasoningFields({ providerType, model, reasoningEffort: 'low' })
-    };
-    assert.deepEqual(JSON.parse(buildAiChatRequestOptions({ body, providerType }).body), {
-      model, max_tokens: 128, reasoning_effort: 'low'
-    });
+    for (const reasoningEffort of ['none', 'low', 'medium', 'high', 'max']) {
+      const body = {
+        model,
+        ...getDeepSeekChatReasoningFields({ providerType, model, reasoningEffort })
+      };
+      assert.deepEqual(JSON.parse(buildAiChatRequestOptions({ body, providerType }).body), {
+        model, reasoning_effort: reasoningEffort
+      });
+    }
   }
   assert.deepEqual(getDeepSeekChatReasoningFields({
     providerType, model: 'qwen3.6-35b', reasoningEffort: 'low'

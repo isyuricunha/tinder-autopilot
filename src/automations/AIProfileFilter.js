@@ -128,13 +128,8 @@ class AIProfileFilter {
       }
 
       return await retryProfileDecision({
-        maxTokens: body.max_tokens,
         isCancelled,
-        request: (maxTokens) => this.requestDecision(
-          requestUrl,
-          { ...body, max_tokens: maxTokens },
-          keySelection
-        )
+        request: () => this.requestDecision(requestUrl, body, keySelection)
       });
     } catch (error) {
       if (/^Extension context invalidated\.?$/i.test(error.message)) {
@@ -191,7 +186,6 @@ class AIProfileFilter {
   // ----------------------------------------------------------------
   buildRequestBody(bio, imageBase64, name, profile) {
     const systemMessage = this.buildSystemMessage();
-    const config = this.getEffortConfig();
 
     const content = [];
 
@@ -222,26 +216,12 @@ class AIProfileFilter {
       model: this.model,
       messages,
       response_format: { type: 'json_object' },
-      max_tokens: config.maxTokens,
-      temperature: config.temperature,
       ...getDeepSeekChatReasoningFields({
         providerType: this.providerType,
         model: this.model,
         reasoningEffort: this.reasoningEffort
       })
     };
-  }
-
-  // ----------------------------------------------------------------
-  // Reasoning effort configuration
-  // ----------------------------------------------------------------
-  getEffortConfig() {
-    const configs = {
-      low: { maxTokens: 128, temperature: 0.3 },
-      medium: { maxTokens: 256, temperature: 0.2 },
-      high: { maxTokens: 512, temperature: 0.1 }
-    };
-    return configs[this.reasoningEffort] || configs.medium;
   }
 
   buildSystemMessage() {

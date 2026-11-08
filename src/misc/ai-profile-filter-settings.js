@@ -7,9 +7,11 @@ const DEFAULT_AI_PROFILE_MODEL = 'gpt-4o-mini';
 const DEFAULT_AI_PROFILE_REASONING_EFFORT = 'medium';
 
 const AI_REASONING_EFFORTS = {
+  none: 'none',
   low: 'low',
   medium: 'medium',
-  high: 'high'
+  high: 'high',
+  max: 'max'
 };
 
 const AI_PROFILE_SETTING_KEYS = {

@@ -744,13 +744,15 @@ const createSwipeSettings = () =>
           storageKey: AI_PROFILE_SETTING_KEYS.reasoningEffort,
           defaultValue: DEFAULT_AI_PROFILE_REASONING_EFFORT,
           options: [
-            { value: AI_REASONING_EFFORTS.low, text: 'Low - Fast & Cheap' },
-            { value: AI_REASONING_EFFORTS.medium, text: 'Medium - Balanced' },
-            { value: AI_REASONING_EFFORTS.high, text: 'High - Deep Analysis' }
+            { value: AI_REASONING_EFFORTS.none, text: 'None' },
+            { value: AI_REASONING_EFFORTS.low, text: 'Low' },
+            { value: AI_REASONING_EFFORTS.medium, text: 'Medium' },
+            { value: AI_REASONING_EFFORTS.high, text: 'High' },
+            { value: AI_REASONING_EFFORTS.max, text: 'Max' }
           ]
         }),
         createHelpText(
-          'Sets the profile filter response budget. For DeepSeek V4 over OpenAI-Compatible, it also sends the selected reasoning effort.'
+          'Sets the reasoning effort for DeepSeek V4 over OpenAI-Compatible. Chat Completions providers set the output limit.'
         )
       ]
     }),
