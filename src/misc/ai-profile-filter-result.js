@@ -1,5 +1,6 @@
 const AI_PROFILE_FILTER_NEUTRAL = 'neutral';
 const AI_PROFILE_FILTER_TRUNCATED = 'truncated';
+const AI_PROFILE_FILTER_CONNECTION = 'connection';
 
 const stripHtml = (value = '') =>
   String(value || '')
@@ -40,6 +41,7 @@ const isAiProfileFilterFailure = (result) =>
 module.exports = {
   AI_PROFILE_FILTER_NEUTRAL,
   AI_PROFILE_FILTER_TRUNCATED,
+  AI_PROFILE_FILTER_CONNECTION,
   createAiProfileFilterFailure,
   isAiProfileFilterFailure,
   summarizeAiProfileFilterHttpError

@@ -39,7 +39,7 @@ Sign in to [Tinder Web](https://tinder.com/) and open Recommendations. The Autop
 2. For model-based filtering, configure the provider in **Settings**, then enter your own **Profile Filter Rules** and select a model in **Swipes**.
 3. Enable **Auto Like**. The status above the tabs shows the current step and how long it has been running.
 
-The profile filter sends your rules separately from the profile fields. It uses the gender field shown on the profile when available. If the model reaches its output limit, Auto Like retries up to twice with a larger limit. If all three responses are cut short, it uses a regular Like and records the fallback in **Activity**. Empty rules, request failures, and other invalid decisions pause Auto Like.
+The profile filter sends your rules separately from the profile fields. It uses the gender field shown on the profile when available. Auto Like retries connection failures and responses cut short by the output limit up to twice. Only three cut-short responses trigger a regular Like. If the connection still prevents a complete decision, Auto Like pauses and shows the reason in **Activity**. Empty rules, API errors, and other invalid decisions also pause Auto Like.
 
 Bio and gender lists accept commas or line breaks. Leave a list empty to apply no restrictions from that list. The distance limit is in kilometers, even when Tinder displays miles. If Tinder does not show a field, its limit does not reject the profile.
 

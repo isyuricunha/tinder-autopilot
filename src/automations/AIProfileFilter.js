@@ -2,8 +2,9 @@ import { logger } from '../misc/helper';
 import { getSetting } from '../misc/settings-store';
 import { fetchWithBackgroundFallback } from '../misc/background-fetch';
 import { parseAiDecision } from '../misc/ai-response-parser';
-import { retryTruncatedProfileDecision } from '../misc/ai-profile-filter-retry';
+import { retryProfileDecision } from '../misc/ai-profile-filter-retry';
 import {
+  AI_PROFILE_FILTER_CONNECTION,
   createAiProfileFilterFailure,
   summarizeAiProfileFilterHttpError
 } from '../misc/ai-profile-filter-result';
@@ -122,7 +123,7 @@ class AIProfileFilter {
         return createAiProfileFilterFailure('AI not configured');
       }
 
-      return await retryTruncatedProfileDecision({
+      return await retryProfileDecision({
         maxTokens: body.max_tokens,
         isCancelled,
         request: (maxTokens) => this.requestDecision(
@@ -144,10 +145,19 @@ class AIProfileFilter {
   }
 
   async requestDecision(requestUrl, body, keySelection) {
-    const response = await fetchWithBackgroundFallback(
-      requestUrl,
-      buildAiChatRequestOptions({ apiKey: this.apiKey, body, providerType: this.providerType })
-    );
+    const options = buildAiChatRequestOptions({ apiKey: this.apiKey, body, providerType: this.providerType });
+    let response;
+    try {
+      response = await fetchWithBackgroundFallback(requestUrl, options);
+    } catch (error) {
+      const networkError =
+        /^(?:Failed to fetch|NetworkError when attempting to fetch resource\.|Load failed)$/i;
+      const timeout = /^Background request timed out after \d+ seconds$/i;
+      if (networkError.test(error.message) || timeout.test(error.message)) {
+        return createAiProfileFilterFailure(error.message, AI_PROFILE_FILTER_CONNECTION);
+      }
+      throw error;
+    }
     await markSelectedAiApiKeyResult({
       selectedKey: keySelection.selectedKey,
       status: response.status
